@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Roman Numeral Siege</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --parchment:#F3E6C9;
+    --parchment-dk:#E2CFA4;
+    --legion:#A4302C;
+    --legion-dk:#6E1E1B;
+    --brass:#D9A441;
+    --brass-dk:#8A6017;
+    --stone:#8E8A7E;
+    --stone-dk:#5C594F;
+    --olive:#7C8A4D;
+    --ink:#2E2A24;
+    --sky-hi:#BFDDE8;
+    --sky-lo:#F2D9A6;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    font-family:'Nunito',sans-serif;
+    background:var(--ink);
+    color:var(--ink);
+    display:flex;align-items:center;justify-content:center;
+    overflow:hidden;
+    user-select:none;-webkit-user-select:none;
+  }
+  #game{
+    width:min(100vw, 900px);
+    height:min(100vh, 100dvh);
+    max-height:720px;
+    display:flex;flex-direction:column;
+    background:var(--parchment);
+    position:relative;
+    overflow:hidden;
+  }
+  @media (min-width:920px){ #game{border-radius:18px;box-shadow:0 24px 60px rgba(0,0,0,.5);} }
+
+  /* ---------- HUD ---------- */
+  #hud{
+    display:flex;align-items:center;justify-content:space-between;
+    gap:10px;padding:10px 14px;
+    background:var(--legion);
+    border-bottom:4px solid var(--legion-dk);
+    color:var(--parchment);
+  }
+  #hearts{display:flex;gap:5px;}
+  .heart{width:26px;height:26px;transition:transform .2s, opacity .2s;}
+  .heart.lost{opacity:.22;transform:scale(.8);}
+  .heart.pop{animation:heartpop .35s ease;}
+  @keyframes heartpop{40%{transform:scale(1.45) rotate(-12deg);}}
+  #wavelabel{
+    font-family:'Cinzel',serif;font-weight:700;font-size:clamp(13px,2.4vw,17px);
+    letter-spacing:.12em;text-align:center;
+  }
+  #hud-right{display:flex;align-items:center;gap:10px;}
+  #combo{
+    font-weight:800;font-size:13px;
+    background:var(--brass);color:var(--legion-dk);
+    padding:3px 12px;border-radius:999px;
+    border:2px solid var(--brass-dk);
+    visibility:hidden;
+    transform-origin:center;
+  }
+  #combo.bump{animation:combobump .25s ease;}
+  @keyframes combobump{50%{transform:scale(1.25);}}
+  #scoreplaque{
+    background:var(--stone-dk);
+    border:2px solid var(--ink);
+    border-radius:8px;
+    padding:2px 12px;
+    text-align:center;
+    min-width:84px;
+  }
+  #scoreplaque .lbl{font-size:10px;letter-spacing:.18em;color:var(--parchment-dk);font-weight:700;}
+  #scoreplaque .val{font-family:'Cinzel',serif;font-weight:700;font-size:20px;color:#fff;line-height:1.1;}
+
+  /* ---------- BATTLEFIELD ---------- */
+  #scene{
+    position:relative;flex:1;min-height:200px;
+    background:linear-gradient(var(--sky-hi), var(--sky-lo) 70%);
+    overflow:hidden;
+  }
+  #scene.shake{animation:shake .4s ease;}
+  @keyframes shake{
+    20%{transform:translate(-6px,3px);}40%{transform:translate(5px,-3px);}
+    60%{transform:translate(-4px,2px);}80%{transform:translate(3px,-1px);}
+  }
+  .sun{
+    position:absolute;right:22%;top:10%;
+    width:64px;height:64px;border-radius:50%;
+    background:#F7C95E;box-shadow:0 0 50px 18px rgba(247,201,94,.45);
+  }
+  .cloud{
+    position:absolute;background:rgba(255,255,255,.85);
+    border-radius:999px;height:18px;
+    animation:drift linear infinite;
+  }
+  .cloud::before{content:"";position:absolute;left:18%;top:-9px;width:45%;height:20px;background:inherit;border-radius:999px;}
+  @keyframes drift{from{transform:translateX(-160px);}to{transform:translateX(calc(100vw + 160px));}}
+  .hill{position:absolute;bottom:34px;border-radius:50% 50% 0 0;}
+  .hill.far{left:-12%;width:65%;height:90px;background:#A8B07A;}
+  .hill.near{right:-15%;width:75%;height:64px;background:#94A263;}
+  #ground{
+    position:absolute;left:0;right:0;bottom:0;height:44px;
+    background:var(--olive);
+    border-top:5px solid #5F6B36;
+  }
+  #castle{position:absolute;right:-4px;bottom:34px;width:clamp(130px,22%,190px);}
+  #soldiers,#fx{position:absolute;inset:0;}
+  .soldier{position:absolute;bottom:38px;width:84px;will-change:left;}
+  .soldier svg{animation:march .45s infinite;}
+  @keyframes march{0%,100%{transform:translateY(0) rotate(0deg);}50%{transform:translateY(-5px) rotate(-1.5deg);}}
+  .pop-pts{
+    position:absolute;font-weight:800;font-size:clamp(15px,2.6vw,20px);color:var(--brass-dk);
+    animation:rise .85s ease-out forwards;pointer-events:none;
+    text-shadow:0 1px 0 var(--parchment);
+  }
+  @keyframes rise{to{transform:translateY(-44px);opacity:0;}}
+  .particle{position:absolute;border-radius:50%;pointer-events:none;}
+  #cannonball{position:absolute;width:16px;height:16px;border-radius:50%;background:#1d1a15;display:none;box-shadow:inset -3px -3px 0 rgba(255,255,255,.18);}
+
+  /* ---------- FUSE ---------- */
+  #fusewrap{
+    display:flex;align-items:center;gap:10px;
+    padding:8px 16px;background:var(--parchment-dk);
+    border-top:3px solid #C7AE7C;border-bottom:3px solid #C7AE7C;
+  }
+  #fuselabel{font-family:'Cinzel',serif;font-weight:700;font-size:11px;letter-spacing:.16em;color:var(--brass-dk);white-space:nowrap;}
+  #fusetrack{position:relative;flex:1;height:10px;}
+  #fuse{
+    position:absolute;left:0;top:2px;height:6px;width:100%;
+    background:repeating-linear-gradient(90deg,#6E5430 0 8px,#8A6B3E 8px 16px);
+    border-radius:3px;
+  }
+  #spark{
+    position:absolute;top:-7px;width:22px;height:22px;margin-left:-11px;
+    border-radius:50%;
+    background:radial-gradient(circle,#FFF3B0 0 30%, #F7A93B 60%, rgba(247,169,59,0) 72%);
+    animation:flicker .12s infinite alternate;
+  }
+  @keyframes flicker{from{transform:scale(.85);}to{transform:scale(1.15);}}
+
+  /* ---------- ANSWERS ---------- */
+  #answers{
+    display:grid;grid-template-columns:repeat(4,1fr);
+    gap:10px;padding:12px 14px 16px;
+    background:var(--parchment);
+  }
+  @media (max-width:560px){ #answers{grid-template-columns:repeat(2,1fr);} }
+  .ansbtn{
+    font-family:'Cinzel',serif;font-weight:900;
+    font-size:clamp(24px,5vw,34px);
+    padding:clamp(10px,2.2vh,18px) 6px;
+    color:var(--ink);
+    background:linear-gradient(#EFE0BC,#DCC795);
+    border:3px solid var(--brass-dk);
+    border-bottom-width:6px;
+    border-radius:14px;
+    cursor:pointer;
+    transition:transform .08s, filter .12s;
+    touch-action:manipulation;
+  }
+  .ansbtn:active{transform:translateY(3px);border-bottom-width:3px;}
+  .ansbtn:disabled{opacity:.45;cursor:default;}
+  .ansbtn.wrong{background:linear-gradient(#E8A8A4,#D67F7A);border-color:var(--legion-dk);color:var(--legion-dk);animation:wobble .35s;}
+  @keyframes wobble{25%{transform:translateX(-5px);}50%{transform:translateX(5px);}75%{transform:translateX(-3px);}}
+  .ansbtn:focus-visible{outline:4px solid var(--legion);outline-offset:2px;}
+
+  /* ---------- OVERLAYS ---------- */
+  .overlay{
+    position:absolute;inset:0;z-index:20;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:14px;padding:24px;text-align:center;
+    background:rgba(46,42,36,.78);
+    color:var(--parchment);
+  }
+  .scroll{
+    background:var(--parchment);color:var(--ink);
+    border:4px solid var(--brass-dk);
+    border-radius:16px;
+    padding:26px 30px;max-width:430px;width:100%;
+    display:flex;flex-direction:column;align-items:center;gap:12px;
+    box-shadow:0 16px 40px rgba(0,0,0,.45);
+  }
+  h1{
+    font-family:'Cinzel',serif;font-weight:900;
+    font-size:clamp(24px,5.4vw,34px);line-height:1.15;
+    color:var(--legion);letter-spacing:.04em;
+  }
+  .eyebrow{font-family:'Cinzel',serif;font-weight:700;font-size:12px;letter-spacing:.34em;color:var(--brass-dk);}
+  .sub{font-size:15px;line-height:1.55;color:#574F40;}
+  .bigbtn{
+    font-family:'Cinzel',serif;font-weight:700;font-size:18px;letter-spacing:.08em;
+    color:var(--parchment);
+    background:var(--legion);
+    border:3px solid var(--legion-dk);border-bottom-width:6px;
+    border-radius:12px;
+    padding:12px 34px;cursor:pointer;
+    transition:transform .08s;
+    touch-action:manipulation;
+  }
+  .bigbtn:active{transform:translateY(3px);border-bottom-width:3px;}
+  .bigbtn:focus-visible{outline:4px solid var(--brass);outline-offset:2px;}
+  #wavebanner{
+    position:absolute;inset:0;z-index:15;display:none;
+    align-items:center;justify-content:center;flex-direction:column;gap:6px;
+    pointer-events:none;
+  }
+  #wavebanner .ribbon{
+    background:var(--legion);color:var(--parchment);
+    border:3px solid var(--legion-dk);
+    padding:12px 36px;border-radius:10px;
+    font-family:'Cinzel',serif;font-weight:900;font-size:clamp(20px,4.6vw,30px);
+    letter-spacing:.1em;
+    animation:bannerin .5s ease;
+    box-shadow:0 10px 26px rgba(0,0,0,.35);
+    text-align:center;
+  }
+  #wavebanner .ribbon small{display:block;font-family:'Nunito',sans-serif;font-weight:700;font-size:13px;letter-spacing:.04em;margin-top:4px;color:var(--parchment-dk);}
+  @keyframes bannerin{from{transform:scale(.6);opacity:0;}60%{transform:scale(1.08);}to{transform:scale(1);opacity:1;}}
+  #medal{width:120px;height:140px;}
+  .finalscore{font-family:'Cinzel',serif;font-weight:900;font-size:30px;color:var(--brass-dk);}
+  .statline{font-size:14px;color:#574F40;font-weight:700;}
+
+  @media (prefers-reduced-motion: reduce){
+    .soldier svg,.cloud,#spark{animation:none !important;}
+    #scene.shake{animation:none;}
+  }
+</style>
+</head>
+<body>
+<div id="game">
+
+  <div id="hud">
+    <div id="hearts" aria-label="Lives remaining"></div>
+    <div id="wavelabel">WAVE I &middot; SHIELDS I&ndash;X</div>
+    <div id="hud-right">
+      <span id="combo">combo &times;2</span>
+      <div id="scoreplaque"><div class="lbl">SCORE</div><div class="val" id="score">0</div></div>
+    </div>
+  </div>
+
+  <div id="scene">
+    <div class="sun"></div>
+    <div class="cloud" style="top:14%;width:90px;animation-duration:46s;"></div>
+    <div class="cloud" style="top:30%;width:60px;animation-duration:64s;animation-delay:-30s;"></div>
+    <div class="hill far"></div>
+    <div class="hill near"></div>
+    <div id="ground"></div>
+
+    <svg id="castle" viewBox="0 0 190 240" aria-hidden="true">
+      <rect x="30" y="90" width="160" height="150" fill="#9B968A"/>
+      <rect x="30" y="90" width="160" height="10" fill="#7E796D"/>
+      <rect x="26" y="74" width="18" height="18" fill="#9B968A"/><rect x="58" y="74" width="18" height="18" fill="#9B968A"/><rect x="90" y="74" width="18" height="18" fill="#9B968A"/><rect x="122" y="74" width="18" height="18" fill="#9B968A"/><rect x="154" y="74" width="18" height="18" fill="#9B968A"/>
+      <rect x="52" y="150" width="62" height="90" rx="31" fill="#574F40"/>
+      <rect x="56" y="154" width="54" height="86" rx="27" fill="#3B352B"/>
+      <line x1="56" y1="180" x2="110" y2="180" stroke="#574F40" stroke-width="4"/>
+      <line x1="56" y1="206" x2="110" y2="206" stroke="#574F40" stroke-width="4"/>
+      <line x1="83" y1="154" x2="83" y2="240" stroke="#574F40" stroke-width="4"/>
+      <rect x="134" y="110" width="16" height="24" rx="8" fill="#574F40"/>
+      <rect x="146" y="20" width="34" height="70" fill="#8A8579"/>
+      <rect x="142" y="12" width="9" height="12" fill="#8A8579"/><rect x="158" y="12" width="9" height="12" fill="#8A8579"/><rect x="174" y="12" width="9" height="12" fill="#8A8579"/>
+      <rect x="156" y="40" width="13" height="20" rx="6" fill="#574F40"/>
+      <line x1="150" y1="12" x2="150" y2="-14" stroke="#574F40" stroke-width="3"/>
+      <path d="M150 -12 L186 -4 L150 4 Z" fill="#A4302C"/>
+      <rect x="0" y="118" width="58" height="14" rx="7" fill="#3B352B"/>
+      <circle cx="56" cy="125" r="13" fill="#574F40"/>
+      <rect x="40" y="134" width="34" height="8" fill="#6E5430"/>
+    </svg>
+
+    <div id="soldiers"></div>
+    <div id="fx"></div>
+    <div id="cannonball"></div>
+
+    <div id="wavebanner"><div class="ribbon" id="wavetext">WAVE I<small>New shields: I to X</small></div></div>
+
+    <div class="overlay" id="startoverlay">
+      <div class="scroll">
+        <div class="eyebrow">S &middot; P &middot; Q &middot; R</div>
+        <h1>Roman Numeral Siege</h1>
+        <p class="sub">Soldiers are marching on your castle, each carrying a shield with a Roman numeral. Tap the matching number to fire the cannon before they reach the gate. Don't let the fuse burn out!</p>
+        <p class="sub" style="font-weight:800;color:var(--legion-dk);">3 lives &middot; 5 waves &middot; build a combo for bonus points</p>
+        <button class="bigbtn" id="startbtn">TO BATTLE</button>
+      </div>
+    </div>
+
+    <div class="overlay" id="endoverlay" style="display:none;">
+      <div class="scroll">
+        <div class="eyebrow" id="endeyebrow">VICTORY</div>
+        <svg id="medal" viewBox="0 0 120 140"></svg>
+        <h1 id="endtitle" style="font-size:24px;">Gold medal</h1>
+        <div class="finalscore" id="finalscore">0</div>
+        <div class="statline" id="endstats"></div>
+        <button class="bigbtn" id="againbtn">FIGHT AGAIN</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="fusewrap">
+    <span id="fuselabel">CANNON FUSE</span>
+    <div id="fusetrack"><div id="fuse"></div><div id="spark" style="left:100%;"></div></div>
+  </div>
+
+  <div id="answers" aria-label="Answer choices"></div>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+var $=function(id){return document.getElementById(id);};
+var scene=$('scene'),soldiersEl=$('soldiers'),fx=$('fx'),ball=$('cannonball'),
+    heartsEl=$('hearts'),waveLabel=$('wavelabel'),scoreEl=$('score'),comboEl=$('combo'),
+    fuse=$('fuse'),spark=$('spark'),answersEl=$('answers'),
+    banner=$('wavebanner'),waveText=$('wavetext'),
+    startOverlay=$('startoverlay'),endOverlay=$('endoverlay');
+
+var ROMANWAVE=['I','II','III','IV','V'];
+var WAVES=[
+  {label:'Shields I\u2013X',      min:1,  max:10,  count:6, time:9000},
+  {label:'Shields XI\u2013XX',    min:11, max:20,  count:6, time:8200},
+  {label:'Shields XXI\u2013XXXIX',min:21, max:39,  count:6, time:7600},
+  {label:'Shields XL\u2013LXXXIX',min:40, max:89,  count:6, time:7200},
+  {label:'The full legion I\u2013C',min:1,max:100, count:8, time:6000}
+];
+
+var hearts,score,combo,maxCombo,waveIdx,soldierIdx,hits,current,raf,running=false;
+
+/* ---------- roman numerals ---------- */
+function toRoman(n){
+  var map=[[100,'C'],[90,'XC'],[50,'L'],[40,'XL'],[10,'X'],[9,'IX'],[5,'V'],[4,'IV'],[1,'I']],r='';
+  for(var i=0;i<map.length;i++){while(n>=map[i][0]){r+=map[i][1];n-=map[i][0];}}
+  return r;
+}
+
+/* ---------- audio ---------- */
+var actx=null;
+function tone(f,d,type,vol,delay){
+  try{
+    if(!actx)actx=new (window.AudioContext||window.webkitAudioContext)();
+    var t0=actx.currentTime+(delay||0);
+    var o=actx.createOscillator(),g=actx.createGain();
+    o.type=type||'square';o.frequency.setValueAtTime(f,t0);
+    g.gain.setValueAtTime(vol||0.07,t0);
+    g.gain.exponentialRampToValueAtTime(0.001,t0+d);
+    o.connect(g);g.connect(actx.destination);
+    o.start(t0);o.stop(t0+d);
+  }catch(e){}
+}
+function boomSound(){
+  try{
+    if(!actx)actx=new (window.AudioContext||window.webkitAudioContext)();
+    var len=actx.sampleRate*0.35,buf=actx.createBuffer(1,len,actx.sampleRate),d=buf.getChannelData(0);
+    for(var i=0;i<len;i++){d[i]=(Math.random()*2-1)*Math.pow(1-i/len,2);}
+    var s=actx.createBufferSource(),g=actx.createGain(),f=actx.createBiquadFilter();
+    f.type='lowpass';f.frequency.value=900;
+    g.gain.value=0.22;
+    s.buffer=buf;s.connect(f);f.connect(g);g.connect(actx.destination);s.start();
+  }catch(e){}
+}
+
+/* ---------- HUD ---------- */
+var HEART='<svg viewBox="0 0 24 24" width="26" height="26"><path d="M12 21 C5 15 2 11.6 2 8.2 2 5.4 4.2 3.4 6.8 3.4 8.6 3.4 10.5 4.4 12 6.4 13.5 4.4 15.4 3.4 17.2 3.4 19.8 3.4 22 5.4 22 8.2 22 11.6 19 15 12 21Z" fill="#F2D9A6" stroke="#6E1E1B" stroke-width="1.6"/></svg>';
+function renderHearts(animLost){
+  heartsEl.innerHTML='';
+  for(var i=0;i<3;i++){
+    var d=document.createElement('div');
+    d.className='heart'+(i<hearts?'':' lost')+(animLost&&i===hearts?' pop':'');
+    d.innerHTML=HEART;
+    heartsEl.appendChild(d);
+  }
+}
+function setCombo(bump){
+  if(combo>1){
+    comboEl.style.visibility='visible';
+    comboEl.textContent='combo \u00d7'+combo;
+    if(bump){comboEl.classList.remove('bump');void comboEl.offsetWidth;comboEl.classList.add('bump');}
+  }else comboEl.style.visibility='hidden';
+}
+function setWaveLabel(){
+  waveLabel.innerHTML='WAVE '+ROMANWAVE[waveIdx]+' &middot; '+WAVES[waveIdx].label.toUpperCase().replace('\u2013','&ndash;');
+}
+
+/* ---------- soldier sprite ---------- */
+function shieldFont(s){return s.length<=3?19:(s.length<=5?15:12);}
+function soldierSVG(rom){
+  var fs=shieldFont(rom);
+  return '<svg width="84" height="110" viewBox="0 0 84 110">'+
+  '<line x1="14" y1="44" x2="14" y2="4" stroke="#574F40" stroke-width="3.5"/>'+
+  '<path d="M14 3 L4 13 L14 11 Z" fill="#8E8A7E"/>'+
+  '<ellipse cx="34" cy="104" rx="16" ry="4" fill="rgba(0,0,0,.15)"/>'+
+  '<rect x="26" y="62" width="7" height="22" rx="3" fill="#6E1E1B"/>'+
+  '<rect x="37" y="62" width="7" height="22" rx="3" fill="#6E1E1B"/>'+
+  '<rect x="24" y="84" width="11" height="6" rx="3" fill="#3B352B"/>'+
+  '<rect x="36" y="84" width="11" height="6" rx="3" fill="#3B352B"/>'+
+  '<rect x="22" y="32" width="26" height="34" rx="8" fill="#A4302C"/>'+
+  '<rect x="22" y="52" width="26" height="6" fill="#D9A441"/>'+
+  '<circle cx="35" cy="20" r="11" fill="#E8A87C"/>'+
+  '<path d="M23 18 a12 12 0 0 1 24 0 Z" fill="#8E8A7E"/>'+
+  '<rect x="31" y="2" width="8" height="8" rx="2" fill="#A4302C"/>'+
+  '<circle cx="31" cy="20" r="1.4" fill="#2E2A24"/>'+
+  '<rect x="40" y="40" width="40" height="32" rx="10" fill="#D9A441" stroke="#8A6017" stroke-width="3"/>'+
+  '<rect x="44" y="44" width="32" height="24" rx="7" fill="#F2D9A6"/>'+
+  '<text x="60" y="'+(56+fs*0.36)+'" text-anchor="middle" font-family="Cinzel,Georgia,serif" font-weight="900" font-size="'+fs+'" fill="#6E1E1B">'+rom+'</text>'+
+  '</svg>';
+}
+
+/* ---------- geometry ---------- */
+function gateX(){return scene.clientWidth-(scene.querySelector('#castle').clientWidth)+10-70;}
+
+/* ---------- distractors ---------- */
+function buildAnswers(correct,w){
+  var rom=toRoman(correct),pool={},opts=[correct];pool[correct]=1;
+  var tricks=[];
+  if(rom.indexOf('IX')>-1)tricks.push(correct+2);
+  if(rom.indexOf('XI')>-1)tricks.push(correct-2);
+  if(rom.indexOf('IV')>-1)tricks.push(correct+2);
+  if(rom.indexOf('VI')>-1)tricks.push(correct-2);
+  if(rom.indexOf('XL')>-1)tricks.push(correct+20);
+  if(rom.indexOf('LX')>-1)tricks.push(correct-20);
+  if(rom.indexOf('XC')>-1)tricks.push(correct-40);
+  tricks.push(correct+1,correct-1,correct+2,correct-2,correct+10,correct-10,correct+5,correct-5);
+  var guard=0;
+  while(opts.length<4&&guard<300){
+    guard++;
+    var c;
+    if(tricks.length&&Math.random()<0.7)c=tricks.splice(Math.floor(Math.random()*tricks.length),1)[0];
+    else c=w.min+Math.floor(Math.random()*(w.max-w.min+1));
+    if(c>=1&&c<=120&&!pool[c]){pool[c]=1;opts.push(c);}
+  }
+  opts.sort(function(){return Math.random()-0.5;});
+  answersEl.innerHTML='';
+  opts.forEach(function(v){
+    var b=document.createElement('button');
+    b.className='ansbtn';b.textContent=v;
+    b.addEventListener('click',function(){answer(v,b);});
+    answersEl.appendChild(b);
+  });
+}
+function disableAnswers(){
+  var bs=answersEl.querySelectorAll('button');
+  for(var i=0;i<bs.length;i++)bs[i].disabled=true;
+}
+
+/* ---------- spawn & march ---------- */
+function spawn(){
+  var w=WAVES[waveIdx];
+  var val=w.min+Math.floor(Math.random()*(w.max-w.min+1));
+  if(current&&current.val===val&&w.max>w.min){val=(val===w.max)?w.min:val+1;}
+  var el=document.createElement('div');
+  el.className='soldier';
+  el.style.left='-100px';
+  el.innerHTML=soldierSVG(toRoman(val));
+  soldiersEl.appendChild(el);
+  var dur=w.time*(1-soldierIdx*0.03);
+  current={val:val,el:el,start:performance.now(),dur:dur,done:false};
+  buildAnswers(val,w);
+  raf=requestAnimationFrame(tick);
+}
+function tick(){
+  if(!running||!current||current.done)return;
+  var p=(performance.now()-current.start)/current.dur;
+  if(p>=1){reachGate();return;}
+  current.el.style.left=(-100+(gateX()+100)*p)+'px';
+  var rem=Math.max(0,1-p);
+  fuse.style.width=(rem*100)+'%';
+  spark.style.left=(rem*100)+'%';
+  raf=requestAnimationFrame(tick);
+}
+
+/* ---------- effects ---------- */
+var particles=[],pRaf=null;
+function explode(x,y,big){
+  boomSound();
+  var cols=['#F7A93B','#D85A30','#A4302C','#F2D9A6'];
+  var n=big?26:16;
+  for(var i=0;i<n;i++){
+    var d=document.createElement('div');
+    var size=4+Math.random()*(big?10:7);
+    d.className='particle';
+    d.style.width=size+'px';d.style.height=size+'px';
+    d.style.background=cols[i%cols.length];
+    fx.appendChild(d);
+    var a=Math.random()*Math.PI*2,sp=(big?3:2)+Math.random()*4;
+    particles.push({el:d,x:x,y:y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-2.5,life:1});
+  }
+  if(!pRaf)pRaf=requestAnimationFrame(stepParticles);
+}
+function stepParticles(){
+  for(var i=particles.length-1;i>=0;i--){
+    var p=particles[i];
+    p.x+=p.vx;p.y+=p.vy;p.vy+=0.22;p.life-=0.025;
+    if(p.life<=0){p.el.remove();particles.splice(i,1);continue;}
+    p.el.style.transform='translate('+p.x+'px,'+p.y+'px)';
+    p.el.style.opacity=p.life;
+  }
+  pRaf=particles.length?requestAnimationFrame(stepParticles):null;
+}
+function fireCannon(tx,ty,cb){
+  tone(82,0.18,'sawtooth',0.1);
+  var sx=scene.clientWidth-(scene.querySelector('#castle').clientWidth)+2;
+  var sy=scene.clientHeight-160;
+  if(sy<20)sy=scene.clientHeight*0.4;
+  ball.style.display='block';
+  var t0=performance.now(),dur=300;
+  function step(){
+    var t=Math.min(1,(performance.now()-t0)/dur);
+    var x=sx+(tx-sx)*t;
+    var y=sy+(ty-sy)*t-90*Math.sin(Math.PI*t);
+    ball.style.transform='translate('+x+'px,'+y+'px)';
+    if(t<1)requestAnimationFrame(step);
+    else{ball.style.display='none';cb();}
+  }
+  requestAnimationFrame(step);
+}
+
+/* ---------- gameplay ---------- */
+function answer(v,btn){
+  if(!current||current.done||!running)return;
+  if(v===current.val){
+    current.done=true;cancelAnimationFrame(raf);disableAnswers();
+    var sx=parseFloat(current.el.style.left)||0;
+    var ty=scene.clientHeight-90;
+    var el=current.el;
+    fireCannon(sx+42,ty,function(){
+      explode(sx+42,ty,false);
+      tone(520+combo*70,0.16,'triangle',0.07);
+      tone(780+combo*70,0.2,'triangle',0.05,0.08);
+      el.remove();
+      var pts=10*combo;
+      score+=pts;scoreEl.textContent=score;hits++;
+      var pop=document.createElement('div');
+      pop.className='pop-pts';pop.textContent='+'+pts;
+      pop.style.left=(sx+22)+'px';pop.style.top=(ty-60)+'px';
+      fx.appendChild(pop);
+      setTimeout(function(){pop.remove();},900);
+      combo=Math.min(combo+1,5);maxCombo=Math.max(maxCombo,combo);
+      setCombo(true);
+      setTimeout(next,480);
+    });
+  }else{
+    btn.disabled=true;btn.classList.add('wrong');
+    tone(150,0.22,'sawtooth',0.08);
+    combo=1;setCombo(false);
+    loseHeart(false);
+  }
+}
+function reachGate(){
+  if(!current||current.done)return;
+  current.done=true;disableAnswers();
+  explode(gateX()+50,scene.clientHeight-100,true);
+  scene.classList.remove('shake');void scene.offsetWidth;scene.classList.add('shake');
+  tone(70,0.45,'sawtooth',0.1);
+  current.el.remove();
+  combo=1;setCombo(false);
+  loseHeart(true);
+  if(hearts>0)setTimeout(next,650);
+}
+function loseHeart(fromGate){
+  hearts--;renderHearts(true);
+  if(hearts<=0){
+    if(current&&!fromGate&&!current.done){current.done=true;cancelAnimationFrame(raf);current.el.remove();}
+    else if(current&&!fromGate){cancelAnimationFrame(raf);if(current.el)current.el.remove();}
+    endGame(false);
+  }
+}
+function next(){
+  if(!running)return;
+  soldierIdx++;
+  var w=WAVES[waveIdx];
+  if(soldierIdx>=w.count){
+    waveIdx++;
+    if(waveIdx>=WAVES.length){endGame(true);return;}
+    soldierIdx=0;
+    setWaveLabel();
+    showBanner();
+  }else spawn();
+}
+function showBanner(){
+  waveText.innerHTML='WAVE '+ROMANWAVE[waveIdx]+'<small>'+WAVES[waveIdx].label+'</small>';
+  banner.style.display='flex';
+  tone(440,0.14,'triangle',0.06);tone(660,0.18,'triangle',0.06,0.16);
+  setTimeout(function(){banner.style.display='none';spawn();},1600);
+}
+
+/* ---------- medal & end ---------- */
+function medalSVG(kind){
+  var fills={gold:['#F2C14E','#8A6017'],silver:['#CFCBC0','#5C594F'],bronze:['#D08A5B','#6E3A1B']};
+  var c=fills[kind];
+  var laurel='<g stroke="'+'#7C8A4D'+'" stroke-width="3" fill="none">'+
+    '<path d="M18 96 C8 70 10 44 28 26"/><path d="M102 96 C112 70 110 44 92 26"/></g>'+
+    '<g fill="#7C8A4D">'+
+    '<ellipse cx="16" cy="84" rx="8" ry="4" transform="rotate(-55 16 84)"/>'+
+    '<ellipse cx="13" cy="64" rx="8" ry="4" transform="rotate(-75 13 64)"/>'+
+    '<ellipse cx="17" cy="44" rx="8" ry="4" transform="rotate(-85 17 44)"/>'+
+    '<ellipse cx="104" cy="84" rx="8" ry="4" transform="rotate(55 104 84)"/>'+
+    '<ellipse cx="107" cy="64" rx="8" ry="4" transform="rotate(75 107 64)"/>'+
+    '<ellipse cx="103" cy="44" rx="8" ry="4" transform="rotate(85 103 44)"/></g>';
+  return laurel+
+  '<path d="M44 8 L60 38 L76 8" fill="#A4302C" stroke="#6E1E1B" stroke-width="3"/>'+
+  '<circle cx="60" cy="74" r="36" fill="'+c[0]+'" stroke="'+c[1]+'" stroke-width="5"/>'+
+  '<circle cx="60" cy="74" r="26" fill="none" stroke="'+c[1]+'" stroke-width="2" stroke-dasharray="4 5"/>'+
+  '<text x="60" y="84" text-anchor="middle" font-family="Cinzel,Georgia,serif" font-weight="900" font-size="26" fill="'+c[1]+'">'+(kind==='gold'?'I':kind==='silver'?'II':'III')+'</text>';
+}
+function endGame(won){
+  running=false;cancelAnimationFrame(raf);disableAnswers();
+  var medalEl=$('medal');
+  if(won){
+    var kind=hearts===3?'gold':hearts===2?'silver':'bronze';
+    var names={gold:'Gold medal',silver:'Silver medal',bronze:'Bronze medal'};
+    var lines={gold:'A flawless defence \u2014 not one scratch on the gate!',
+               silver:'The castle stands strong. One more push for gold!',
+               bronze:'Victory, just barely. The legion will return\u2026'};
+    $('endeyebrow').textContent='VICTORY';
+    medalEl.style.display='block';
+    medalEl.innerHTML=medalSVG(kind);
+    $('endtitle').textContent=names[kind];
+    $('endstats').textContent=lines[kind]+' \u00b7 '+hits+' soldiers stopped \u00b7 best combo \u00d7'+maxCombo;
+    tone(523,0.16,'triangle',0.07);tone(659,0.16,'triangle',0.07,0.18);tone(784,0.34,'triangle',0.07,0.36);
+  }else{
+    $('endeyebrow').textContent='DEFEAT';
+    medalEl.style.display='none';
+    $('endtitle').textContent='The gate has fallen!';
+    $('endstats').textContent=hits+' soldiers stopped \u00b7 best combo \u00d7'+maxCombo+' \u00b7 train up and try again';
+    tone(220,0.3,'sawtooth',0.08);tone(130,0.55,'sawtooth',0.08,0.28);
+  }
+  $('finalscore').textContent=score+' pts';
+  endOverlay.style.display='flex';
+}
+
+/* ---------- start / reset ---------- */
+function reset(){
+  hearts=3;score=0;combo=1;maxCombo=1;waveIdx=0;soldierIdx=0;hits=0;current=null;
+  soldiersEl.innerHTML='';fx.innerHTML='';particles=[];
+  renderHearts(false);
+  scoreEl.textContent='0';setCombo(false);setWaveLabel();
+  fuse.style.width='100%';spark.style.left='100%';
+  startOverlay.style.display='none';endOverlay.style.display='none';
+  running=true;
+  showBanner();
+}
+$('startbtn').addEventListener('click',reset);
+$('againbtn').addEventListener('click',reset);
+renderHearts||0;hearts=3;renderHearts(false);
+
+/* keyboard: 1-4 select answer buttons */
+document.addEventListener('keydown',function(e){
+  var n=parseInt(e.key,10);
+  if(n>=1&&n<=4){
+    var bs=answersEl.querySelectorAll('button:not(:disabled)');
+    var all=answersEl.querySelectorAll('button');
+    if(all[n-1]&&!all[n-1].disabled)all[n-1].click();
+  }
+});
+})();
+</script>
+</body>
+</html>
