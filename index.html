@@ -21,6 +21,7 @@
     --ink:#2E2A24;
     --sky-hi:#BFDDE8;
     --sky-lo:#F2D9A6;
+    --gold:#F2C14E;
   }
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
   html,body{height:100%;}
@@ -33,15 +34,15 @@
     user-select:none;-webkit-user-select:none;
   }
   #game{
-    width:min(100vw, 900px);
+    width:min(100vw, 920px);
     height:min(100vh, 100dvh);
-    max-height:720px;
+    max-height:740px;
     display:flex;flex-direction:column;
     background:var(--parchment);
     position:relative;
     overflow:hidden;
   }
-  @media (min-width:920px){ #game{border-radius:18px;box-shadow:0 24px 60px rgba(0,0,0,.5);} }
+  @media (min-width:940px){ #game{border-radius:18px;box-shadow:0 24px 60px rgba(0,0,0,.5);} }
 
   /* ---------- HUD ---------- */
   #hud{
@@ -57,17 +58,16 @@
   .heart.pop{animation:heartpop .35s ease;}
   @keyframes heartpop{40%{transform:scale(1.45) rotate(-12deg);}}
   #wavelabel{
-    font-family:'Cinzel',serif;font-weight:700;font-size:clamp(13px,2.4vw,17px);
-    letter-spacing:.12em;text-align:center;
+    font-family:'Cinzel',serif;font-weight:700;font-size:clamp(12px,2.3vw,16px);
+    letter-spacing:.1em;text-align:center;flex:1;
   }
-  #hud-right{display:flex;align-items:center;gap:10px;}
+  #hud-right{display:flex;align-items:center;gap:8px;}
   #combo{
     font-weight:800;font-size:13px;
     background:var(--brass);color:var(--legion-dk);
     padding:3px 12px;border-radius:999px;
     border:2px solid var(--brass-dk);
     visibility:hidden;
-    transform-origin:center;
   }
   #combo.bump{animation:combobump .25s ease;}
   @keyframes combobump{50%{transform:scale(1.25);}}
@@ -81,10 +81,18 @@
   }
   #scoreplaque .lbl{font-size:10px;letter-spacing:.18em;color:var(--parchment-dk);font-weight:700;}
   #scoreplaque .val{font-family:'Cinzel',serif;font-weight:700;font-size:20px;color:#fff;line-height:1.1;}
+  #soundbtn{
+    width:34px;height:34px;border-radius:8px;
+    border:2px solid var(--legion-dk);
+    background:rgba(0,0,0,.18);color:var(--parchment);
+    cursor:pointer;display:flex;align-items:center;justify-content:center;
+    padding:0;
+  }
+  #soundbtn svg{width:20px;height:20px;}
 
   /* ---------- BATTLEFIELD ---------- */
   #scene{
-    position:relative;flex:1;min-height:200px;
+    position:relative;flex:1;min-height:230px;
     background:linear-gradient(var(--sky-hi), var(--sky-lo) 70%);
     overflow:hidden;
   }
@@ -94,7 +102,7 @@
     60%{transform:translate(-4px,2px);}80%{transform:translate(3px,-1px);}
   }
   .sun{
-    position:absolute;right:22%;top:10%;
+    position:absolute;right:22%;top:8%;
     width:64px;height:64px;border-radius:50%;
     background:#F7C95E;box-shadow:0 0 50px 18px rgba(247,201,94,.45);
   }
@@ -113,18 +121,40 @@
     background:var(--olive);
     border-top:5px solid #5F6B36;
   }
-  #castle{position:absolute;right:-4px;bottom:34px;width:clamp(130px,22%,190px);}
+  #castle{position:absolute;right:-4px;bottom:34px;width:clamp(120px,20%,180px);}
   #soldiers,#fx{position:absolute;inset:0;}
-  .soldier{position:absolute;bottom:38px;width:84px;will-change:left;}
-  .soldier svg{animation:march .45s infinite;}
+  .soldier{position:absolute;bottom:38px;width:118px;will-change:left;}
+  .soldier .body{animation:march .45s infinite;}
+  .soldier.boss .body{animation-duration:.34s;}
   @keyframes march{0%,100%{transform:translateY(0) rotate(0deg);}50%{transform:translateY(-5px) rotate(-1.5deg);}}
+  .bubble{
+    position:absolute;top:-30px;left:6px;
+    background:#fff;border:2px solid var(--ink);
+    border-radius:10px;padding:3px 9px;
+    font-size:12px;font-weight:800;white-space:nowrap;
+    animation:bubblein .25s ease;
+  }
+  .bubble::after{content:"";position:absolute;left:18px;bottom:-7px;border:7px solid transparent;border-top-color:var(--ink);border-bottom:0;}
+  @keyframes bubblein{from{transform:scale(.5);opacity:0;}}
   .pop-pts{
-    position:absolute;font-weight:800;font-size:clamp(15px,2.6vw,20px);color:var(--brass-dk);
+    position:absolute;font-weight:800;font-size:clamp(16px,2.8vw,22px);color:var(--brass-dk);
     animation:rise .85s ease-out forwards;pointer-events:none;
     text-shadow:0 1px 0 var(--parchment);
   }
-  @keyframes rise{to{transform:translateY(-44px);opacity:0;}}
-  .particle{position:absolute;border-radius:50%;pointer-events:none;}
+  .pop-pts.goldpts{color:#B8860B;font-size:clamp(18px,3.2vw,26px);}
+  @keyframes rise{to{transform:translateY(-48px);opacity:0;}}
+  .bigpop{
+    position:absolute;left:50%;top:34%;transform:translateX(-50%);
+    background:var(--parchment);border:3px solid var(--legion-dk);
+    color:var(--legion-dk);
+    border-radius:12px;padding:8px 22px;
+    font-weight:800;font-size:clamp(15px,3vw,19px);
+    animation:bigpopin 1.8s ease forwards;pointer-events:none;z-index:14;
+    box-shadow:0 8px 22px rgba(0,0,0,.3);
+    white-space:nowrap;
+  }
+  @keyframes bigpopin{0%{transform:translateX(-50%) scale(.5);opacity:0;}12%{transform:translateX(-50%) scale(1.1);opacity:1;}22%{transform:translateX(-50%) scale(1);}80%{opacity:1;}100%{opacity:0;}}
+  .particle{position:absolute;pointer-events:none;}
   #cannonball{position:absolute;width:16px;height:16px;border-radius:50%;background:#1d1a15;display:none;box-shadow:inset -3px -3px 0 rgba(255,255,255,.18);}
 
   /* ---------- FUSE ---------- */
@@ -157,7 +187,7 @@
   @media (max-width:560px){ #answers{grid-template-columns:repeat(2,1fr);} }
   .ansbtn{
     font-family:'Cinzel',serif;font-weight:900;
-    font-size:clamp(24px,5vw,34px);
+    font-size:clamp(26px,5.4vw,36px);
     padding:clamp(10px,2.2vh,18px) 6px;
     color:var(--ink);
     background:linear-gradient(#EFE0BC,#DCC795);
@@ -178,37 +208,44 @@
   .overlay{
     position:absolute;inset:0;z-index:20;
     display:flex;flex-direction:column;align-items:center;justify-content:center;
-    gap:14px;padding:24px;text-align:center;
+    gap:14px;padding:18px;text-align:center;
     background:rgba(46,42,36,.78);
     color:var(--parchment);
+    overflow:auto;
   }
   .scroll{
     background:var(--parchment);color:var(--ink);
     border:4px solid var(--brass-dk);
     border-radius:16px;
-    padding:26px 30px;max-width:430px;width:100%;
-    display:flex;flex-direction:column;align-items:center;gap:12px;
+    padding:22px 26px;max-width:460px;width:100%;
+    display:flex;flex-direction:column;align-items:center;gap:11px;
     box-shadow:0 16px 40px rgba(0,0,0,.45);
   }
   h1{
     font-family:'Cinzel',serif;font-weight:900;
-    font-size:clamp(24px,5.4vw,34px);line-height:1.15;
+    font-size:clamp(23px,5.2vw,32px);line-height:1.15;
     color:var(--legion);letter-spacing:.04em;
   }
   .eyebrow{font-family:'Cinzel',serif;font-weight:700;font-size:12px;letter-spacing:.34em;color:var(--brass-dk);}
-  .sub{font-size:15px;line-height:1.55;color:#574F40;}
+  .sub{font-size:14px;line-height:1.5;color:#574F40;}
   .bigbtn{
-    font-family:'Cinzel',serif;font-weight:700;font-size:18px;letter-spacing:.08em;
+    font-family:'Cinzel',serif;font-weight:700;font-size:17px;letter-spacing:.08em;
     color:var(--parchment);
     background:var(--legion);
     border:3px solid var(--legion-dk);border-bottom-width:6px;
     border-radius:12px;
-    padding:12px 34px;cursor:pointer;
+    padding:11px 30px;cursor:pointer;
     transition:transform .08s;
     touch-action:manipulation;
   }
   .bigbtn:active{transform:translateY(3px);border-bottom-width:3px;}
   .bigbtn:focus-visible{outline:4px solid var(--brass);outline-offset:2px;}
+  .ghostbtn{
+    font-family:'Nunito',sans-serif;font-weight:800;font-size:14px;
+    color:var(--brass-dk);background:none;
+    border:2px solid var(--brass-dk);border-radius:10px;
+    padding:8px 20px;cursor:pointer;
+  }
   #wavebanner{
     position:absolute;inset:0;z-index:15;display:none;
     align-items:center;justify-content:center;flex-direction:column;gap:6px;
@@ -226,12 +263,46 @@
   }
   #wavebanner .ribbon small{display:block;font-family:'Nunito',sans-serif;font-weight:700;font-size:13px;letter-spacing:.04em;margin-top:4px;color:var(--parchment-dk);}
   @keyframes bannerin{from{transform:scale(.6);opacity:0;}60%{transform:scale(1.08);}to{transform:scale(1);opacity:1;}}
-  #medal{width:120px;height:140px;}
-  .finalscore{font-family:'Cinzel',serif;font-weight:900;font-size:30px;color:var(--brass-dk);}
-  .statline{font-size:14px;color:#574F40;font-weight:700;}
+  #medal{width:110px;height:128px;}
+  .finalscore{font-family:'Cinzel',serif;font-weight:900;font-size:28px;color:var(--brass-dk);}
+  .statline{font-size:13px;color:#574F40;font-weight:700;}
+
+  /* ---------- name entry & leaderboard ---------- */
+  #nameform{display:flex;gap:8px;width:100%;max-width:320px;}
+  #nameinput{
+    flex:1;font-family:'Nunito',sans-serif;font-weight:800;font-size:16px;
+    padding:9px 12px;border-radius:10px;
+    border:3px solid var(--brass-dk);background:#fff;color:var(--ink);
+    min-width:0;
+  }
+  #nameinput:focus{outline:3px solid var(--legion);}
+  .savebtn{
+    font-family:'Nunito',sans-serif;font-weight:800;font-size:15px;
+    background:var(--brass);color:var(--legion-dk);
+    border:3px solid var(--brass-dk);border-radius:10px;
+    padding:8px 16px;cursor:pointer;
+  }
+  .hsbadge{
+    background:var(--gold);color:#6E4A00;border:2px solid var(--brass-dk);
+    font-weight:800;font-size:13px;border-radius:999px;padding:3px 14px;
+    animation:combobump .4s ease;
+  }
+  #board{width:100%;max-width:340px;border-collapse:collapse;font-size:14px;}
+  #board th{
+    font-family:'Cinzel',serif;font-size:11px;letter-spacing:.14em;
+    color:var(--brass-dk);text-align:left;padding:4px 8px;
+    border-bottom:2px solid var(--brass-dk);
+  }
+  #board th:last-child{text-align:right;}
+  #board td{padding:5px 8px;border-bottom:1px solid var(--parchment-dk);font-weight:700;}
+  #board td:first-child{width:36px;font-family:'Cinzel',serif;font-weight:900;color:var(--brass-dk);}
+  #board td:last-child{text-align:right;font-family:'Cinzel',serif;font-weight:900;}
+  #board tr.me td{background:#F7E9B8;color:var(--legion-dk);}
+  #board tr.top1 td:first-child{color:#B8860B;}
+  .emptyboard{font-size:14px;color:#8a7f68;font-weight:700;padding:14px 0;}
 
   @media (prefers-reduced-motion: reduce){
-    .soldier svg,.cloud,#spark{animation:none !important;}
+    .soldier .body,.cloud,#spark{animation:none !important;}
     #scene.shake{animation:none;}
   }
 </style>
@@ -245,13 +316,14 @@
     <div id="hud-right">
       <span id="combo">combo &times;2</span>
       <div id="scoreplaque"><div class="lbl">SCORE</div><div class="val" id="score">0</div></div>
+      <button id="soundbtn" aria-label="Toggle sound"></button>
     </div>
   </div>
 
   <div id="scene">
     <div class="sun"></div>
-    <div class="cloud" style="top:14%;width:90px;animation-duration:46s;"></div>
-    <div class="cloud" style="top:30%;width:60px;animation-duration:64s;animation-delay:-30s;"></div>
+    <div class="cloud" style="top:12%;width:90px;animation-duration:46s;"></div>
+    <div class="cloud" style="top:28%;width:60px;animation-duration:64s;animation-delay:-30s;"></div>
     <div class="hill far"></div>
     <div class="hill near"></div>
     <div id="ground"></div>
@@ -280,15 +352,16 @@
     <div id="fx"></div>
     <div id="cannonball"></div>
 
-    <div id="wavebanner"><div class="ribbon" id="wavetext">WAVE I<small>New shields: I to X</small></div></div>
+    <div id="wavebanner"><div class="ribbon" id="wavetext"></div></div>
 
     <div class="overlay" id="startoverlay">
       <div class="scroll">
         <div class="eyebrow">S &middot; P &middot; Q &middot; R</div>
         <h1>Roman Numeral Siege</h1>
-        <p class="sub">Soldiers are marching on your castle, each carrying a shield with a Roman numeral. Tap the matching number to fire the cannon before they reach the gate. Don't let the fuse burn out!</p>
-        <p class="sub" style="font-weight:800;color:var(--legion-dk);">3 lives &middot; 5 waves &middot; build a combo for bonus points</p>
+        <p class="sub">Soldiers are marching on your castle, each carrying a shield with a Roman numeral. Tap the matching number to fire the cannon before the fuse burns out!</p>
+        <p class="sub" style="font-weight:800;color:var(--legion-dk);">Golden soldiers = double points &middot; Centurion bosses = triple points &middot; A perfect wave restores a heart!</p>
         <button class="bigbtn" id="startbtn">TO BATTLE</button>
+        <button class="ghostbtn" id="boardbtn">View leaderboard</button>
       </div>
     </div>
 
@@ -296,10 +369,29 @@
       <div class="scroll">
         <div class="eyebrow" id="endeyebrow">VICTORY</div>
         <svg id="medal" viewBox="0 0 120 140"></svg>
-        <h1 id="endtitle" style="font-size:24px;">Gold medal</h1>
+        <h1 id="endtitle" style="font-size:23px;">Gold medal</h1>
         <div class="finalscore" id="finalscore">0</div>
         <div class="statline" id="endstats"></div>
-        <button class="bigbtn" id="againbtn">FIGHT AGAIN</button>
+        <div class="hsbadge" id="hsbadge" style="display:none;">New high score! Carve your name:</div>
+        <div id="nameform" style="display:none;">
+          <input id="nameinput" maxlength="14" placeholder="Your name" autocomplete="off">
+          <button class="savebtn" id="savescore">Save</button>
+        </div>
+        <table id="board" style="display:none;"></table>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;">
+          <button class="bigbtn" id="againbtn">FIGHT AGAIN</button>
+          <button class="ghostbtn" id="boardbtn2" style="align-self:center;">Leaderboard</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="overlay" id="boardoverlay" style="display:none;">
+      <div class="scroll">
+        <div class="eyebrow">HALL OF HEROES</div>
+        <h1 style="font-size:22px;">Leaderboard</h1>
+        <table id="board2"></table>
+        <p class="sub" style="font-size:12px;">Top 10 scores on this device</p>
+        <button class="bigbtn" id="closeboard">BACK</button>
       </div>
     </div>
   </div>
@@ -321,18 +413,20 @@ var scene=$('scene'),soldiersEl=$('soldiers'),fx=$('fx'),ball=$('cannonball'),
     heartsEl=$('hearts'),waveLabel=$('wavelabel'),scoreEl=$('score'),comboEl=$('combo'),
     fuse=$('fuse'),spark=$('spark'),answersEl=$('answers'),
     banner=$('wavebanner'),waveText=$('wavetext'),
-    startOverlay=$('startoverlay'),endOverlay=$('endoverlay');
+    startOverlay=$('startoverlay'),endOverlay=$('endoverlay'),boardOverlay=$('boardoverlay');
 
 var ROMANWAVE=['I','II','III','IV','V'];
 var WAVES=[
-  {label:'Shields I\u2013X',      min:1,  max:10,  count:6, time:9000},
-  {label:'Shields XI\u2013XX',    min:11, max:20,  count:6, time:8200},
-  {label:'Shields XXI\u2013XXXIX',min:21, max:39,  count:6, time:7600},
-  {label:'Shields XL\u2013LXXXIX',min:40, max:89,  count:6, time:7200},
-  {label:'The full legion I\u2013C',min:1,max:100, count:8, time:6000}
+  {label:'Shields I\u2013X',       min:1,  max:10,  count:6, time:9000},
+  {label:'Shields XI\u2013XX',     min:11, max:20,  count:6, time:8200},
+  {label:'Shields XXI\u2013XXXIX', min:21, max:39,  count:6, time:7600},
+  {label:'Shields XL\u2013LXXXIX', min:40, max:89,  count:6, time:7200},
+  {label:'The full legion I\u2013C',min:1, max:100, count:8, time:6200}
 ];
+var TAUNTS=['Read my shield!','Veni, vidi!','Too slow!','Hail Caesar!','You cannot count!','For Rome!','Tick tock!','Is it... VII?'];
 
 var hearts,score,combo,maxCombo,waveIdx,soldierIdx,hits,current,raf,running=false;
+var mistakesThisWave=0;
 
 /* ---------- roman numerals ---------- */
 function toRoman(n){
@@ -342,8 +436,9 @@ function toRoman(n){
 }
 
 /* ---------- audio ---------- */
-var actx=null;
+var actx=null,muted=false;
 function tone(f,d,type,vol,delay){
+  if(muted)return;
   try{
     if(!actx)actx=new (window.AudioContext||window.webkitAudioContext)();
     var t0=actx.currentTime+(delay||0);
@@ -356,6 +451,7 @@ function tone(f,d,type,vol,delay){
   }catch(e){}
 }
 function boomSound(){
+  if(muted)return;
   try{
     if(!actx)actx=new (window.AudioContext||window.webkitAudioContext)();
     var len=actx.sampleRate*0.35,buf=actx.createBuffer(1,len,actx.sampleRate),d=buf.getChannelData(0);
@@ -366,14 +462,20 @@ function boomSound(){
     s.buffer=buf;s.connect(f);f.connect(g);g.connect(actx.destination);s.start();
   }catch(e){}
 }
+function hornSound(){tone(196,0.3,'sawtooth',0.06);tone(247,0.3,'sawtooth',0.06,0.28);tone(294,0.5,'sawtooth',0.07,0.56);}
+var SND_ON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5 6 9H3v6h3l5 4V5z" fill="currentColor"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18 6a8.5 8.5 0 0 1 0 12"/></svg>';
+var SND_OFF='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5 6 9H3v6h3l5 4V5z" fill="currentColor"/><path d="M16 9l5 6M21 9l-5 6"/></svg>';
+function renderSound(){$('soundbtn').innerHTML=muted?SND_OFF:SND_ON;}
+$('soundbtn').addEventListener('click',function(){muted=!muted;renderSound();});
+renderSound();
 
 /* ---------- HUD ---------- */
 var HEART='<svg viewBox="0 0 24 24" width="26" height="26"><path d="M12 21 C5 15 2 11.6 2 8.2 2 5.4 4.2 3.4 6.8 3.4 8.6 3.4 10.5 4.4 12 6.4 13.5 4.4 15.4 3.4 17.2 3.4 19.8 3.4 22 5.4 22 8.2 22 11.6 19 15 12 21Z" fill="#F2D9A6" stroke="#6E1E1B" stroke-width="1.6"/></svg>';
-function renderHearts(animLost){
+function renderHearts(animIdx){
   heartsEl.innerHTML='';
   for(var i=0;i<3;i++){
     var d=document.createElement('div');
-    d.className='heart'+(i<hearts?'':' lost')+(animLost&&i===hearts?' pop':'');
+    d.className='heart'+(i<hearts?'':' lost')+(animIdx===i?' pop':'');
     d.innerHTML=HEART;
     heartsEl.appendChild(d);
   }
@@ -389,32 +491,40 @@ function setWaveLabel(){
   waveLabel.innerHTML='WAVE '+ROMANWAVE[waveIdx]+' &middot; '+WAVES[waveIdx].label.toUpperCase().replace('\u2013','&ndash;');
 }
 
-/* ---------- soldier sprite ---------- */
-function shieldFont(s){return s.length<=3?19:(s.length<=5?15:12);}
-function soldierSVG(rom){
+/* ---------- soldier sprites (big readable shields) ---------- */
+function shieldFont(s){return s.length<=2?30:(s.length<=4?24:(s.length<=6?19:15));}
+function soldierSVG(rom,type){
   var fs=shieldFont(rom);
-  return '<svg width="84" height="110" viewBox="0 0 84 110">'+
-  '<line x1="14" y1="44" x2="14" y2="4" stroke="#574F40" stroke-width="3.5"/>'+
-  '<path d="M14 3 L4 13 L14 11 Z" fill="#8E8A7E"/>'+
-  '<ellipse cx="34" cy="104" rx="16" ry="4" fill="rgba(0,0,0,.15)"/>'+
-  '<rect x="26" y="62" width="7" height="22" rx="3" fill="#6E1E1B"/>'+
-  '<rect x="37" y="62" width="7" height="22" rx="3" fill="#6E1E1B"/>'+
-  '<rect x="24" y="84" width="11" height="6" rx="3" fill="#3B352B"/>'+
-  '<rect x="36" y="84" width="11" height="6" rx="3" fill="#3B352B"/>'+
-  '<rect x="22" y="32" width="26" height="34" rx="8" fill="#A4302C"/>'+
-  '<rect x="22" y="52" width="26" height="6" fill="#D9A441"/>'+
-  '<circle cx="35" cy="20" r="11" fill="#E8A87C"/>'+
-  '<path d="M23 18 a12 12 0 0 1 24 0 Z" fill="#8E8A7E"/>'+
-  '<rect x="31" y="2" width="8" height="8" rx="2" fill="#A4302C"/>'+
-  '<circle cx="31" cy="20" r="1.4" fill="#2E2A24"/>'+
-  '<rect x="40" y="40" width="40" height="32" rx="10" fill="#D9A441" stroke="#8A6017" stroke-width="3"/>'+
-  '<rect x="44" y="44" width="32" height="24" rx="7" fill="#F2D9A6"/>'+
-  '<text x="60" y="'+(56+fs*0.36)+'" text-anchor="middle" font-family="Cinzel,Georgia,serif" font-weight="900" font-size="'+fs+'" fill="#6E1E1B">'+rom+'</text>'+
+  var tunic=type==='gold'?'#C9952B':'#A4302C';
+  var tunicTrim=type==='gold'?'#F2C14E':'#D9A441';
+  var helm=type==='gold'?'#D9A441':'#8E8A7E';
+  var shieldRim=type==='gold'?'#B8860B':'#8A6017';
+  var shieldFace=type==='gold'?'#FFE9A8':'#F2D9A6';
+  var shieldBg=type==='gold'?'#F2C14E':'#D9A441';
+  var crest=type==='boss'?'<path d="M30 2 Q44 -10 58 2 L54 12 Q44 4 34 12 Z" fill="#A4302C" stroke="#6E1E1B" stroke-width="2"/>':'<rect x="40" y="2" width="9" height="9" rx="2" fill="'+(type==='gold'?'#B8860B':'#A4302C')+'"/>';
+  var glow=type==='gold'?'<circle cx="44" cy="56" r="42" fill="rgba(242,193,78,.28)"/>':'';
+  return '<svg class="body" width="118" height="124" viewBox="0 0 118 124">'+glow+
+  '<line x1="16" y1="52" x2="16" y2="6" stroke="#574F40" stroke-width="4"/>'+
+  '<path d="M16 5 L5 16 L16 14 Z" fill="#8E8A7E"/>'+
+  '<ellipse cx="42" cy="118" rx="19" ry="4.5" fill="rgba(0,0,0,.15)"/>'+
+  '<rect x="33" y="72" width="8" height="26" rx="3.5" fill="#6E1E1B"/>'+
+  '<rect x="46" y="72" width="8" height="26" rx="3.5" fill="#6E1E1B"/>'+
+  '<rect x="30" y="97" width="13" height="7" rx="3.5" fill="#3B352B"/>'+
+  '<rect x="45" y="97" width="13" height="7" rx="3.5" fill="#3B352B"/>'+
+  '<rect x="28" y="38" width="31" height="38" rx="9" fill="'+tunic+'"/>'+
+  '<rect x="28" y="60" width="31" height="7" fill="'+tunicTrim+'"/>'+
+  '<circle cx="44" cy="24" r="13" fill="#E8A87C"/>'+
+  '<path d="M30 22 a14 14 0 0 1 28 0 Z" fill="'+helm+'"/>'+
+  crest+
+  '<circle cx="39" cy="24" r="1.7" fill="#2E2A24"/>'+
+  '<rect x="50" y="42" width="64" height="50" rx="13" fill="'+shieldBg+'" stroke="'+shieldRim+'" stroke-width="4"/>'+
+  '<rect x="56" y="48" width="52" height="38" rx="9" fill="'+shieldFace+'"/>'+
+  '<text x="82" y="'+(67+fs*0.36)+'" text-anchor="middle" font-family="Cinzel,Georgia,serif" font-weight="900" font-size="'+fs+'" fill="#6E1E1B">'+rom+'</text>'+
   '</svg>';
 }
 
 /* ---------- geometry ---------- */
-function gateX(){return scene.clientWidth-(scene.querySelector('#castle').clientWidth)+10-70;}
+function gateX(){return scene.clientWidth-(scene.querySelector('#castle').clientWidth)+10-95;}
 
 /* ---------- distractors ---------- */
 function buildAnswers(correct,w){
@@ -455,13 +565,31 @@ function spawn(){
   var w=WAVES[waveIdx];
   var val=w.min+Math.floor(Math.random()*(w.max-w.min+1));
   if(current&&current.val===val&&w.max>w.min){val=(val===w.max)?w.min:val+1;}
+  var type='normal';
+  if(soldierIdx===w.count-1){type='boss';hornSound();}
+  else if(Math.random()<0.16)type='gold';
   var el=document.createElement('div');
-  el.className='soldier';
-  el.style.left='-100px';
-  el.innerHTML=soldierSVG(toRoman(val));
+  el.className='soldier'+(type==='boss'?' boss':'');
+  el.style.left='-130px';
+  if(type==='boss'){el.style.transform='scale(1.22)';el.style.transformOrigin='bottom left';}
+  el.innerHTML=soldierSVG(toRoman(val),type);
+  if(type!=='boss'&&Math.random()<0.35){
+    var bub=document.createElement('div');
+    bub.className='bubble';
+    bub.textContent=TAUNTS[Math.floor(Math.random()*TAUNTS.length)];
+    el.appendChild(bub);
+    setTimeout(function(){bub.remove();},1700);
+  }else if(type==='boss'){
+    var bub2=document.createElement('div');
+    bub2.className='bubble';
+    bub2.textContent='I am the CENTURION!';
+    el.appendChild(bub2);
+    setTimeout(function(){bub2.remove();},1900);
+  }
   soldiersEl.appendChild(el);
   var dur=w.time*(1-soldierIdx*0.03);
-  current={val:val,el:el,start:performance.now(),dur:dur,done:false};
+  if(type==='boss')dur*=0.85;
+  current={val:val,el:el,start:performance.now(),dur:dur,done:false,type:type};
   buildAnswers(val,w);
   raf=requestAnimationFrame(tick);
 }
@@ -469,7 +597,7 @@ function tick(){
   if(!running||!current||current.done)return;
   var p=(performance.now()-current.start)/current.dur;
   if(p>=1){reachGate();return;}
-  current.el.style.left=(-100+(gateX()+100)*p)+'px';
+  current.el.style.left=(-130+(gateX()+130)*p)+'px';
   var rem=Math.max(0,1-p);
   fuse.style.width=(rem*100)+'%';
   spark.style.left=(rem*100)+'%';
@@ -478,31 +606,50 @@ function tick(){
 
 /* ---------- effects ---------- */
 var particles=[],pRaf=null;
-function explode(x,y,big){
-  boomSound();
-  var cols=['#F7A93B','#D85A30','#A4302C','#F2D9A6'];
-  var n=big?26:16;
-  for(var i=0;i<n;i++){
-    var d=document.createElement('div');
-    var size=4+Math.random()*(big?10:7);
-    d.className='particle';
-    d.style.width=size+'px';d.style.height=size+'px';
-    d.style.background=cols[i%cols.length];
-    fx.appendChild(d);
-    var a=Math.random()*Math.PI*2,sp=(big?3:2)+Math.random()*4;
-    particles.push({el:d,x:x,y:y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-2.5,life:1});
-  }
+function addParticle(x,y,vx,vy,size,color,square,life){
+  var d=document.createElement('div');
+  d.className='particle';
+  d.style.width=size+'px';d.style.height=size+'px';
+  d.style.background=color;
+  d.style.borderRadius=square?'2px':'50%';
+  fx.appendChild(d);
+  particles.push({el:d,x:x,y:y,vx:vx,vy:vy,life:life||1,spin:square?(Math.random()*8-4):0,rot:0});
   if(!pRaf)pRaf=requestAnimationFrame(stepParticles);
+}
+function explode(x,y,big,gold){
+  boomSound();
+  var cols=gold?['#F2C14E','#FFE9A8','#D9A441','#B8860B']:['#F7A93B','#D85A30','#A4302C','#F2D9A6'];
+  var n=big?28:18;
+  for(var i=0;i<n;i++){
+    var a=Math.random()*Math.PI*2,sp=(big?3:2)+Math.random()*4;
+    addParticle(x,y,Math.cos(a)*sp,Math.sin(a)*sp-2.5,4+Math.random()*(big?10:7),cols[i%cols.length],false,1);
+  }
+}
+function confetti(){
+  var cols=['#A4302C','#D9A441','#7C8A4D','#F2C14E','#5C8AA8','#D67F7A'];
+  for(var i=0;i<60;i++){
+    addParticle(Math.random()*scene.clientWidth,-10-Math.random()*60,
+      (Math.random()*2-1)*1.2, 1+Math.random()*2.2,
+      5+Math.random()*6, cols[i%cols.length], true, 1.6+Math.random()*0.8);
+  }
 }
 function stepParticles(){
   for(var i=particles.length-1;i>=0;i--){
     var p=particles[i];
-    p.x+=p.vx;p.y+=p.vy;p.vy+=0.22;p.life-=0.025;
-    if(p.life<=0){p.el.remove();particles.splice(i,1);continue;}
-    p.el.style.transform='translate('+p.x+'px,'+p.y+'px)';
-    p.el.style.opacity=p.life;
+    p.x+=p.vx;p.y+=p.vy;
+    if(p.spin){p.vy+=0.06;p.rot+=p.spin;}else{p.vy+=0.22;}
+    p.life-=p.spin?0.008:0.025;
+    if(p.life<=0||p.y>scene.clientHeight+30){p.el.remove();particles.splice(i,1);continue;}
+    p.el.style.transform='translate('+p.x+'px,'+p.y+'px)'+(p.spin?' rotate('+p.rot+'deg)':'');
+    p.el.style.opacity=Math.min(1,p.life);
   }
   pRaf=particles.length?requestAnimationFrame(stepParticles):null;
+}
+function bigPop(text){
+  var d=document.createElement('div');
+  d.className='bigpop';d.textContent=text;
+  scene.appendChild(d);
+  setTimeout(function(){d.remove();},1900);
 }
 function fireCannon(tx,ty,cb){
   tone(82,0.18,'sawtooth',0.1);
@@ -523,23 +670,26 @@ function fireCannon(tx,ty,cb){
 }
 
 /* ---------- gameplay ---------- */
+function basePts(type){return type==='boss'?30:(type==='gold'?20:10);}
 function answer(v,btn){
   if(!current||current.done||!running)return;
   if(v===current.val){
     current.done=true;cancelAnimationFrame(raf);disableAnswers();
     var sx=parseFloat(current.el.style.left)||0;
-    var ty=scene.clientHeight-90;
-    var el=current.el;
-    fireCannon(sx+42,ty,function(){
-      explode(sx+42,ty,false);
+    var ty=scene.clientHeight-95;
+    var el=current.el,type=current.type;
+    fireCannon(sx+60,ty,function(){
+      explode(sx+60,ty,type!=='normal',type==='gold');
       tone(520+combo*70,0.16,'triangle',0.07);
       tone(780+combo*70,0.2,'triangle',0.05,0.08);
+      if(type==='boss')tone(330,0.4,'square',0.06,0.1);
       el.remove();
-      var pts=10*combo;
+      var pts=basePts(type)*combo;
       score+=pts;scoreEl.textContent=score;hits++;
       var pop=document.createElement('div');
-      pop.className='pop-pts';pop.textContent='+'+pts;
-      pop.style.left=(sx+22)+'px';pop.style.top=(ty-60)+'px';
+      pop.className='pop-pts'+(type!=='normal'?' goldpts':'');
+      pop.textContent='+'+pts+(type==='gold'?' GOLD!':type==='boss'?' BOSS!':'');
+      pop.style.left=(sx+20)+'px';pop.style.top=(ty-70)+'px';
       fx.appendChild(pop);
       setTimeout(function(){pop.remove();},900);
       combo=Math.min(combo+1,5);maxCombo=Math.max(maxCombo,combo);
@@ -550,25 +700,26 @@ function answer(v,btn){
     btn.disabled=true;btn.classList.add('wrong');
     tone(150,0.22,'sawtooth',0.08);
     combo=1;setCombo(false);
+    mistakesThisWave++;
     loseHeart(false);
   }
 }
 function reachGate(){
   if(!current||current.done)return;
   current.done=true;disableAnswers();
-  explode(gateX()+50,scene.clientHeight-100,true);
+  explode(gateX()+60,scene.clientHeight-105,true,false);
   scene.classList.remove('shake');void scene.offsetWidth;scene.classList.add('shake');
   tone(70,0.45,'sawtooth',0.1);
   current.el.remove();
   combo=1;setCombo(false);
+  mistakesThisWave++;
   loseHeart(true);
   if(hearts>0)setTimeout(next,650);
 }
 function loseHeart(fromGate){
-  hearts--;renderHearts(true);
+  hearts--;renderHearts(hearts);
   if(hearts<=0){
-    if(current&&!fromGate&&!current.done){current.done=true;cancelAnimationFrame(raf);current.el.remove();}
-    else if(current&&!fromGate){cancelAnimationFrame(raf);if(current.el)current.el.remove();}
+    if(current&&!fromGate){cancelAnimationFrame(raf);if(current.el)current.el.remove();current.done=true;}
     endGame(false);
   }
 }
@@ -577,25 +728,90 @@ function next(){
   soldierIdx++;
   var w=WAVES[waveIdx];
   if(soldierIdx>=w.count){
+    if(mistakesThisWave===0&&hearts<3){
+      hearts++;renderHearts(hearts-1);
+      bigPop('\u2764 Perfect wave \u2014 heart restored!');
+      tone(660,0.15,'triangle',0.07);tone(880,0.25,'triangle',0.07,0.16);
+    }
     waveIdx++;
     if(waveIdx>=WAVES.length){endGame(true);return;}
-    soldierIdx=0;
+    soldierIdx=0;mistakesThisWave=0;
     setWaveLabel();
     showBanner();
   }else spawn();
 }
 function showBanner(){
-  waveText.innerHTML='WAVE '+ROMANWAVE[waveIdx]+'<small>'+WAVES[waveIdx].label+'</small>';
+  waveText.innerHTML='WAVE '+ROMANWAVE[waveIdx]+'<small></small>';
+  waveText.querySelector('small').textContent=WAVES[waveIdx].label;
   banner.style.display='flex';
   tone(440,0.14,'triangle',0.06);tone(660,0.18,'triangle',0.06,0.16);
   setTimeout(function(){banner.style.display='none';spawn();},1600);
+}
+
+/* ---------- leaderboard ---------- */
+var BOARD_KEY='rns-leaderboard';
+function loadBoard(){
+  try{
+    var raw=localStorage.getItem(BOARD_KEY);
+    if(!raw)return [];
+    var arr=JSON.parse(raw);
+    return Array.isArray(arr)?arr.slice(0,10):[];
+  }catch(e){return [];}
+}
+function saveBoard(b){
+  try{localStorage.setItem(BOARD_KEY,JSON.stringify(b.slice(0,10)));}catch(e){}
+}
+function qualifies(s){
+  if(s<=0)return false;
+  var b=loadBoard();
+  if(b.length<10)return true;
+  return s>b[b.length-1].score;
+}
+function addToBoard(name,s){
+  var b=loadBoard();
+  b.push({name:name,score:s});
+  b.sort(function(a,c){return c.score-a.score;});
+  b=b.slice(0,10);
+  saveBoard(b);
+  return b;
+}
+function renderBoard(tableEl,highlightName,highlightScore){
+  var b=loadBoard();
+  tableEl.innerHTML='';
+  if(!b.length){
+    tableEl.style.display='none';
+    var p=tableEl.parentNode.querySelector('.emptyboard');
+    if(!p){
+      p=document.createElement('div');p.className='emptyboard';
+      p.textContent='No heroes yet \u2014 be the first!';
+      tableEl.parentNode.insertBefore(p,tableEl);
+    }
+    return;
+  }
+  var old=tableEl.parentNode.querySelector('.emptyboard');
+  if(old)old.remove();
+  tableEl.style.display='table';
+  var head=tableEl.insertRow();
+  ['RANK','HERO','SCORE'].forEach(function(t){
+    var th=document.createElement('th');th.textContent=t;head.appendChild(th);
+  });
+  var marked=false;
+  b.forEach(function(row,i){
+    var tr=tableEl.insertRow();
+    if(i===0)tr.className='top1';
+    if(!marked&&highlightName&&row.name===highlightName&&row.score===highlightScore){tr.className+=' me';marked=true;}
+    var medals=['I','II','III'];
+    tr.insertCell().textContent=i<3?medals[i]:(i+1);
+    tr.insertCell().textContent=row.name;
+    tr.insertCell().textContent=row.score;
+  });
 }
 
 /* ---------- medal & end ---------- */
 function medalSVG(kind){
   var fills={gold:['#F2C14E','#8A6017'],silver:['#CFCBC0','#5C594F'],bronze:['#D08A5B','#6E3A1B']};
   var c=fills[kind];
-  var laurel='<g stroke="'+'#7C8A4D'+'" stroke-width="3" fill="none">'+
+  var laurel='<g stroke="#7C8A4D" stroke-width="3" fill="none">'+
     '<path d="M18 96 C8 70 10 44 28 26"/><path d="M102 96 C112 70 110 44 92 26"/></g>'+
     '<g fill="#7C8A4D">'+
     '<ellipse cx="16" cy="84" rx="8" ry="4" transform="rotate(-55 16 84)"/>'+
@@ -610,6 +826,7 @@ function medalSVG(kind){
   '<circle cx="60" cy="74" r="26" fill="none" stroke="'+c[1]+'" stroke-width="2" stroke-dasharray="4 5"/>'+
   '<text x="60" y="84" text-anchor="middle" font-family="Cinzel,Georgia,serif" font-weight="900" font-size="26" fill="'+c[1]+'">'+(kind==='gold'?'I':kind==='silver'?'II':'III')+'</text>';
 }
+var pendingScore=0;
 function endGame(won){
   running=false;cancelAnimationFrame(raf);disableAnswers();
   var medalEl=$('medal');
@@ -625,6 +842,7 @@ function endGame(won){
     $('endtitle').textContent=names[kind];
     $('endstats').textContent=lines[kind]+' \u00b7 '+hits+' soldiers stopped \u00b7 best combo \u00d7'+maxCombo;
     tone(523,0.16,'triangle',0.07);tone(659,0.16,'triangle',0.07,0.18);tone(784,0.34,'triangle',0.07,0.36);
+    confetti();
   }else{
     $('endeyebrow').textContent='DEFEAT';
     medalEl.style.display='none';
@@ -633,29 +851,61 @@ function endGame(won){
     tone(220,0.3,'sawtooth',0.08);tone(130,0.55,'sawtooth',0.08,0.28);
   }
   $('finalscore').textContent=score+' pts';
+  pendingScore=score;
+  var q=qualifies(score);
+  $('hsbadge').style.display=q?'block':'none';
+  $('nameform').style.display=q?'flex':'none';
+  $('board').style.display='none';
+  if(q){
+    $('nameinput').value='';
+    setTimeout(function(){try{$('nameinput').focus();}catch(e){}},300);
+  }
   endOverlay.style.display='flex';
 }
+$('savescore').addEventListener('click',function(){
+  var name=$('nameinput').value.trim().slice(0,14);
+  if(!name)name='Mystery hero';
+  addToBoard(name,pendingScore);
+  $('hsbadge').style.display='none';
+  $('nameform').style.display='none';
+  renderBoard($('board'),name,pendingScore);
+  tone(660,0.12,'triangle',0.07);tone(990,0.2,'triangle',0.07,0.13);
+});
+$('nameinput').addEventListener('keydown',function(e){
+  if(e.key==='Enter')$('savescore').click();
+  e.stopPropagation();
+});
+
+/* ---------- leaderboard overlay ---------- */
+function openBoard(){
+  renderBoard($('board2'),null,null);
+  boardOverlay.style.display='flex';
+}
+$('boardbtn').addEventListener('click',openBoard);
+$('boardbtn2').addEventListener('click',openBoard);
+$('closeboard').addEventListener('click',function(){boardOverlay.style.display='none';});
 
 /* ---------- start / reset ---------- */
 function reset(){
-  hearts=3;score=0;combo=1;maxCombo=1;waveIdx=0;soldierIdx=0;hits=0;current=null;
-  soldiersEl.innerHTML='';fx.innerHTML='';particles=[];
-  renderHearts(false);
+  hearts=3;score=0;combo=1;maxCombo=1;waveIdx=0;soldierIdx=0;hits=0;current=null;mistakesThisWave=0;
+  soldiersEl.innerHTML='';fx.innerHTML='';particles.forEach(function(p){p.el.remove();});particles=[];
+  renderHearts(-1);
   scoreEl.textContent='0';setCombo(false);setWaveLabel();
   fuse.style.width='100%';spark.style.left='100%';
-  startOverlay.style.display='none';endOverlay.style.display='none';
+  startOverlay.style.display='none';endOverlay.style.display='none';boardOverlay.style.display='none';
   running=true;
   showBanner();
 }
 $('startbtn').addEventListener('click',reset);
 $('againbtn').addEventListener('click',reset);
-renderHearts||0;hearts=3;renderHearts(false);
+hearts=3;renderHearts(-1);
+waveIdx=0;setWaveLabel();
 
 /* keyboard: 1-4 select answer buttons */
 document.addEventListener('keydown',function(e){
+  if(document.activeElement===$('nameinput'))return;
   var n=parseInt(e.key,10);
   if(n>=1&&n<=4){
-    var bs=answersEl.querySelectorAll('button:not(:disabled)');
     var all=answersEl.querySelectorAll('button');
     if(all[n-1]&&!all[n-1].disabled)all[n-1].click();
   }
