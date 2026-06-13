@@ -300,39 +300,36 @@
 (function(){
 "use strict";
 
-/* ═══════════════════════════════════════════
-   SUPABASE CONFIG
-   ═══════════════════════════════════════════ */
-var SB_URL  = 'https://wpohvsjkrskhlrayaubp.supabase.co';
-var SB_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indwb2h2c2prcnNraGxyYXlhdWJwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzMDEzOTcsImV4cCI6MjA5Njg3NzM5N30.Xi07ayGB5CykR-_7QX-b8UsUmMmTbGIlYpctXYgW9JI';
-var SB_HDRS = {'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY};
+/* SUPABASE CONFIG */
+var SB_URL = 'https://wpohvsjkrskhlrayaubp.supabase.co';
+var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indwb2h2c2prcnNraGxyYXlhdWJwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzMDEzOTcsImV4cCI6MjA5Njg3NzM5N30.Xi07ayGB5CykR-_7QX-b8UsUmMmTbGIlYpctXYgW9JI';
 
+function sbH(){
+  return {'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'};
+}
 async function sbFetchTop(limit){
-  limit = limit||15;
+  limit=limit||15;
   try{
-    var r = await fetch(SB_URL+'/rest/v1/scores?select=name,score,created_at&order=score.desc&limit='+limit, {headers:SB_HDRS});
-    if(!r.ok)return null;
+    var r=await fetch(SB_URL+'/rest/v1/scores?select=name%2Cscore&order=score.desc&limit='+limit,{headers:sbH()});
+    if(!r.ok){console.error('fetch scores',r.status,await r.text());return null;}
     return await r.json();
-  }catch(e){return null;}
+  }catch(e){console.error(e);return null;}
 }
 async function sbInsert(name,score){
   try{
-    var r = await fetch(SB_URL+'/rest/v1/scores', {
-      method:'POST',
-      headers:Object.assign({'Prefer':'return=representation'},SB_HDRS),
-      body:JSON.stringify({name:name,score:score})
-    });
-    return r.ok;
-  }catch(e){return false;}
+    var h=sbH();h['Prefer']='return=minimal';
+    var r=await fetch(SB_URL+'/rest/v1/scores',{method:'POST',headers:h,body:JSON.stringify({name:name,score:score})});
+    if(!r.ok){console.error('insert',r.status,await r.text());return false;}
+    return true;
+  }catch(e){console.error(e);return false;}
 }
 async function sbQualifies(score){
-  // Check if score would make top 15
   try{
-    var r = await fetch(SB_URL+'/rest/v1/scores?select=score&order=score.desc&limit=15', {headers:SB_HDRS});
+    var r=await fetch(SB_URL+'/rest/v1/scores?select=score&order=score.desc&limit=15',{headers:sbH()});
     if(!r.ok)return true;
-    var rows = await r.json();
-    if(rows.length<15)return true;
-    return score > rows[rows.length-1].score;
+    var rows=await r.json();
+    if(!rows||rows.length<15)return true;
+    return score>rows[rows.length-1].score;
   }catch(e){return true;}
 }
 
