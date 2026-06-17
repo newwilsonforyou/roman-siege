@@ -8,169 +8,439 @@
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Orbitron:wght@700;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#11091C;
-    --bg2:#1B0F2E;
-    --gold:#F2C14E;
-    --legion:#C0392B;
-    --plasma:#36E2FF;
-    --ink:#F3E6C9;
-    --muted:#9A8FB5;
+    --bg:#11091C;--bg2:#1B0F2E;--gold:#F2C14E;--legion:#C0392B;
+    --plasma:#36E2FF;--ink:#F3E6C9;--muted:#9A8FB5;
   }
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
   html,body{min-height:100%;}
-  body{
-    font-family:'Rajdhani',sans-serif;
-    background:
-      radial-gradient(circle at 20% 15%,rgba(192,57,43,.22),transparent 42%),
+  body{font-family:'Rajdhani',sans-serif;
+    background:radial-gradient(circle at 20% 15%,rgba(192,57,43,.22),transparent 42%),
       radial-gradient(circle at 82% 80%,rgba(54,226,255,.18),transparent 45%),
       linear-gradient(160deg,var(--bg),var(--bg2));
-    color:var(--ink);min-height:100vh;
-    display:flex;flex-direction:column;align-items:center;
-    padding:32px 18px 48px;overflow-x:hidden;
-  }
-  /* floating numerals in the background */
+    color:var(--ink);min-height:100vh;display:flex;flex-direction:column;align-items:center;
+    padding:20px 18px 48px;overflow-x:hidden;}
   .floatnum{position:fixed;font-family:'Cinzel',serif;font-weight:900;
     color:rgba(243,230,201,.05);pointer-events:none;z-index:0;user-select:none;}
 
+  #userbar{width:100%;max-width:760px;display:flex;justify-content:flex-end;align-items:center;
+    gap:10px;z-index:3;margin-bottom:8px;min-height:48px;}
+  .signin-prompt{font-weight:700;color:var(--muted);font-size:15px;}
+  .ub-chip{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.06);
+    border:1.5px solid rgba(255,255,255,.12);border-radius:999px;padding:5px 6px 5px 14px;}
+  .ub-avatar{width:36px;height:36px;border-radius:50%;background:#2a1b3e;display:flex;
+    align-items:center;justify-content:center;font-size:20px;border:2px solid var(--gold);}
+  .ub-name{font-family:'Cinzel',serif;font-weight:700;font-size:16px;color:var(--ink);}
+  .ub-btn{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:14px;cursor:pointer;
+    border-radius:999px;padding:8px 16px;border:1.5px solid var(--plasma);
+    background:none;color:var(--plasma);}
+  .ub-btn.solid{background:var(--gold);border-color:var(--gold);color:#3a2400;}
+
   header{text-align:center;z-index:2;margin-bottom:8px;}
-  .kicker{font-family:'Orbitron',sans-serif;font-weight:700;font-size:12px;
-    letter-spacing:.5em;color:var(--gold);margin-bottom:10px;text-transform:uppercase;}
-  h1{font-family:'Cinzel',serif;font-weight:900;font-size:clamp(34px,8vw,64px);
-    line-height:1;letter-spacing:.02em;
-    background:linear-gradient(180deg,#fff 10%,var(--gold));
+  .kicker{font-family:'Orbitron',sans-serif;font-weight:700;font-size:12px;letter-spacing:.5em;
+    color:var(--gold);margin-bottom:10px;text-transform:uppercase;}
+  h1{font-family:'Cinzel',serif;font-weight:900;font-size:clamp(34px,8vw,64px);line-height:1;
+    letter-spacing:.02em;background:linear-gradient(180deg,#fff 10%,var(--gold));
     -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
     filter:drop-shadow(0 4px 20px rgba(242,193,78,.25));}
   .sub{color:var(--muted);font-size:16px;font-weight:600;margin-top:12px;max-width:480px;}
 
-  .cards{display:grid;grid-template-columns:repeat(2,1fr);gap:22px;
-    width:100%;max-width:760px;margin-top:38px;z-index:2;}
+  .cards{display:grid;grid-template-columns:repeat(2,1fr);gap:22px;width:100%;max-width:760px;
+    margin-top:30px;z-index:2;}
   @media(max-width:640px){.cards{grid-template-columns:1fr;}}
-
-  .card{position:relative;border-radius:22px;overflow:hidden;cursor:pointer;
-    text-decoration:none;color:inherit;display:flex;flex-direction:column;
-    min-height:330px;border:1.5px solid rgba(255,255,255,.1);
-    transition:transform .18s ease,box-shadow .18s ease,border-color .18s;}
+  .card{position:relative;border-radius:22px;overflow:hidden;cursor:pointer;text-decoration:none;
+    color:inherit;display:flex;flex-direction:column;min-height:330px;
+    border:1.5px solid rgba(255,255,255,.1);transition:transform .18s,box-shadow .18s,border-color .18s;}
   .card:hover,.card:focus-visible{transform:translateY(-6px);outline:none;}
-  .card-art{position:relative;flex:1;display:flex;align-items:center;justify-content:center;
-    overflow:hidden;}
+  .card-art{position:relative;flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;}
   .card-body{padding:18px 20px 22px;background:rgba(0,0,0,.34);backdrop-filter:blur(4px);}
-  .card-tag{font-family:'Orbitron',sans-serif;font-weight:700;font-size:10px;
-    letter-spacing:.24em;text-transform:uppercase;margin-bottom:6px;}
+  .card-tag{font-family:'Orbitron',sans-serif;font-weight:700;font-size:10px;letter-spacing:.24em;
+    text-transform:uppercase;margin-bottom:6px;}
   .card-title{font-family:'Cinzel',serif;font-weight:900;font-size:26px;line-height:1.05;}
   .card-desc{color:#cfc4e8;font-size:14px;font-weight:600;margin-top:7px;line-height:1.4;}
-  .play{display:inline-flex;align-items:center;gap:7px;margin-top:14px;
-    font-family:'Orbitron',sans-serif;font-weight:700;font-size:13px;letter-spacing:.1em;
-    padding:9px 18px;border-radius:10px;}
-
-  /* Siege card theme */
+  .play{display:inline-flex;align-items:center;gap:7px;margin-top:14px;font-family:'Orbitron',sans-serif;
+    font-weight:700;font-size:13px;letter-spacing:.1em;padding:9px 18px;border-radius:10px;}
   .siege{background:linear-gradient(160deg,#3a1410,#1c0a08);}
   .siege:hover{box-shadow:0 18px 50px rgba(192,57,43,.4);border-color:var(--legion);}
-  .siege .card-art{background:
-    radial-gradient(circle at 50% 120%,rgba(242,193,78,.25),transparent 60%),
+  .siege .card-art{background:radial-gradient(circle at 50% 120%,rgba(242,193,78,.25),transparent 60%),
     linear-gradient(#7fa0c0 0%,#f2d9a6 72%,#7c8a4d 72%,#7c8a4d 100%);}
   .siege .card-tag{color:var(--gold);}
   .siege .play{background:var(--legion);color:#fff;}
-
-  /* Nebula card theme */
   .nebula{background:linear-gradient(160deg,#0a1430,#070b1e);}
   .nebula:hover{box-shadow:0 18px 50px rgba(54,226,255,.35);border-color:var(--plasma);}
-  .nebula .card-art{background:
-    radial-gradient(circle at 30% 30%,rgba(54,226,255,.3),transparent 55%),
-    radial-gradient(circle at 75% 75%,rgba(255,122,61,.25),transparent 50%),
-    #070b1e;}
+  .nebula .card-art{background:radial-gradient(circle at 30% 30%,rgba(54,226,255,.3),transparent 55%),
+    radial-gradient(circle at 75% 75%,rgba(255,122,61,.25),transparent 50%),#070b1e;}
   .nebula .card-tag{color:var(--plasma);}
   .nebula .play{background:var(--plasma);color:#062;}
-
   .badge2d,.badge3d{position:absolute;top:14px;right:14px;font-family:'Orbitron',sans-serif;
-    font-weight:900;font-size:12px;letter-spacing:.1em;padding:5px 11px;border-radius:8px;
-    z-index:3;}
+    font-weight:900;font-size:12px;letter-spacing:.1em;padding:5px 11px;border-radius:8px;z-index:3;}
   .badge2d{background:rgba(242,193,78,.9);color:#3a2400;}
   .badge3d{background:rgba(54,226,255,.9);color:#003040;}
-
+  .card.locked{opacity:.5;pointer-events:none;filter:grayscale(.3);}
+  .lockmsg{position:absolute;inset:0;z-index:4;display:none;align-items:center;justify-content:center;
+    background:rgba(8,5,16,.55);font-family:'Cinzel',serif;font-weight:700;color:#fff;font-size:15px;}
+  .card.locked .lockmsg{display:flex;}
   footer{margin-top:40px;color:var(--muted);font-size:13px;text-align:center;z-index:2;font-weight:600;}
   footer b{color:var(--ink);}
-
-  /* simple SVG art sizing */
   .art-svg{width:80%;max-width:240px;height:auto;}
   .pulse{animation:pulse 2.4s ease-in-out infinite;}
   @keyframes pulse{50%{transform:translateY(-6px);}}
-  @media(prefers-reduced-motion:reduce){.pulse{animation:none;}}
+
+  .modal{position:fixed;inset:0;z-index:50;display:none;align-items:center;justify-content:center;
+    padding:18px;background:rgba(8,5,16,.82);backdrop-filter:blur(4px);}
+  .modal.show{display:flex;}
+  .sheet{background:linear-gradient(160deg,#241634,#160d24);border:1.5px solid rgba(255,255,255,.14);
+    border-radius:20px;padding:26px;max-width:460px;width:100%;max-height:88vh;overflow:auto;
+    box-shadow:0 24px 70px rgba(0,0,0,.6);}
+  .sheet h2{font-family:'Cinzel',serif;font-weight:900;font-size:24px;color:var(--gold);text-align:center;margin-bottom:4px;}
+  .sheet p.note{color:var(--muted);font-size:14px;text-align:center;margin-bottom:18px;font-weight:600;}
+  .field-lbl{font-family:'Orbitron',sans-serif;font-size:11px;letter-spacing:.2em;color:var(--muted);
+    font-weight:700;margin:14px 0 8px;}
+  #nameField,#newName,#newPass,#logName,#logPass{width:100%;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:18px;
+    padding:12px 14px;border-radius:12px;border:1.5px solid rgba(255,255,255,.18);
+    background:rgba(0,0,0,.3);color:var(--ink);}
+  #nameField:focus,#newName:focus,#newPass:focus,#logName:focus,#logPass:focus{outline:2px solid var(--gold);}
+  .avatars{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-top:4px;}
+  .av{aspect-ratio:1;border-radius:12px;border:2px solid transparent;background:rgba(255,255,255,.06);
+    font-size:24px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .12s;}
+  .av:hover{background:rgba(255,255,255,.12);}
+  .av.sel{border-color:var(--gold);background:rgba(242,193,78,.2);transform:scale(1.05);}
+  .modal-btn{width:100%;font-family:'Cinzel',serif;font-weight:700;font-size:18px;letter-spacing:.08em;
+    color:#3a2400;background:var(--gold);border:0;border-radius:12px;padding:14px;cursor:pointer;margin-top:22px;}
+  .modal-btn.ghost{background:none;color:var(--muted);border:1.5px solid rgba(255,255,255,.18);
+    margin-top:10px;font-size:15px;padding:10px;}
+  .modal-err{color:#ff7a8f;font-weight:700;font-size:14px;text-align:center;margin-top:10px;min-height:18px;}
+
+  .rec-head{display:flex;align-items:center;gap:14px;margin-bottom:18px;}
+  .rec-avatar{width:60px;height:60px;border-radius:50%;background:#2a1b3e;display:flex;
+    align-items:center;justify-content:center;font-size:34px;border:3px solid var(--gold);flex-shrink:0;}
+  .rec-name{font-family:'Cinzel',serif;font-weight:900;font-size:26px;color:var(--ink);}
+  .rec-sub{color:var(--muted);font-size:13px;font-weight:600;}
+  .rec-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px;}
+  .rec-stat{background:rgba(255,255,255,.05);border-radius:12px;padding:12px 8px;text-align:center;}
+  .rec-stat .n{font-family:'Orbitron',sans-serif;font-weight:900;font-size:22px;color:var(--plasma);}
+  .rec-stat .l{font-size:11px;color:var(--muted);font-weight:700;letter-spacing:.08em;margin-top:2px;}
+  .rec-section{font-family:'Orbitron',sans-serif;font-size:11px;letter-spacing:.2em;color:var(--gold);
+    font-weight:700;margin:16px 0 8px;}
+  table.rec{width:100%;border-collapse:collapse;font-size:14px;}
+  table.rec th{text-align:left;font-family:'Orbitron',sans-serif;font-size:10px;letter-spacing:.12em;
+    color:var(--muted);font-weight:700;padding:5px 8px;border-bottom:1.5px solid rgba(255,255,255,.14);}
+  table.rec th:last-child,table.rec td:last-child{text-align:right;}
+  table.rec td{padding:6px 8px;border-bottom:1px solid rgba(255,255,255,.07);font-weight:600;}
+  table.rec td.best{font-family:'Orbitron',sans-serif;font-weight:900;color:var(--gold);}
+  .rec-loading{text-align:center;color:var(--muted);padding:20px;font-weight:600;}
+  .rec-empty{text-align:center;color:var(--muted);padding:14px;font-weight:600;font-size:14px;}
 </style>
 </head>
 <body>
-  <!-- background floating numerals -->
   <div class="floatnum" style="top:12%;left:6%;font-size:120px;transform:rotate(-12deg);">VII</div>
   <div class="floatnum" style="top:62%;left:84%;font-size:150px;transform:rotate(10deg);">XL</div>
   <div class="floatnum" style="top:78%;left:10%;font-size:90px;">XXIV</div>
   <div class="floatnum" style="top:8%;left:78%;font-size:100px;transform:rotate(8deg);">IX</div>
 
+  <div id="userbar"></div>
+
   <header>
     <div class="kicker">Choose your battle</div>
     <h1>Roman Numeral Arcade</h1>
-    <p class="sub">Two ways to master I to C. Defend a castle, or defend a planet — pick a game and start your training, pilot.</p>
+    <p class="sub">Two ways to master I to C. Sign in, then defend a castle or defend a planet — every game you play is saved to your record.</p>
   </header>
 
   <main class="cards">
-    <!-- SIEGE -->
-    <a class="card siege" href="roman-numeral-siege.html">
+    <a class="card siege" id="card-siege" href="roman-numeral-siege.html">
       <span class="badge2d">2D</span>
+      <div class="lockmsg">🔒 Sign in first</div>
       <div class="card-art">
         <svg class="art-svg pulse" viewBox="0 0 200 150" aria-hidden="true">
-          <!-- castle -->
           <rect x="120" y="55" width="70" height="80" fill="#9B968A"/>
           <rect x="118" y="46" width="12" height="12" fill="#9B968A"/><rect x="138" y="46" width="12" height="12" fill="#9B968A"/><rect x="158" y="46" width="12" height="12" fill="#9B968A"/><rect x="178" y="46" width="12" height="12" fill="#9B968A"/>
           <rect x="140" y="92" width="30" height="43" rx="15" fill="#574F40"/>
-          <!-- soldier with shield -->
           <g transform="translate(34,58)">
             <rect x="14" y="30" width="20" height="26" rx="6" fill="#C0392B"/>
             <circle cx="24" cy="20" r="10" fill="#E8A87C"/>
             <path d="M13 19 a11 11 0 0 1 22 0 Z" fill="#8E8A7E"/>
-            <rect x="30" y="30" width="34" height="28" rx="8" fill="#F2C14E" stroke="#8A6017" stroke-width="2.5"/>
+            <rect x="30" y="30" width="34" height="28" rx="8" fill="#F2C14E" stroke="#8A6017" stroke-width="2"/>
             <text x="47" y="49" text-anchor="middle" font-family="Cinzel,serif" font-weight="900" font-size="17" fill="#6E1E1B">XIV</text>
           </g>
-          <!-- cannonball arc -->
           <circle cx="100" cy="46" r="4" fill="#1d1a15"/>
         </svg>
       </div>
       <div class="card-body">
         <div class="card-tag">Castle Defender</div>
         <div class="card-title">Roman Numeral Siege</div>
-        <div class="card-desc">Soldiers storm the gate carrying numeral shields. Fire the cannon before the fuse burns out — with a worldwide leaderboard.</div>
+        <div class="card-desc">Soldiers storm the gate carrying numeral shields. Fire the cannon before the fuse burns out.</div>
         <span class="play">PLAY ▶</span>
       </div>
     </a>
 
-    <!-- NEBULA -->
-    <a class="card nebula" href="numeral-nebula-3d.html">
+    <a class="card nebula" id="card-nebula" href="numeral-nebula-3d.html">
       <span class="badge3d">3D</span>
+      <div class="lockmsg">🔒 Sign in first</div>
       <div class="card-art">
         <svg class="art-svg pulse" viewBox="0 0 200 150" aria-hidden="true">
-          <!-- planet -->
           <circle cx="100" cy="150" r="55" fill="#1d6fa5"/>
           <circle cx="100" cy="150" r="58" fill="none" stroke="#36E2FF" stroke-width="2" opacity=".5"/>
-          <!-- asteroid with numeral -->
           <g transform="translate(70,30)">
             <polygon points="30,2 52,16 48,42 22,48 4,30 10,8" fill="#3a4a66" stroke="#36E2FF" stroke-width="2"/>
             <circle cx="29" cy="26" r="20" fill="#0e2740" stroke="#36E2FF" stroke-width="3"/>
             <text x="29" y="33" text-anchor="middle" font-family="Orbitron,sans-serif" font-weight="900" font-size="18" fill="#fff">XL</text>
           </g>
-          <!-- laser -->
           <line x1="100" y1="120" x2="95" y2="64" stroke="#36E2FF" stroke-width="3" opacity=".8"/>
-          <!-- stars -->
           <circle cx="20" cy="20" r="1.6" fill="#aec6ff"/><circle cx="170" cy="40" r="1.6" fill="#aec6ff"/><circle cx="150" cy="14" r="1.2" fill="#aec6ff"/><circle cx="40" cy="60" r="1.2" fill="#aec6ff"/>
         </svg>
       </div>
       <div class="card-body">
         <div class="card-tag">Space Defender</div>
         <div class="card-title">Numeral Nebula</div>
-        <div class="card-desc">Real 3D! Numeral asteroids drift toward your planet. Blast them, chain combos, adjust your speed, and earn a pilot rank.</div>
+        <div class="card-desc">Real 3D! Numeral asteroids drift toward your planet. Blast them, chain combos, earn a pilot rank.</div>
         <span class="play">PLAY ▶</span>
       </div>
     </a>
   </main>
 
-  <footer>
-    Built for learning Roman numerals <b>I</b> to <b>C</b> &middot; tap a card to begin
-  </footer>
+  <footer>Built for learning Roman numerals <b>I</b> to <b>C</b> &middot; sign in to save your record</footer>
+
+  <div class="modal" id="signinModal">
+    <div class="sheet">
+      <h2 id="siTitle">Who's playing?</h2>
+      <p class="note" id="siNote">Are you new here, or coming back?</p>
+
+      <!-- mode chooser -->
+      <div id="siChoose">
+        <button class="modal-btn" id="goNew">🆕 I'm New — Create Account</button>
+        <button class="modal-btn ghost" id="goReturning">↩️ I've Played Before — Log In</button>
+      </div>
+
+      <!-- new account form -->
+      <div id="siNew" style="display:none;">
+        <div class="field-lbl">CHOOSE A USERNAME</div>
+        <input id="newName" maxlength="16" placeholder="e.g. Wilson" autocomplete="off">
+        <div class="field-lbl">CREATE A PASSWORD</div>
+        <input id="newPass" type="password" maxlength="24" placeholder="Secret word" autocomplete="new-password">
+        <div class="field-lbl">PICK YOUR HERO</div>
+        <div class="avatars" id="avatarGrid"></div>
+        <div class="modal-err" id="newErr"></div>
+        <button class="modal-btn" id="createBtn">CREATE & ENTER</button>
+        <button class="modal-btn ghost" id="backNew">Back</button>
+      </div>
+
+      <!-- returning login form -->
+      <div id="siReturn" style="display:none;">
+        <div class="field-lbl">USERNAME</div>
+        <input id="logName" maxlength="16" placeholder="Your username" autocomplete="off">
+        <div class="field-lbl">PASSWORD</div>
+        <input id="logPass" type="password" maxlength="24" placeholder="Your password" autocomplete="current-password">
+        <div class="modal-err" id="logErr"></div>
+        <button class="modal-btn" id="loginBtn">LOG IN</button>
+        <button class="modal-btn ghost" id="backReturn">Back</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="recordsModal">
+    <div class="sheet">
+      <div id="recBody"><div class="rec-loading">Loading your record…</div></div>
+      <button class="modal-btn ghost" id="closeRecords">CLOSE</button>
+    </div>
+  </div>
+
+<script>
+(function(){
+"use strict";
+var $=function(id){return document.getElementById(id);};
+
+var SB_URL='https://wpohvsjkrskhlrayaubp.supabase.co';
+var SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indwb2h2c2prcnNraGxyYXlhdWJwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzMDEzOTcsImV4cCI6MjA5Njg3NzM5N30.Xi07ayGB5CykR-_7QX-b8UsUmMmTbGIlYpctXYgW9JI';
+function sbH(){return {'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'};}
+
+var AVATARS=['🛡️','⚔️','👑','🏛️','🦅','🐺','🔥','⭐','🚀','🪐','☄️','🎯'];
+var selectedAvatar='🛡️';
+
+function getPlayer(){try{return JSON.parse(localStorage.getItem('rna_player')||'null');}catch(e){return null;}}
+function setPlayer(p){localStorage.setItem('rna_player',JSON.stringify(p));}
+function clearPlayer(){localStorage.removeItem('rna_player');}
+
+function renderUserBar(){
+  var p=getPlayer(),bar=$('userbar');
+  if(p){
+    bar.innerHTML='<div class="ub-chip"><div class="ub-avatar">'+p.avatar+'</div>'+
+      '<span class="ub-name">'+escapeHtml(p.name)+'</span></div>'+
+      '<button class="ub-btn solid" id="recBtn">My Records</button>'+
+      '<button class="ub-btn" id="switchBtn">Switch</button>';
+    $('recBtn').addEventListener('click',openRecords);
+    $('switchBtn').addEventListener('click',function(){clearPlayer();renderUserBar();openSignin();});
+    setCardsLocked(false);
+  }else{
+    bar.innerHTML='<span class="signin-prompt">Sign in to save your scores →</span>'+
+      '<button class="ub-btn solid" id="signinBtn">Sign In</button>';
+    $('signinBtn').addEventListener('click',openSignin);
+    setCardsLocked(true);
+  }
+}
+function setCardsLocked(locked){
+  $('card-siege').classList.toggle('locked',locked);
+  $('card-nebula').classList.toggle('locked',locked);
+}
+function escapeHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+function buildAvatars(){
+  var g=$('avatarGrid');g.innerHTML='';
+  AVATARS.forEach(function(a){
+    var d=document.createElement('div');
+    d.className='av'+(a===selectedAvatar?' sel':'');
+    d.textContent=a;
+    d.addEventListener('click',function(){
+      selectedAvatar=a;
+      g.querySelectorAll('.av').forEach(function(x){x.classList.remove('sel');});
+      d.classList.add('sel');
+    });
+    g.appendChild(d);
+  });
+}
+
+/* simple password hashing using the browser's built-in crypto (SHA-256).
+   Stores a scrambled hash, never the raw password. This is locker-level
+   security suitable for a classroom, not bank-grade. */
+async function hashPass(pw){
+  try{
+    var enc=new TextEncoder().encode('rna-salt::'+pw);
+    var buf=await crypto.subtle.digest('SHA-256',enc);
+    return Array.from(new Uint8Array(buf)).map(function(b){return b.toString(16).padStart(2,'0');}).join('');
+  }catch(e){
+    // fallback if crypto unavailable: weak scramble (still not plain text)
+    var h=0;for(var i=0;i<pw.length;i++){h=(h*31+pw.charCodeAt(i))>>>0;}
+    return 'fallback'+h;
+  }
+}
+
+function showMode(mode){
+  $('siChoose').style.display=mode==='choose'?'block':'none';
+  $('siNew').style.display=mode==='new'?'block':'none';
+  $('siReturn').style.display=mode==='return'?'block':'none';
+  if(mode==='choose'){$('siTitle').textContent="Who's playing?";$('siNote').textContent='Are you new here, or coming back?';}
+  if(mode==='new'){$('siTitle').textContent='Create your account';$('siNote').textContent='Pick a username, a password, and a hero.';buildAvatars();}
+  if(mode==='return'){$('siTitle').textContent='Welcome back!';$('siNote').textContent='Enter your username and password.';}
+}
+function openSignin(){
+  selectedAvatar='🛡️';
+  $('newName').value='';$('newPass').value='';$('newErr').textContent='';
+  $('logName').value='';$('logPass').value='';$('logErr').textContent='';
+  showMode('choose');
+  $('signinModal').classList.add('show');
+}
+$('goNew').addEventListener('click',function(){showMode('new');setTimeout(function(){$('newName').focus();},150);});
+$('goReturning').addEventListener('click',function(){showMode('return');setTimeout(function(){$('logName').focus();},150);});
+$('backNew').addEventListener('click',function(){showMode('choose');});
+$('backReturn').addEventListener('click',function(){showMode('choose');});
+
+/* CREATE ACCOUNT */
+$('createBtn').addEventListener('click',async function(){
+  var name=$('newName').value.trim().slice(0,16);
+  var pass=$('newPass').value;
+  if(!name){$('newErr').textContent='Please choose a username.';return;}
+  if(pass.length<3){$('newErr').textContent='Password must be at least 3 characters.';return;}
+  $('createBtn').textContent='Creating…';$('createBtn').disabled=true;
+  try{
+    // check if username already taken
+    var r=await fetch(SB_URL+'/rest/v1/players?select=name&name=eq.'+encodeURIComponent(name),{headers:sbH()});
+    var rows=r.ok?await r.json():[];
+    if(rows&&rows.length){
+      $('newErr').textContent='That username is taken. Try another, or log in.';
+      $('createBtn').textContent='CREATE & ENTER';$('createBtn').disabled=false;return;
+    }
+    var ph=await hashPass(pass);
+    var h=sbH();h['Prefer']='return=minimal';
+    var ins=await fetch(SB_URL+'/rest/v1/players',{method:'POST',headers:h,
+      body:JSON.stringify({name:name,avatar:selectedAvatar,pass_hash:ph})});
+    if(!ins.ok){throw new Error('insert failed');}
+    setPlayer({name:name,avatar:selectedAvatar});
+    $('signinModal').classList.remove('show');
+    renderUserBar();
+  }catch(e){
+    $('newErr').textContent='Connection problem. Try again.';
+  }
+  $('createBtn').textContent='CREATE & ENTER';$('createBtn').disabled=false;
+});
+$('newPass').addEventListener('keydown',function(e){if(e.key==='Enter')$('createBtn').click();});
+
+/* LOG IN */
+$('loginBtn').addEventListener('click',async function(){
+  var name=$('logName').value.trim().slice(0,16);
+  var pass=$('logPass').value;
+  if(!name||!pass){$('logErr').textContent='Enter your username and password.';return;}
+  $('loginBtn').textContent='Logging in…';$('loginBtn').disabled=true;
+  try{
+    var r=await fetch(SB_URL+'/rest/v1/players?select=*&name=eq.'+encodeURIComponent(name),{headers:sbH()});
+    var rows=r.ok?await r.json():[];
+    if(!rows||!rows.length){
+      $('logErr').textContent='No account with that username. Create one?';
+      $('loginBtn').textContent='LOG IN';$('loginBtn').disabled=false;return;
+    }
+    var player=rows[0];
+    var ph=await hashPass(pass);
+    // accounts created before passwords (no hash) are let in to avoid lockout
+    if(player.pass_hash && player.pass_hash!==ph){
+      $('logErr').textContent='Wrong password. Try again.';
+      $('loginBtn').textContent='LOG IN';$('loginBtn').disabled=false;return;
+    }
+    setPlayer({name:player.name,avatar:player.avatar||'🛡️'});
+    $('signinModal').classList.remove('show');
+    renderUserBar();
+  }catch(e){
+    $('logErr').textContent='Connection problem. Try again.';
+  }
+  $('loginBtn').textContent='LOG IN';$('loginBtn').disabled=false;
+});
+$('logPass').addEventListener('keydown',function(e){if(e.key==='Enter')$('loginBtn').click();});
+
+function openRecords(){
+  var p=getPlayer();if(!p)return;
+  $('recordsModal').classList.add('show');
+  $('recBody').innerHTML='<div class="rec-loading">Loading your record…</div>';
+  loadRecords(p);
+}
+$('closeRecords').addEventListener('click',function(){$('recordsModal').classList.remove('show');});
+
+async function loadRecords(p){
+  var rows=[];
+  try{
+    var r=await fetch(SB_URL+'/rest/v1/scores?select=score,game,created_at&player=eq.'+
+      encodeURIComponent(p.name)+'&order=created_at.desc&limit=200',{headers:sbH()});
+    if(r.ok)rows=await r.json();
+  }catch(e){}
+  var siege=rows.filter(function(x){return x.game==='siege';});
+  var neb=rows.filter(function(x){return x.game==='nebula';});
+  function best(a){return a.length?Math.max.apply(null,a.map(function(x){return x.score;})):0;}
+  var totalGames=rows.length;
+  var head='<div class="rec-head"><div class="rec-avatar">'+p.avatar+'</div>'+
+    '<div><div class="rec-name">'+escapeHtml(p.name)+'</div>'+
+    '<div class="rec-sub">'+totalGames+' games played in total</div></div></div>';
+  var stats='<div class="rec-stats">'+
+    '<div class="rec-stat"><div class="n">'+best(siege)+'</div><div class="l">SIEGE BEST</div></div>'+
+    '<div class="rec-stat"><div class="n">'+best(neb)+'</div><div class="l">NEBULA BEST</div></div>'+
+    '<div class="rec-stat"><div class="n">'+totalGames+'</div><div class="l">GAMES</div></div></div>';
+  function historyTable(title,arr){
+    if(!arr.length)return '<div class="rec-section">'+title+'</div><div class="rec-empty">No games yet — go play!</div>';
+    var bestScore=best(arr);
+    var h='<div class="rec-section">'+title+'</div><table class="rec"><thead><tr><th>WHEN</th><th>SCORE</th></tr></thead><tbody>';
+    arr.slice(0,12).forEach(function(x){
+      var d=new Date(x.created_at);
+      var when=d.toLocaleDateString(undefined,{month:'short',day:'numeric'})+' '+
+        d.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
+      h+='<tr><td>'+when+'</td><td class="'+(x.score===bestScore?'best':'')+'">'+x.score+'</td></tr>';
+    });
+    return h+'</tbody></table>';
+  }
+  $('recBody').innerHTML=head+stats+
+    historyTable('⚔️ SIEGE HISTORY',siege)+
+    historyTable('🚀 NEBULA HISTORY',neb);
+}
+
+[$('signinModal'),$('recordsModal')].forEach(function(m){
+  m.addEventListener('click',function(e){if(e.target===m)m.classList.remove('show');});
+});
+
+renderUserBar();
+})();
+</script>
 </body>
 </html>

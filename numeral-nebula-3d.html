@@ -279,6 +279,8 @@ var SB_URL = 'https://wpohvsjkrskhlrayaubp.supabase.co';
 var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indwb2h2c2prcnNraGxyYXlhdWJwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzMDEzOTcsImV4cCI6MjA5Njg3NzM5N30.Xi07ayGB5CykR-_7QX-b8UsUmMmTbGIlYpctXYgW9JI';
 function sbH(){return {'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'};}
 var GAME_ID='nebula';
+function currentPlayer(){try{return JSON.parse(localStorage.getItem('rna_player')||'null');}catch(e){return null;}}
+function playerName(){var p=currentPlayer();return p?p.name:null;}
 async function sbFetchTop(limit){
   limit=limit||15;
   try{
@@ -290,7 +292,9 @@ async function sbFetchTop(limit){
 async function sbInsert(name,score){
   try{
     var h=sbH();h['Prefer']='return=minimal';
-    var r=await fetch(SB_URL+'/rest/v1/scores',{method:'POST',headers:h,body:JSON.stringify({name:name,score:score,game:GAME_ID})});
+    var body={name:name,score:score,game:GAME_ID};
+    var pn=playerName();if(pn)body.player=pn;
+    var r=await fetch(SB_URL+'/rest/v1/scores',{method:'POST',headers:h,body:JSON.stringify(body)});
     if(!r.ok){console.error('insert',r.status,await r.text());return false;}
     return true;
   }catch(e){console.error(e);return false;}
@@ -946,13 +950,21 @@ function endGame(won){
   pendingScore=score;pendingSaved=false;
   $('hsbadge').style.display='none';$('nameform').style.display='none';
   if(score>0){
-    sbQualifies(score).then(function(q){
-      if(q){
-        $('hsbadge').style.display='block';$('nameform').style.display='flex';
-        $('nameinput').value='';
-        setTimeout(function(){try{$('nameinput').focus();}catch(e){}},300);
-      }
-    });
+    var p=currentPlayer();
+    if(p){
+      sbInsert(p.name,score).then(function(){loadEndBoard(p.name,score);});
+      $('hsbadge').textContent='✓ Saved to '+p.name+"'s record";
+      $('hsbadge').style.display='block';
+    }else{
+      sbQualifies(score).then(function(q){
+        if(q){
+          $('hsbadge').textContent='🏆 Top pilot! Log your name:';
+          $('hsbadge').style.display='block';$('nameform').style.display='flex';
+          $('nameinput').value='';
+          setTimeout(function(){try{$('nameinput').focus();}catch(e){}},300);
+        }
+      });
+    }
   }
   loadEndBoard(null,null);
 }

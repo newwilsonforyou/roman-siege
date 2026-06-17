@@ -109,6 +109,22 @@
     background:radial-gradient(circle,#FFF3B0 0 30%,#F7A93B 60%,rgba(247,169,59,0) 72%);
     animation:flicker .12s infinite alternate;}
   @keyframes flicker{from{transform:scale(.85);}to{transform:scale(1.15);}}
+  #spdctl{display:flex;align-items:center;gap:6px;flex-shrink:0;}
+  .spdbtn{font-family:'Cinzel',serif;font-weight:900;font-size:17px;line-height:1;
+    width:28px;height:28px;border-radius:7px;color:var(--parchment);background:var(--legion);
+    border:2px solid var(--legion-dk);cursor:pointer;display:flex;align-items:center;
+    justify-content:center;transition:transform .07s;}
+  .spdbtn:active{transform:scale(.9);}
+  #spdName{font-family:'Cinzel',serif;font-weight:700;font-size:11px;color:var(--legion-dk);
+    min-width:64px;text-align:center;letter-spacing:.04em;}
+  #furybadge{position:absolute;top:64px;left:50%;transform:translateX(-50%);z-index:7;display:none;
+    font-family:'Cinzel',serif;font-weight:900;font-size:15px;letter-spacing:.06em;
+    color:#fff;background:linear-gradient(90deg,#FF6A00,#FFB300);
+    padding:6px 18px;border-radius:999px;border:2px solid #fff;
+    box-shadow:0 0 22px rgba(255,140,0,.8);animation:furypulse .6s infinite alternate;
+    pointer-events:none;white-space:nowrap;}
+  @keyframes furypulse{from{box-shadow:0 0 18px rgba(255,140,0,.6);}to{box-shadow:0 0 34px rgba(255,180,0,1);}}
+  body.fury #scene{box-shadow:inset 0 0 80px rgba(255,120,0,.35);}
 
   /* ANSWERS */
   #answers{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:12px 14px 16px;
@@ -291,7 +307,13 @@
   <div id="fusewrap">
     <span id="fuselabel">CANNON FUSE</span>
     <div id="fusetrack"><div id="fuse"></div><div id="spark" style="left:100%;"></div></div>
+    <div id="spdctl">
+      <button class="spdbtn" id="spdSlow" aria-label="Slower">−</button>
+      <span id="spdName">Soldier</span>
+      <button class="spdbtn" id="spdFast" aria-label="Faster">+</button>
+    </div>
   </div>
+  <div id="furybadge">🔥 BATTLE FURY</div>
 
   <div id="answers" aria-label="Answer choices"></div>
 </div>
@@ -308,6 +330,8 @@ function sbH(){
   return {'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'};
 }
 var GAME_ID='siege';
+function currentPlayer(){try{return JSON.parse(localStorage.getItem('rna_player')||'null');}catch(e){return null;}}
+function playerName(){var p=currentPlayer();return p?p.name:null;}
 async function sbFetchTop(limit){
   limit=limit||15;
   try{
@@ -319,7 +343,9 @@ async function sbFetchTop(limit){
 async function sbInsert(name,score){
   try{
     var h=sbH();h['Prefer']='return=minimal';
-    var r=await fetch(SB_URL+'/rest/v1/scores',{method:'POST',headers:h,body:JSON.stringify({name:name,score:score,game:GAME_ID})});
+    var body={name:name,score:score,game:GAME_ID};
+    var pn=playerName();if(pn)body.player=pn;
+    var r=await fetch(SB_URL+'/rest/v1/scores',{method:'POST',headers:h,body:JSON.stringify(body)});
     if(!r.ok){console.error('insert',r.status,await r.text());return false;}
     return true;
   }catch(e){console.error(e);return false;}
@@ -357,6 +383,8 @@ var WAVES=[
 ];
 var TAUNTS=['Read my shield!','Veni, vidi!','Too slow!','Hail Caesar!',
             'You cannot count!','For Rome!','Tick tock!','Is it... VII?'];
+var SPEEDS=[{m:1.45,n:'Relaxed'},{m:1.2,n:'Steady'},{m:1.0,n:'Soldier'},{m:0.82,n:'Veteran'},{m:0.66,n:'Legendary'}];
+var spd=2; // index; higher index = less time = faster/harder
 
 var hearts,score,combo,maxCombo,waveIdx,soldierIdx,hits,current,raf,running=false,mistakesThisWave=0;
 
@@ -525,7 +553,7 @@ function spawn(){
     el.appendChild(bub2);setTimeout(function(){bub2.remove();},1900);
   }
   soldiersEl.appendChild(el);
-  var dur=WAVES[waveIdx].time*(1-soldierIdx*0.03);
+  var dur=WAVES[waveIdx].time*(1-soldierIdx*0.03)*SPEEDS[spd].m;
   if(type==='boss')dur*=0.85;
   current={val:val,el:el,start:performance.now(),dur:dur,done:false,type:type};
   buildAnswers(val,w);
@@ -603,6 +631,12 @@ function fireCannon(tx,ty,cb){
    GAMEPLAY
    ═══════════════════════════════════════════ */
 function basePts(type){return type==='boss'?30:(type==='gold'?20:10);}
+function updateFury(){
+  var on=combo>=3;
+  document.body.classList.toggle('fury',on);
+  var fb=$('furybadge');
+  if(fb){fb.style.display=on?'block':'none';if(on)fb.textContent='🔥 BATTLE FURY ×'+combo;}
+}
 function answer(v,btn){
   if(!current||current.done||!running)return;
   if(v===current.val){
@@ -610,23 +644,28 @@ function answer(v,btn){
     var sx=parseFloat(current.el.style.left)||0,ty=scene.clientHeight-95;
     var el=current.el,type=current.type;
     fireCannon(sx+60,ty,function(){
-      explode(sx+60,ty,type!=='normal',type==='gold');
+      var fury=combo>=3;
+      explode(sx+60,ty,type!=='normal'||fury,type==='gold'||fury);
       tone(520+combo*70,0.16,'triangle',0.07);tone(780+combo*70,0.2,'triangle',0.05,0.08);
       if(type==='boss')tone(330,0.4,'square',0.06,0.1);
+      if(fury)tone(660,0.18,'sawtooth',0.05,0.04);
       el.remove();
-      var pts=basePts(type)*combo;score+=pts;scoreEl.textContent=score;hits++;
+      var pts=basePts(type)*combo;
+      if(fury)pts+=5*combo; // Battle Fury bonus
+      score+=pts;scoreEl.textContent=score;hits++;
       var pop=document.createElement('div');
-      pop.className='pop-pts'+(type!=='normal'?' goldpts':'');
-      pop.textContent='+'+pts+(type==='gold'?' GOLD!':type==='boss'?' BOSS!':'');
+      pop.className='pop-pts'+(type!=='normal'||fury?' goldpts':'');
+      pop.textContent='+'+pts+(type==='gold'?' GOLD!':type==='boss'?' BOSS!':fury?' 🔥FURY!':'');
       pop.style.left=(sx+20)+'px';pop.style.top=(ty-70)+'px';
       fx.appendChild(pop);setTimeout(function(){pop.remove();},900);
       combo=Math.min(combo+1,5);maxCombo=Math.max(maxCombo,combo);setCombo(true);
+      updateFury();
       setTimeout(next,480);
     });
   }else{
     btn.disabled=true;btn.classList.add('wrong');
     tone(150,0.22,'sawtooth',0.08);
-    combo=1;setCombo(false);mistakesThisWave++;loseHeart(false);
+    combo=1;setCombo(false);updateFury();mistakesThisWave++;loseHeart(false);
   }
 }
 function reachGate(){
@@ -753,14 +792,23 @@ async function endGame(won){
   $('hsbadge').style.display='none';
   $('nameform').style.display='none';
   endOverlay.style.display='flex';
-  // Check if qualifies & show name entry
   if(score>0){
-    var q=await sbQualifies(score);
-    if(q){
+    var p=currentPlayer();
+    if(p){
+      // signed-in: auto-save this game to their record, no typing needed
+      sbInsert(p.name,score).then(function(){loadEndBoard(p.name,score);});
+      $('hsbadge').textContent='✓ Saved to '+p.name+"'s record";
       $('hsbadge').style.display='block';
-      $('nameform').style.display='flex';
-      $('nameinput').value='';
-      setTimeout(function(){try{$('nameinput').focus();}catch(e){}},300);
+    }else{
+      // guest: old manual name-entry if it's a high score
+      var q=await sbQualifies(score);
+      if(q){
+        $('hsbadge').textContent='🏆 Top score! Carve your name:';
+        $('hsbadge').style.display='block';
+        $('nameform').style.display='flex';
+        $('nameinput').value='';
+        setTimeout(function(){try{$('nameinput').focus();}catch(e){}},300);
+      }
     }
   }
   loadEndBoard(null,null);
@@ -801,7 +849,7 @@ function reset(){
   hearts=3;score=0;combo=1;maxCombo=1;waveIdx=0;soldierIdx=0;hits=0;current=null;mistakesThisWave=0;
   soldiersEl.innerHTML='';fx.innerHTML='';
   particles.forEach(function(p){p.el.remove();});particles=[];
-  renderHearts(-1);scoreEl.textContent='0';setCombo(false);setWaveLabel();
+  renderHearts(-1);scoreEl.textContent='0';setCombo(false);setWaveLabel();updateFury();
   fuse.style.width='100%';spark.style.left='100%';
   startOverlay.style.display='none';endOverlay.style.display='none';boardOverlay.style.display='none';
   running=true;showBanner();
@@ -809,6 +857,24 @@ function reset(){
 $('startbtn').addEventListener('click',reset);
 $('againbtn').addEventListener('click',reset);
 hearts=3;renderHearts(-1);waveIdx=0;setWaveLabel();
+
+/* speed control */
+function setSpeed(s){
+  spd=Math.max(0,Math.min(SPEEDS.length-1,s));
+  $('spdName').textContent=SPEEDS[spd].n;
+  // re-time the soldier currently marching so the change feels instant
+  if(current&&!current.done){
+    var w=WAVES[waveIdx];
+    var elapsed=performance.now()-current.start;
+    var p=elapsed/current.dur; // progress so far (keep it)
+    var newDur=w.time*(1-soldierIdx*0.03)*SPEEDS[spd].m*(current.type==='boss'?0.85:1);
+    current.dur=newDur;
+    current.start=performance.now()-p*newDur; // preserve visual position
+  }
+}
+$('spdSlow').addEventListener('click',function(){setSpeed(spd-1);tone(330,0.08,'square',0.05);});
+$('spdFast').addEventListener('click',function(){setSpeed(spd+1);tone(560,0.08,'square',0.05);});
+$('spdName').textContent=SPEEDS[spd].n;
 
 /* keyboard shortcuts */
 document.addEventListener('keydown',function(e){
