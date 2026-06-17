@@ -205,8 +205,8 @@ var PLANETS=[
   {name:'Neptune', col:'#3b5fd0', r:20}
 ];
 var DIFFS=[
-  {n:'Guided',    showNum:true,  showName:true,  note:'Guided: orbit numbers + planet names shown'},
-  {n:'Commander', showNum:false, showName:false, note:'Commander: no hints — know your planets by sight!'}
+  {n:'Guided',    showNum:true,  showName:true,  mult:1, note:'Guided: orbit numbers + planet names shown'},
+  {n:'Commander', showNum:false, showName:false, mult:2, note:'Commander: no hints — and DOUBLE points!'}
 ];
 var diff=0;
 
@@ -583,7 +583,11 @@ function winLevel(){
   var elapsed=(Date.now()-startTime)/1000;
   var timeBonus=Math.max(0,Math.round((120-elapsed)*10)); // faster = more
   var lifeBonus=lives*200;
-  score+=timeBonus+lifeBonus;$('scoreval').textContent=score;
+  score+=timeBonus+lifeBonus;
+  // Commander is harder (no hints) so it's worth more
+  var mult=DIFFS[diff].mult||1;
+  score=Math.round(score*mult);
+  $('scoreval').textContent=score;
   finishTime=elapsed;
   endGame(true);
 }
@@ -611,7 +615,8 @@ async function endGame(won){
   $('endtitle').textContent=won?'SYSTEM COMPLETE!':'OUT OF TRIES';
   $('endscore').textContent=score;
   if(won){
-    $('endstats').innerHTML='Built in <b style="color:#36E2FF;">'+finishTime.toFixed(1)+'s</b> with '+lives+' '+(lives===1?'life':'lives')+' left &middot; perfect order, Mercury to Neptune!';
+    var multTxt=DIFFS[diff].mult>1?' &middot; <b style="color:#FFD23F;">Commander ×'+DIFFS[diff].mult+' bonus!</b>':'';
+    $('endstats').innerHTML='Built in <b style="color:#36E2FF;">'+finishTime.toFixed(1)+'s</b> with '+lives+' '+(lives===1?'life':'lives')+' left'+multTxt;
   }else{
     $('endstats').innerHTML='You placed '+placedCount+'/8 planets. Try again, explorer!';
   }
