@@ -785,12 +785,32 @@ function nextStep(){
   var s=SECTORS[sectorIdx];
   if(spawnedThisSector>=s.count){
     sectorIdx++;
-    if(sectorIdx>=SECTORS.length){endGame(true);return;}
+    if(sectorIdx>=SECTORS.length){
+      // beyond the base sectors → generate an endless harder "Deep Space" sector
+      addEndlessSector();
+    }
     spawnedThisSector=0;
     $('wavebadge').textContent=SECTORS[sectorIdx].name;
-    showFlash('SECTOR '+SECTORS[sectorIdx].name,SECTORS[sectorIdx].label);
+    var isBonus=sectorIdx>=BASE_SECTOR_COUNT;
+    showFlash((isBonus?'DEEP SPACE ':'SECTOR ')+SECTORS[sectorIdx].name,SECTORS[sectorIdx].label);
     setTimeout(spawnAsteroid,1700);
   }else spawnAsteroid();
+}
+var BASE_SECTOR_COUNT=6;
+var ROMAN_EXTRA=['VII','VIII','IX','X','XI','XII','XIII','XIV','XV','XVI','XVII','XVIII','XIX','XX'];
+function addEndlessSector(){
+  // how many bonus sectors so far (0-based beyond the base set)
+  var bonusN=sectorIdx-BASE_SECTOR_COUNT;
+  var name=ROMAN_EXTRA[bonusN]||('+'+(bonusN+7));
+  // each bonus sector is the full I–C range, faster each time, more asteroids
+  var speed=2.7+0.35*(bonusN+1);
+  SECTORS.push({
+    name:name,
+    label:'Deep space — faster!',
+    min:1,max:100,
+    count:10+bonusN,           // a couple more each round
+    baseSpeed:speed
+  });
 }
 function showFlash(big,small){
   $('flashtext').innerHTML=big+'<div style="font-family:Rajdhani;font-size:18px;color:var(--text-dim);letter-spacing:.1em;margin-top:6px;">'+small+'</div>';
@@ -906,6 +926,7 @@ animate();
 /* ============ START / END ============ */
 function startGame(){
   shields=3;score=0;combo=1;maxCombo=1;sectorIdx=0;spawnedThisSector=0;destroyed=0;current=null;
+  SECTORS.length=BASE_SECTOR_COUNT; // remove any endless sectors from a previous run
   // clear leftovers
   asteroids.forEach(function(a){scene.remove(a);});asteroids=[];
   particles.forEach(function(p){if(p.mesh)scene.remove(p.mesh);if(p.light)scene.remove(p.light);});particles=[];
@@ -927,23 +948,26 @@ function endGame(won){
   running=false;
   $('speedctl').classList.remove('show');
   asteroids.forEach(function(a){a.userData.dead=true;});
+  // how far did they get? (sector reached, 1-based)
+  var reached=sectorIdx+1;
+  var clearedAll=sectorIdx>=BASE_SECTOR_COUNT; // got into deep space
   var rank,medal,medalCol;
-  if(won&&maxCombo>=5){rank='LEGENDARY ACE';medal='★';medalCol='#FFD23F';}
-  else if(won){rank='STAR COMMANDER';medal='★';medalCol='#36E2FF';}
-  else if(score>=300){rank='SQUADRON PILOT';medal='✦';medalCol='#5BFF9B';}
-  else if(score>=120){rank='FLIGHT CADET';medal='✦';medalCol='#FF7A3D';}
-  else{rank='ROOKIE';medal='✦';medalCol='#7E8DB5';}
+  if(clearedAll&&reached>=BASE_SECTOR_COUNT+3){rank='LEGENDARY ACE';medal='★';medalCol='#FFD23F';}
+  else if(clearedAll){rank='DEEP SPACE PILOT';medal='★';medalCol='#36E2FF';}
+  else if(reached>=5){rank='STAR COMMANDER';medal='★';medalCol='#5BFF9B';}
+  else if(reached>=3){rank='SQUADRON PILOT';medal='✦';medalCol='#FF7A3D';}
+  else{rank='FLIGHT CADET';medal='✦';medalCol='#7E8DB5';}
   $('endbadge').textContent=medal;
   $('endbadge').style.color=medalCol;
   $('endbadge').style.borderColor=medalCol;
   $('endbadge').style.boxShadow='0 0 30px '+medalCol;
   $('endrank').textContent=rank;
   $('endrank').style.color=medalCol;
-  $('endtitle').textContent=won?'NEBULA CLEARED':'SHIELDS DOWN';
+  $('endtitle').textContent=clearedAll?'DEEP SPACE!':'SHIELDS DOWN';
   $('endscore').textContent=score;
   $('endstats').innerHTML=destroyed+' asteroids destroyed &middot; best chain x'+maxCombo+
-    '<br>'+(won?'You defended every sector!':'Sector '+SECTORS[sectorIdx].name+' overrun — regroup and retry.');
-  if(won){tone(523,0.14,'sine',0.06);tone(659,0.14,'sine',0.06,0.15);tone(784,0.3,'sine',0.06,0.3);}
+    '<br>You reached sector '+SECTORS[sectorIdx].name+(clearedAll?' — into deep space!':'. Keep pushing!');
+  if(clearedAll){tone(523,0.14,'sine',0.06);tone(659,0.14,'sine',0.06,0.15);tone(784,0.3,'sine',0.06,0.3);}
   else{tone(220,0.3,'sawtooth',0.07);tone(110,0.5,'sawtooth',0.07,0.25);}
   $('endpanel').style.display='flex';
   // leaderboard
