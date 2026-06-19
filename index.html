@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Roman Numeral Arcade</title>
+<title>Year 5 Arcade</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Orbitron:wght@700;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -87,6 +87,12 @@
     font-weight:900;font-size:12px;letter-spacing:.1em;padding:5px 11px;border-radius:8px;z-index:3;}
   .badge2d{background:rgba(242,193,78,.9);color:#3a2400;}
   .badge3d{background:rgba(54,226,255,.9);color:#003040;}
+  .empire .card-tag{color:var(--legion);} .empire .play{background:var(--legion);color:#fff;}
+  .empire:hover{box-shadow:0 18px 50px rgba(192,57,43,.4);border-color:var(--legion);}
+  .museum .card-tag{color:var(--gold);} .museum .play{background:var(--gold);color:#3a2400;}
+  .museum:hover{box-shadow:0 18px 50px rgba(242,193,78,.4);border-color:var(--gold);}
+  .voyage .card-tag{color:var(--plasma);} .voyage .play{background:var(--plasma);color:#062;}
+  .voyage:hover{box-shadow:0 18px 50px rgba(54,226,255,.35);border-color:var(--plasma);}
   .card.locked{opacity:.5;pointer-events:none;filter:grayscale(.3);}
   .lockmsg{position:absolute;inset:0;z-index:4;display:none;align-items:center;justify-content:center;
     background:rgba(8,5,16,.55);font-family:'Cinzel',serif;font-weight:700;color:#fff;font-size:15px;}
@@ -152,9 +158,9 @@
   <div id="userbar"></div>
 
   <header>
-    <div class="kicker">Choose your battle</div>
-    <h1>Roman Numeral Arcade</h1>
-    <p class="sub">Two ways to master I to C. Sign in, then defend a castle or defend a planet — every game you play is saved to your record.</p>
+    <div class="kicker">Choose your game</div>
+    <h1>Year 5 Arcade</h1>
+    <p class="sub">Six games in one place — master Roman numerals from I to C, then explore Victorian Britain and the British Empire. Sign in, and every game you play is saved to your record.</p>
   </header>
 
   <main class="cards">
@@ -225,6 +231,77 @@
         <div class="card-tag">Build It</div>
         <div class="card-title">Solar System Builder</div>
         <div class="card-desc">Drag each planet into its orbit, in order from the Sun. Hands-on, no waiting — race the clock for bonus points.</div>
+        <span class="play">PLAY ▶</span>
+      </div>
+    </a>
+
+    <a class="card empire" id="card-empire" href="british-empire-map.html">
+      <span class="badge2d" style="background:rgba(192,57,43,.92);color:#fff;">MAP</span>
+      <div class="lockmsg">🔒 Sign in first</div>
+      <div class="card-art">
+        <svg class="art-svg pulse" viewBox="0 0 200 150" aria-hidden="true">
+          <circle cx="100" cy="75" r="48" fill="#2E6B8A"/>
+          <path d="M68 46 Q92 60 80 82 Q98 96 122 88 Q138 70 120 54 Q100 47 68 46Z" fill="#7FB07A"/>
+          <path d="M70 104 Q92 110 116 100" fill="none" stroke="#7FB07A" stroke-width="7" stroke-linecap="round"/>
+          <circle cx="100" cy="75" r="48" fill="none" stroke="#bcd6e6" stroke-width="2" opacity=".45"/>
+          <line x1="52" y1="75" x2="148" y2="75" stroke="#bcd6e6" stroke-width="1.5" opacity=".35"/>
+          <g transform="translate(123,26)">
+            <rect x="0" y="0" width="3" height="36" fill="#6E4B2A"/>
+            <path d="M3 1 L27 8 L3 16 Z" fill="#C0392B"/>
+          </g>
+        </svg>
+      </div>
+      <div class="card-body">
+        <div class="card-tag">Map Explorer</div>
+        <div class="card-title">Build the British Empire</div>
+        <div class="card-desc">Drag each land's real flag onto the real world map. Colour the Empire red — 30+ lands and islands, a new set every game.</div>
+        <span class="play">PLAY ▶</span>
+      </div>
+    </a>
+
+    <a class="card museum" id="card-museum" href="victorian-museum.html">
+      <span class="badge2d">SORT</span>
+      <div class="lockmsg">🔒 Sign in first</div>
+      <div class="card-art">
+        <svg class="art-svg pulse" viewBox="0 0 200 150" aria-hidden="true">
+          <path d="M38 62 L100 30 L162 62 Z" fill="#E8C36B"/>
+          <rect x="46" y="62" width="108" height="8" fill="#D8B894"/>
+          <rect x="52" y="70" width="13" height="50" fill="#F3E6C9"/>
+          <rect x="78" y="70" width="13" height="50" fill="#F3E6C9"/>
+          <rect x="104" y="70" width="13" height="50" fill="#F3E6C9"/>
+          <rect x="130" y="70" width="13" height="50" fill="#F3E6C9"/>
+          <rect x="42" y="120" width="116" height="10" fill="#D8B894"/>
+          <circle cx="100" cy="47" r="6" fill="#C0392B"/>
+        </svg>
+      </div>
+      <div class="card-body">
+        <div class="card-tag">Sorting Game</div>
+        <div class="card-title">The Victorian Museum</div>
+        <div class="card-desc">Would Queen Victoria have seen it? Sort each object into the right case. Clear all 10 to reach the next stage — but one wrong answer ends the game!</div>
+        <span class="play">PLAY ▶</span>
+      </div>
+    </a>
+
+    <a class="card voyage" id="card-voyage" href="victorian-britain-quiz.html">
+      <span class="badge3d">3D</span>
+      <div class="lockmsg">🔒 Sign in first</div>
+      <div class="card-art">
+        <svg class="art-svg pulse" viewBox="0 0 200 150" aria-hidden="true">
+          <rect x="40" y="72" width="68" height="38" rx="6" fill="#574F40"/>
+          <rect x="108" y="58" width="32" height="52" rx="5" fill="#6E1E1B"/>
+          <rect x="119" y="40" width="11" height="20" fill="#9B968A"/>
+          <circle cx="58" cy="116" r="12" fill="#1d1a15" stroke="#F2C14E" stroke-width="3"/>
+          <circle cx="92" cy="116" r="12" fill="#1d1a15" stroke="#F2C14E" stroke-width="3"/>
+          <circle cx="124" cy="116" r="9" fill="#1d1a15" stroke="#F2C14E" stroke-width="2.5"/>
+          <text x="74" y="100" text-anchor="middle" font-family="Cinzel,serif" font-weight="900" font-size="28" fill="#F2C14E">?</text>
+          <circle cx="130" cy="34" r="3" fill="#bcd6e6" opacity=".8"/>
+          <circle cx="125" cy="25" r="2" fill="#bcd6e6" opacity=".6"/>
+        </svg>
+      </div>
+      <div class="card-body">
+        <div class="card-tag">Quiz Adventure</div>
+        <div class="card-title">Victorian Voyage</div>
+        <div class="card-desc">Blast through questions on Queen Victoria, the Empire, inventions and daily life. Tap the right answer before time runs out.</div>
         <span class="play">PLAY ▶</span>
       </div>
     </a>
@@ -313,6 +390,9 @@ function setCardsLocked(locked){
   $('card-siege').classList.toggle('locked',locked);
   $('card-nebula').classList.toggle('locked',locked);
   $('card-builder').classList.toggle('locked',locked);
+  $('card-empire').classList.toggle('locked',locked);
+  $('card-museum').classList.toggle('locked',locked);
+  $('card-voyage').classList.toggle('locked',locked);
 }
 function escapeHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
@@ -443,6 +523,9 @@ async function loadRecords(p){
   }catch(e){}
   var siege=rows.filter(function(x){return x.game==='siege';});
   var neb=rows.filter(function(x){return x.game==='nebula';});
+  var empire=rows.filter(function(x){return x.game==='empiremap';});
+  var museum=rows.filter(function(x){return x.game==='vicmuseum';});
+  var voyage=rows.filter(function(x){return x.game==='victorians';});
   function best(a){return a.length?Math.max.apply(null,a.map(function(x){return x.score;})):0;}
   var totalGames=rows.length;
   var head='<div class="rec-head"><div class="rec-avatar">'+p.avatar+'</div>'+
@@ -451,6 +534,9 @@ async function loadRecords(p){
   var stats='<div class="rec-stats">'+
     '<div class="rec-stat"><div class="n">'+best(siege)+'</div><div class="l">SIEGE BEST</div></div>'+
     '<div class="rec-stat"><div class="n">'+best(neb)+'</div><div class="l">NEBULA BEST</div></div>'+
+    '<div class="rec-stat"><div class="n">'+best(empire)+'</div><div class="l">EMPIRE BEST</div></div>'+
+    '<div class="rec-stat"><div class="n">'+best(museum)+'</div><div class="l">MUSEUM BEST</div></div>'+
+    '<div class="rec-stat"><div class="n">'+best(voyage)+'</div><div class="l">VOYAGE BEST</div></div>'+
     '<div class="rec-stat"><div class="n">'+totalGames+'</div><div class="l">GAMES</div></div></div>';
   function historyTable(title,arr){
     if(!arr.length)return '<div class="rec-section">'+title+'</div><div class="rec-empty">No games yet — go play!</div>';
@@ -466,7 +552,10 @@ async function loadRecords(p){
   }
   $('recBody').innerHTML=head+stats+
     historyTable('⚔️ SIEGE HISTORY',siege)+
-    historyTable('🚀 NEBULA HISTORY',neb);
+    historyTable('🚀 NEBULA HISTORY',neb)+
+    historyTable('🌍 EMPIRE HISTORY',empire)+
+    historyTable('🏛️ MUSEUM HISTORY',museum)+
+    historyTable('🎩 VOYAGE HISTORY',voyage);
 }
 
 [$('signinModal'),$('recordsModal')].forEach(function(m){

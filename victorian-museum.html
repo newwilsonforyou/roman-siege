@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>The Victorian Museum — Sort the Exhibits</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --void:#2c1414;--void2:#52312a;--plasma:#E8C36B;--plasma-dim:#8a6326;
+    --fusion:#C0653A;--gold:#F2D27C;--danger:#C0392B;--ok:#5BBE74;
+    --text:#FDF3E3;--text-dim:#D8B894;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;overflow:hidden;}
+  body{font-family:'Rajdhani',sans-serif;background:var(--void);color:var(--text);
+    display:flex;align-items:center;justify-content:center;
+    user-select:none;-webkit-user-select:none;touch-action:none;}
+  #wrap{position:relative;width:min(100vw,1000px);height:min(100vh,100dvh);max-height:760px;
+    overflow:hidden;
+    background:
+      repeating-linear-gradient(45deg,rgba(242,210,124,0.05) 0 14px,rgba(242,210,124,0) 14px 28px),
+      radial-gradient(circle at 50% 16%,#7a3030,#3a1818 68%,#2c1414 100%);}
+  @media(min-width:1020px){#wrap{border-radius:20px;box-shadow:0 30px 80px rgba(0,0,0,.7);}}
+  canvas#stars{position:absolute;inset:0;z-index:0;}
+  #board{position:absolute;inset:0;z-index:1;}
+
+  /* HUD */
+  .hud{position:absolute;left:0;right:0;z-index:5;pointer-events:none;}
+  #topbar{top:0;display:flex;justify-content:space-between;align-items:flex-start;padding:14px 16px;
+    background:linear-gradient(var(--void) 8%,rgba(7,11,30,0) 100%);}
+  .stat .lbl{font-family:'Orbitron',sans-serif;font-size:10px;letter-spacing:.22em;color:var(--text-dim);font-weight:700;}
+  .stat .val{font-family:'Orbitron',sans-serif;font-size:20px;font-weight:900;line-height:1;}
+  #scoreval{color:var(--plasma);text-shadow:0 0 12px rgba(54,226,255,.5);}
+  #placedval{color:var(--gold);}
+  #livesrow{display:flex;gap:5px;margin-top:4px;}
+  .life{width:22px;height:22px;}
+  .life.gone{opacity:.2;}
+
+  /* instruction banner */
+  #instruct{top:60px;text-align:center;}
+  #instruct .big{font-family:'Orbitron',sans-serif;font-weight:700;font-size:clamp(15px,3vw,22px);
+    color:#fff;text-shadow:0 0 14px rgba(54,226,255,.4);}
+  #instruct .small{font-size:14px;color:var(--text-dim);font-weight:600;margin-top:3px;}
+
+  /* holding bay (objects to sort) */
+  #bay{position:absolute;left:0;right:0;bottom:0;z-index:4;
+    display:flex;align-items:flex-start;justify-content:center;gap:8px;flex-wrap:wrap;
+    padding:12px 10px 16px;background:linear-gradient(rgba(44,20,20,0),var(--void) 42%);min-height:104px;}
+  .bay-planet{min-width:72px;max-width:96px;cursor:grab;position:relative;
+    display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:1px;
+    padding:8px 6px 6px;border-radius:12px;touch-action:none;
+    background:linear-gradient(#5a3326,#3d2017);border:1.5px solid var(--plasma-dim);
+    box-shadow:0 4px 12px rgba(0,0,0,.45);transition:transform .12s;}
+  .bay-planet:active{cursor:grabbing;}
+  .bay-planet .emoji{font-size:30px;line-height:1.05;filter:drop-shadow(0 1px 2px rgba(0,0,0,.5));}
+  .bay-planet .pname{font-size:12px;font-weight:700;color:var(--text);text-align:center;line-height:1.05;}
+  .bay-planet .phint{font-size:9.5px;font-weight:700;color:var(--gold);text-align:center;letter-spacing:.02em;}
+  .bay-planet.dragging{opacity:.3;}
+  .drag-ghost{position:fixed;z-index:99;width:60px;height:60px;pointer-events:none;
+    transform:translate(-50%,-50%);display:flex;align-items:center;justify-content:center;
+    font-size:38px;filter:drop-shadow(0 0 16px rgba(242,210,124,.8));}
+
+  /* overlays */
+  .panel{position:absolute;inset:0;z-index:10;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:15px;padding:26px;text-align:center;
+    background:radial-gradient(circle at 50% 30%,rgba(20,30,70,.72),rgba(7,11,30,.96));backdrop-filter:blur(3px);overflow:auto;}
+  .title{font-family:'Orbitron',sans-serif;font-weight:900;font-size:clamp(30px,7vw,52px);
+    line-height:1.02;background:linear-gradient(180deg,#fff,var(--gold));-webkit-background-clip:text;
+    background-clip:text;-webkit-text-fill-color:transparent;filter:drop-shadow(0 0 24px rgba(255,210,63,.35));}
+  .tagline{font-size:16px;color:var(--text-dim);max-width:460px;line-height:1.45;font-weight:600;}
+  .chip-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;max-width:480px;}
+  .chip{font-size:13px;font-weight:600;color:var(--text);background:rgba(27,42,86,.6);
+    border:1px solid var(--plasma-dim);border-radius:999px;padding:7px 15px;}
+  .chip b{color:var(--gold);}
+  .cta{font-family:'Orbitron',sans-serif;font-weight:700;font-size:18px;letter-spacing:.1em;
+    color:var(--void);background:linear-gradient(120deg,var(--plasma),#9affff);border:0;border-radius:14px;
+    padding:15px 44px;cursor:pointer;box-shadow:0 0 30px rgba(54,226,255,.5);transition:transform .08s;}
+  .cta:active{transform:scale(.96);}
+  .cta.ghost{background:none;color:var(--plasma);border:1.5px solid var(--plasma-dim);box-shadow:none;font-size:14px;padding:11px 26px;}
+  #difficulty{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
+  .diffbtn{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:14px;color:var(--text-dim);
+    background:rgba(27,42,86,.5);border:1.5px solid var(--plasma-dim);border-radius:10px;padding:9px 16px;cursor:pointer;}
+  .diffbtn.on{color:var(--void);background:var(--plasma);border-color:var(--plasma);}
+  .endbig{font-family:'Orbitron',sans-serif;font-size:42px;font-weight:900;color:var(--plasma);text-shadow:0 0 20px rgba(54,226,255,.5);}
+  .rank{font-family:'Orbitron',sans-serif;font-weight:900;font-size:22px;color:var(--gold);letter-spacing:.08em;text-shadow:0 0 16px rgba(255,210,63,.5);}
+  .endstat{font-size:14px;color:var(--text-dim);font-weight:700;}
+  #endbadge{font-size:50px;width:96px;height:96px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    border:3px solid var(--gold);color:var(--gold);background:rgba(14,21,53,.6);box-shadow:0 0 30px var(--gold);animation:badgepop .6s ease;}
+  @keyframes badgepop{0%{transform:scale(0) rotate(-40deg);}60%{transform:scale(1.15);}100%{transform:scale(1);}}
+
+  /* name entry + leaderboard */
+  #nameform{display:flex;gap:8px;width:100%;max-width:300px;}
+  #nameinput{flex:1;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:16px;padding:9px 12px;
+    border-radius:10px;border:1.5px solid var(--plasma-dim);background:rgba(7,11,30,.7);color:var(--text);min-width:0;}
+  .savebtn{font-family:'Orbitron',sans-serif;font-weight:700;font-size:14px;background:var(--plasma);
+    color:var(--void);border:0;border-radius:10px;padding:8px 16px;cursor:pointer;}
+  .hsbadge{font-family:'Orbitron',sans-serif;font-weight:700;font-size:13px;color:var(--void);
+    background:var(--gold);border-radius:999px;padding:5px 16px;box-shadow:0 0 18px rgba(255,210,63,.5);}
+  .lb-wrap{width:100%;max-width:360px;}
+  table.lb{width:100%;border-collapse:collapse;font-size:15px;}
+  table.lb th{font-family:'Orbitron',sans-serif;font-size:10px;letter-spacing:.16em;color:var(--text-dim);
+    text-align:left;padding:5px 8px;border-bottom:1.5px solid var(--plasma-dim);font-weight:700;}
+  table.lb th:last-child{text-align:right;}
+  table.lb td{padding:6px 8px;border-bottom:1px solid rgba(126,141,181,.18);font-weight:600;}
+  table.lb td:first-child{width:34px;font-family:'Orbitron',sans-serif;font-weight:900;color:var(--gold);}
+  table.lb td:last-child{text-align:right;font-family:'Orbitron',sans-serif;font-weight:900;color:var(--plasma);}
+  table.lb tr.me td{background:rgba(54,226,255,.15);}
+  .lb-msg{font-size:14px;color:var(--text-dim);font-weight:600;padding:10px 0;text-align:center;}
+  .lb-loading{display:flex;align-items:center;justify-content:center;gap:8px;font-size:13px;color:var(--text-dim);font-weight:600;padding:12px 0;}
+  .lb-spin{width:18px;height:18px;border:3px solid rgba(126,141,181,.3);border-top-color:var(--plasma);border-radius:50%;animation:lbspin .7s linear infinite;}
+  @keyframes lbspin{to{transform:rotate(360deg);}}
+  #soundbtn{position:absolute;top:14px;right:50%;transform:translateX(50%);}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="stars"></canvas>
+  <svg id="board"></svg>
+
+  <div class="hud" id="topbar">
+    <div class="stat">
+      <div class="lbl">SCORE</div><div class="val" id="scoreval">0</div>
+      <div id="livesrow"></div>
+    </div>
+    <div class="stat" style="text-align:center;">
+      <div class="lbl">STAGE</div><div class="val" id="levelval" style="color:#F2D27C;">1</div>
+    </div>
+    <div class="stat" style="text-align:right;">
+      <div class="lbl">SORTED</div><div class="val" id="placedval">0/10</div>
+    </div>
+  </div>
+
+  <div class="hud" id="instruct">
+    <div class="big" id="instructBig">Drag each object into the right case</div>
+    <div class="small" id="instructSmall">Was it around in Queen Victoria's time?</div>
+  </div>
+
+  <div id="bay"></div>
+
+  <!-- START -->
+  <div class="panel" id="startpanel">
+    <div class="title">THE VICTORIAN<br>MUSEUM</div>
+    <div class="tagline">You're a museum curator in Queen Victoria's England! Drag each object into the right case — would Queen Victoria have seen it, or did it come later? Sort all <b>10</b> correctly and you move up to the next stage with 10 brand-new objects. But be careful — <b>one wrong answer ends the game!</b> How many stages can you clear?</div>
+    <div class="chip-row">
+      <div class="chip">🏛️ Clear stages of <b>10</b></div>
+      <div class="chip">💥 One wrong = game over</div>
+      <div class="chip">🎲 New objects every stage</div>
+      <div class="chip">⚡ Faster = more points</div>
+    </div>
+    <div style="margin-top:4px;">
+      <div class="lbl" style="font-family:'Orbitron',sans-serif;font-size:11px;letter-spacing:.22em;color:var(--text-dim);font-weight:700;margin-bottom:8px;">HELP LEVEL</div>
+      <div id="difficulty">
+        <button class="diffbtn on" data-d="0">Helper</button>
+        <button class="diffbtn" data-d="1">Curator</button>
+      </div>
+      <div class="small" id="diffNote" style="font-size:12px;color:var(--text-dim);margin-top:8px;font-weight:600;">Helper: each object shows a date clue</div>
+    </div>
+    <button class="cta" id="launchbtn">OPEN THE MUSEUM</button>
+    <button class="cta ghost" id="boardbtn">🏆 Leaderboard</button>
+  </div>
+
+  <!-- END -->
+  <div class="panel" id="endpanel" style="display:none;">
+    <div id="endbadge">★</div>
+    <div class="rank" id="endrank">CURATOR</div>
+    <div class="title" id="endtitle" style="font-size:clamp(24px,5.5vw,38px);">MUSEUM SORTED</div>
+    <div class="endbig" id="endscore">0</div>
+    <div class="endstat" id="endstats"></div>
+    <div class="hsbadge" id="hsbadge" style="display:none;">🏆 Top score! Log your name:</div>
+    <div id="nameform" style="display:none;">
+      <input id="nameinput" maxlength="14" placeholder="Your name" autocomplete="off">
+      <button class="savebtn" id="savescore">Save</button>
+    </div>
+    <div class="lb-wrap"><div id="endboard"></div></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;">
+      <button class="cta" id="againbtn">SORT AGAIN</button>
+      <button class="cta ghost" id="boardbtn2">🏆 Full board</button>
+    </div>
+  </div>
+
+  <!-- LEADERBOARD -->
+  <div class="panel" id="boardpanel" style="display:none;">
+    <div class="rank" style="color:var(--gold);">HALL OF CURATORS</div>
+    <div class="title" style="font-size:clamp(24px,5vw,38px);">🏛️ Leaderboard</div>
+    <div class="lb-wrap"><div id="mainboard"></div></div>
+    <div class="endstat" style="font-size:12px;">Top 15 curators, worldwide</div>
+    <div style="display:flex;gap:10px;">
+      <button class="cta" id="closeboard">BACK</button>
+      <button class="cta ghost" id="refreshboard">↻ Refresh</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+var $=function(id){return document.getElementById(id);};
+var SVGNS='http://www.w3.org/2000/svg';
+
+/* ============ OBJECTS TO SORT — a big bank; each round picks a random handful ============ */
+var BANK=[
+  // cat 0 = around in Queen Victoria’s time (or earlier)
+  {icon:'☎️',name:'Telephone',cat:0,hint:'1876'},
+  {icon:'💡',name:'Light bulb',cat:0,hint:'1879'},
+  {icon:'🚲',name:'Penny-farthing',cat:0,hint:'1871'},
+  {icon:'✉️',name:'Postage stamp',cat:0,hint:'1840'},
+  {icon:'📮',name:'Red post box',cat:0,hint:'1852'},
+  {icon:'🧵',name:'Sewing machine',cat:0,hint:'1846'},
+  {icon:'⌨️',name:'Typewriter',cat:0,hint:'1868'},
+  {icon:'📡',name:'Telegraph',cat:0,hint:'1837'},
+  {icon:'💌',name:'Christmas card',cat:0,hint:'1843'},
+  {icon:'🎶',name:'Gramophone',cat:0,hint:'1877'},
+  {icon:'🚇',name:'The Underground',cat:0,hint:'1863'},
+  {icon:'🩻',name:'X-ray machine',cat:0,hint:'1895'},
+  {icon:'🛼',name:'Roller skates',cat:0,hint:'1863'},
+  {icon:'🖊️',name:'Fountain pen',cat:0,hint:'1884'},
+  {icon:'💊',name:'Aspirin',cat:0,hint:'1897'},
+  {icon:'🚗',name:'Early motor car',cat:0,hint:'1886'},
+  {icon:'🎷',name:'Saxophone',cat:0,hint:'1846'},
+  {icon:'🚲',name:'Safety bicycle',cat:0,hint:'1885'},
+  {icon:'🥫',name:'Tin opener',cat:0,hint:'1855'},
+  {icon:'📷',name:'Photograph',cat:0,hint:'1839'},
+  {icon:'🍽️',name:'Dishwasher',cat:0,hint:'1886'},
+  {icon:'🛗',name:'Escalator',cat:0,hint:'1892'},
+  {icon:'🎡',name:'Ferris wheel',cat:0,hint:'1893'},
+  {icon:'🤐',name:'Zip fastener',cat:0,hint:'1893'},
+  {icon:'🧾',name:'Cash register',cat:0,hint:'1879'},
+  {icon:'🚋',name:'Electric tram',cat:0,hint:'1881'},
+  {icon:'🎤',name:'Microphone',cat:0,hint:'1877'},
+  {icon:'🧹',name:'Carpet sweeper',cat:0,hint:'1876'},
+  {icon:'🧻',name:'Toilet roll',cat:0,hint:'1879'},
+  {icon:'🚽',name:'Flushing toilet',cat:0,hint:'1850s'},
+  {icon:'📎',name:'Stapler',cat:0,hint:'1866'},
+  {icon:'👖',name:'Blue jeans',cat:0,hint:'1873'},
+  {icon:'🥤',name:'Coca-Cola',cat:0,hint:'1886'},
+  {icon:'🥣',name:'Cornflakes',cat:0,hint:'1894'},
+  {icon:'🍬',name:'Chewing gum',cat:0,hint:'1848'},
+  {icon:'🧈',name:'Margarine',cat:0,hint:'1869'},
+  {icon:'🥫',name:'Tin can',cat:0,hint:'1810'},
+  {icon:'🔥',name:'Friction match',cat:0,hint:'1826'},
+  {icon:'🔋',name:'Battery',cat:0,hint:'1800'},
+  {icon:'🚂',name:'Steam train',cat:0,hint:'1825'},
+  {icon:'🚢',name:'Steamship',cat:0,hint:'1807'},
+  {icon:'🩺',name:'Stethoscope',cat:0,hint:'1816'},
+  {icon:'⠿',name:'Braille',cat:0,hint:'1824'},
+  {icon:'🧥',name:'Rubber raincoat',cat:0,hint:'1823'},
+  {icon:'🌱',name:'Lawn mower',cat:0,hint:'1830'},
+  {icon:'📟',name:'Morse code',cat:0,hint:'1837'},
+  {icon:'😴',name:'Anaesthetic',cat:0,hint:'1846'},
+  {icon:'🥛',name:'Pasteurised milk',cat:0,hint:'1864'},
+  {icon:'🧪',name:'Periodic table',cat:0,hint:'1869'},
+  {icon:'⚡',name:'Electric dynamo',cat:0,hint:'1831'},
+  {icon:'📸',name:'Box camera',cat:0,hint:'1888'},
+  {icon:'🏍️',name:'Motorcycle',cat:0,hint:'1885'},
+  {icon:'⛽',name:'Diesel engine',cat:0,hint:'1893'},
+  {icon:'🎬',name:'Cinema',cat:0,hint:'1895'},
+  {icon:'🧴',name:'Vacuum flask',cat:0,hint:'1892'},
+  {icon:'🌀',name:'Electric fan',cat:0,hint:'1882'},
+  {icon:'📰',name:'Penny newspaper',cat:0,hint:'1850s'},
+  {icon:'🚪',name:'Revolving door',cat:0,hint:'1888'},
+  {icon:'🌵',name:'Barbed wire',cat:0,hint:'1874'},
+  {icon:'🛞',name:'Rubber tyre',cat:0,hint:'1888'},
+  {icon:'🎹',name:'Player piano',cat:0,hint:'1896'},
+  {icon:'🌊',name:'Submarine',cat:0,hint:'1879'},
+  {icon:'👔',name:'Electric iron',cat:0,hint:'1882'},
+  {icon:'🎢',name:'Roller coaster',cat:0,hint:'1884'},
+  {icon:'🥤',name:'Drinking straw',cat:0,hint:'1888'},
+  {icon:'📬',name:'Postcard',cat:0,hint:'1870'},
+  {icon:'🚦',name:'Traffic signal',cat:0,hint:'1868'},
+  {icon:'🦷',name:'Dental drill',cat:0,hint:'1875'},
+  {icon:'🔔',name:'Bicycle bell',cat:0,hint:'1877'},
+  {icon:'🪮',name:'Hairbrush',cat:0,hint:'1700s'},
+  {icon:'⌚',name:'Pocket watch',cat:0,hint:'1700s'},
+  {icon:'🔭',name:'Telescope',cat:0,hint:'1608'},
+  {icon:'🔬',name:'Microscope',cat:0,hint:'1600s'},
+  {icon:'🧭',name:'Compass',cat:0,hint:'ancient'},
+  {icon:'🗞️',name:'Printing press',cat:0,hint:'1440'},
+  {icon:'👓',name:'Spectacles',cat:0,hint:'1280s'},
+  {icon:'🎈',name:'Hot-air balloon',cat:0,hint:'1783'},
+  {icon:'♨️',name:'Steam engine',cat:0,hint:'1712'},
+  {icon:'🌡️',name:'Thermometer',cat:0,hint:'1600s'},
+  {icon:'☂️',name:'Umbrella',cat:0,hint:'ancient'},
+  {icon:'🎹',name:'Piano',cat:0,hint:'1700'},
+  {icon:'🕯️',name:'Candle',cat:0,hint:'ancient'},
+  {icon:'🎻',name:'Violin',cat:0,hint:'1500s'},
+  {icon:'🌬️',name:'Windmill',cat:0,hint:'ancient'},
+  {icon:'🕛',name:'Sundial',cat:0,hint:'ancient'},
+  {icon:'🪶',name:'Quill pen',cat:0,hint:'ancient'},
+  {icon:'🧮',name:'Abacus',cat:0,hint:'ancient'},
+  {icon:'🗺️',name:'Map & atlas',cat:0,hint:'ancient'},
+  {icon:'🌍',name:'Globe',cat:0,hint:'1490s'},
+  {icon:'🛒',name:'Wheelbarrow',cat:0,hint:'ancient'},
+  {icon:'⚓',name:'Anchor',cat:0,hint:'ancient'},
+  {icon:'🗼',name:'Lighthouse',cat:0,hint:'ancient'},
+  {icon:'🕰️',name:'Clockwork',cat:0,hint:'1300s'},
+  {icon:'🪞',name:'Mirror',cat:0,hint:'ancient'},
+  {icon:'🧼',name:'Soap',cat:0,hint:'ancient'},
+  {icon:'✂️',name:'Scissors',cat:0,hint:'ancient'},
+  {icon:'🔑',name:'Key & lock',cat:0,hint:'ancient'},
+  {icon:'📖',name:'Printed book',cat:0,hint:'1450'},
+  {icon:'🪁',name:'Kite',cat:0,hint:'ancient'},
+  {icon:'🥁',name:'Drum',cat:0,hint:'ancient'},
+  // cat 1 = invented after Queen Victoria (after 1901)
+  {icon:'📺',name:'Television',cat:1,hint:'1927'},
+  {icon:'💻',name:'Computer',cat:1,hint:'1943'},
+  {icon:'🌐',name:'The internet',cat:1,hint:'1983'},
+  {icon:'📱',name:'Smartphone',cat:1,hint:'2007'},
+  {icon:'📞',name:'Mobile phone',cat:1,hint:'1973'},
+  {icon:'🖥️',name:'Laptop',cat:1,hint:'1981'},
+  {icon:'📲',name:'Tablet',cat:1,hint:'2010'},
+  {icon:'⌚',name:'Smartwatch',cat:1,hint:'2015'},
+  {icon:'📶',name:'Wi-Fi',cat:1,hint:'1997'},
+  {icon:'🔵',name:'Bluetooth',cat:1,hint:'1994'},
+  {icon:'📍',name:'GPS sat-nav',cat:1,hint:'1978'},
+  {icon:'📧',name:'Email',cat:1,hint:'1971'},
+  {icon:'🔎',name:'Search engine',cat:1,hint:'1990'},
+  {icon:'💬',name:'Social media',cat:1,hint:'2004'},
+  {icon:'📹',name:'Video call',cat:1,hint:'2003'},
+  {icon:'🔲',name:'QR code',cat:1,hint:'1994'},
+  {icon:'🎥',name:'Webcam',cat:1,hint:'1991'},
+  {icon:'📚',name:'E-reader',cat:1,hint:'2007'},
+  {icon:'🥽',name:'VR headset',cat:1,hint:'2016'},
+  {icon:'🖨️',name:'3D printer',cat:1,hint:'1984'},
+  {icon:'🤖',name:'Robot',cat:1,hint:'1954'},
+  {icon:'🛸',name:'Drone',cat:1,hint:'2006'},
+  {icon:'💠',name:'Microchip',cat:1,hint:'1958'},
+  {icon:'💾',name:'Floppy disk',cat:1,hint:'1971'},
+  {icon:'💿',name:'CD',cat:1,hint:'1982'},
+  {icon:'📀',name:'DVD',cat:1,hint:'1995'},
+  {icon:'🔌',name:'USB stick',cat:1,hint:'2000'},
+  {icon:'📷',name:'Digital camera',cat:1,hint:'1975'},
+  {icon:'🎮',name:'Games console',cat:1,hint:'1972'},
+  {icon:'👾',name:'Video game',cat:1,hint:'1958'},
+  {icon:'🔊',name:'Smart speaker',cat:1,hint:'2014'},
+  {icon:'🏃',name:'Fitness tracker',cat:1,hint:'2009'},
+  {icon:'👆',name:'Touchscreen',cat:1,hint:'1982'},
+  {icon:'🗣️',name:'AI assistant',cat:1,hint:'2011'},
+  {icon:'🚙',name:'Self-driving car',cat:1,hint:'2010s'},
+  {icon:'🔋',name:'Electric car',cat:1,hint:'2008'},
+  {icon:'🛰️',name:'Satellite',cat:1,hint:'1957'},
+  {icon:'🚀',name:'Space rocket',cat:1,hint:'1942'},
+  {icon:'🌌',name:'Space station',cat:1,hint:'1971'},
+  {icon:'🌕',name:'Moon landing',cat:1,hint:'1969'},
+  {icon:'✈️',name:'Aeroplane',cat:1,hint:'1903'},
+  {icon:'🚁',name:'Helicopter',cat:1,hint:'1939'},
+  {icon:'🛫',name:'Jet engine',cat:1,hint:'1937'},
+  {icon:'🛬',name:'Jumbo jet',cat:1,hint:'1969'},
+  {icon:'🚄',name:'Bullet train',cat:1,hint:'1964'},
+  {icon:'🚤',name:'Hovercraft',cat:1,hint:'1959'},
+  {icon:'🌊',name:'Jet ski',cat:1,hint:'1972'},
+  {icon:'🛴',name:'Electric scooter',cat:1,hint:'2017'},
+  {icon:'🛹',name:'Hoverboard',cat:1,hint:'2015'},
+  {icon:'🍲',name:'Microwave oven',cat:1,hint:'1946'},
+  {icon:'🧊',name:'Fridge-freezer',cat:1,hint:'1927'},
+  {icon:'🧺',name:'Washing machine',cat:1,hint:'1908'},
+  {icon:'🧦',name:'Tumble dryer',cat:1,hint:'1938'},
+  {icon:'❄️',name:'Air conditioning',cat:1,hint:'1902'},
+  {icon:'🍞',name:'Pop-up toaster',cat:1,hint:'1921'},
+  {icon:'🍹',name:'Blender',cat:1,hint:'1922'},
+  {icon:'🔪',name:'Food processor',cat:1,hint:'1971'},
+  {icon:'🥘',name:'Slow cooker',cat:1,hint:'1970'},
+  {icon:'🍟',name:'Air fryer',cat:1,hint:'2010'},
+  {icon:'🪥',name:'Electric toothbrush',cat:1,hint:'1954'},
+  {icon:'💇',name:'Hairdryer',cat:1,hint:'1920'},
+  {icon:'🪢',name:'Velcro',cat:1,hint:'1948'},
+  {icon:'🗒️',name:'Sticky note',cat:1,hint:'1974'},
+  {icon:'🖋️',name:'Ballpoint pen',cat:1,hint:'1938'},
+  {icon:'🖍️',name:'Highlighter',cat:1,hint:'1963'},
+  {icon:'🫧',name:'Bubble wrap',cat:1,hint:'1957'},
+  {icon:'🩹',name:'Duct tape',cat:1,hint:'1942'},
+  {icon:'🧷',name:'Super glue',cat:1,hint:'1942'},
+  {icon:'🧱',name:'Lego',cat:1,hint:'1949'},
+  {icon:'🥏',name:'Frisbee',cat:1,hint:'1948'},
+  {icon:'🧩',name:'Rubik’s cube',cat:1,hint:'1974'},
+  {icon:'🤸',name:'Trampoline',cat:1,hint:'1936'},
+  {icon:'🛹',name:'Skateboard',cat:1,hint:'1950s'},
+  {icon:'📻',name:'Radio broadcast',cat:1,hint:'1920'},
+  {icon:'🎞️',name:'Talking film',cat:1,hint:'1927'},
+  {icon:'📼',name:'VHS tape',cat:1,hint:'1976'},
+  {icon:'🎵',name:'Cassette tape',cat:1,hint:'1963'},
+  {icon:'🎧',name:'MP3 player',cat:1,hint:'1998'},
+  {icon:'🎙️',name:'Walkman',cat:1,hint:'1979'},
+  {icon:'🍿',name:'Streaming',cat:1,hint:'2007'},
+  {icon:'📹',name:'Camcorder',cat:1,hint:'1983'},
+  {icon:'🎛️',name:'Synthesizer',cat:1,hint:'1964'},
+  {icon:'🎸',name:'Electric guitar',cat:1,hint:'1931'},
+  {icon:'💉',name:'Penicillin',cat:1,hint:'1928'},
+  {icon:'🧲',name:'MRI scanner',cat:1,hint:'1977'},
+  {icon:'❤️',name:'Pacemaker',cat:1,hint:'1958'},
+  {icon:'🩸',name:'Insulin',cat:1,hint:'1921'},
+  {icon:'🧫',name:'Polio vaccine',cat:1,hint:'1955'},
+  {icon:'👁️',name:'Contact lenses',cat:1,hint:'1971'},
+  {icon:'🔦',name:'Laser',cat:1,hint:'1960'},
+  {icon:'☀️',name:'Solar panel',cat:1,hint:'1954'},
+  {icon:'☢️',name:'Nuclear power',cat:1,hint:'1951'},
+  {icon:'🔆',name:'LED light',cat:1,hint:'1962'},
+  {icon:'💳',name:'Credit card',cat:1,hint:'1950'},
+  {icon:'🏧',name:'Cash machine',cat:1,hint:'1967'},
+  {icon:'🏷️',name:'Barcode',cat:1,hint:'1952'},
+  {icon:'♻️',name:'Plastic',cat:1,hint:'1907'},
+  {icon:'🪫',name:'Power bank',cat:1,hint:'2000s'},
+  {icon:'📡',name:'Radar',cat:1,hint:'1935'},
+  {icon:'🛗',name:'Spacesuit',cat:1,hint:'1959'}
+];
+var PER_ROUND=10;              // how many objects appear each stage
+var ROUND=[];                  // the random selection for the current stage
+var stage=1, MAX_STAGES=20, usedNames={};   // stage progression + no-repeat tracking
+function pickRound(n){
+  function take(cat,k){
+    var pool=BANK.filter(function(o){return o.cat===cat && !usedNames[o.name];});
+    if(pool.length<k){ // ran through them all — start that category fresh
+      BANK.forEach(function(o){if(o.cat===cat)delete usedNames[o.name];});
+      pool=BANK.filter(function(o){return o.cat===cat;});
+    }
+    for(var i=pool.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=pool[i];pool[i]=pool[j];pool[j]=t;}
+    var sel=pool.slice(0,k);
+    sel.forEach(function(o){usedNames[o.name]=1;});
+    return sel;
+  }
+  var half=Math.floor(n/2);
+  var sel=take(0,half).concat(take(1,n-half));
+  for(var i=sel.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=sel[i];sel[i]=sel[j];sel[j]=t;}
+  return sel;
+}
+var CASES=[
+  {id:0, emoji:'👑', label:'Victoria knew it', sub:'Around in her lifetime (or before)'},
+  {id:1, emoji:'🚫', label:'Came after',       sub:'Invented after 1901'}
+];
+var DIFFS=[
+  {n:'Helper',  showHint:true,  mult:1, note:'Helper: each object shows a date clue'},
+  {n:'Curator', showHint:false, mult:2, note:'Curator: no clues — and DOUBLE points!'}
+];
+var diff=0;
+
+/* ============ SUPABASE ============ */
+var SB_URL='https://wpohvsjkrskhlrayaubp.supabase.co';
+var SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indwb2h2c2prcnNraGxyYXlhdWJwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzMDEzOTcsImV4cCI6MjA5Njg3NzM5N30.Xi07ayGB5CykR-_7QX-b8UsUmMmTbGIlYpctXYgW9JI';
+function sbH(){return {'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'};}
+var GAME_ID='vicmuseum';
+function currentPlayer(){try{return JSON.parse(localStorage.getItem('rna_player')||'null');}catch(e){return null;}}
+function playerName(){var p=currentPlayer();return p?p.name:null;}
+async function sbFetchTop(limit){limit=limit||15;try{var r=await fetch(SB_URL+'/rest/v1/scores?select=name%2Cscore&game=eq.'+GAME_ID+'&order=score.desc&limit='+limit,{headers:sbH()});if(!r.ok)return null;return await r.json();}catch(e){return null;}}
+async function sbInsert(name,score){try{var h=sbH();h['Prefer']='return=minimal';var body={name:name,score:score,game:GAME_ID};var pn=playerName();if(pn)body.player=pn;var r=await fetch(SB_URL+'/rest/v1/scores',{method:'POST',headers:h,body:JSON.stringify(body)});return r.ok;}catch(e){return false;}}
+async function sbQualifies(score){try{var r=await fetch(SB_URL+'/rest/v1/scores?select=score&game=eq.'+GAME_ID+'&order=score.desc&limit=15',{headers:sbH()});if(!r.ok)return true;var rows=await r.json();if(!rows||rows.length<15)return true;return score>rows[rows.length-1].score;}catch(e){return true;}}
+function lbEsc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function lbLoading(){return '<div class="lb-loading"><div class="lb-spin"></div>Loading…</div>';}
+function lbTable(rows,hiN,hiS){if(!rows||!rows.length)return '<div class="lb-msg">No curators yet — be the first!</div>';var med=['I','II','III'],h='<table class="lb"><thead><tr><th>RANK</th><th>CURATOR</th><th>SCORE</th></tr></thead><tbody>',mk=false;rows.forEach(function(r,i){var me=(!mk&&hiN&&r.name===hiN&&r.score===hiS);if(me)mk=true;h+='<tr class="'+(me?'me':'')+'"><td>'+(i<3?med[i]:(i+1))+'</td><td>'+lbEsc(r.name)+'</td><td>'+r.score+'</td></tr>';});return h+'</tbody></table>';}
+async function loadMainBoard(){$('mainboard').innerHTML=lbLoading();$('mainboard').innerHTML=lbTable(await sbFetchTop(15),null,null);}
+async function loadEndBoard(n,s){$('endboard').innerHTML=lbLoading();$('endboard').innerHTML=lbTable(await sbFetchTop(10),n,s);}
+
+/* ============ AUDIO ============ */
+var actx=null;
+function tone(f,d,type,vol,delay){try{if(!actx)actx=new(window.AudioContext||window.webkitAudioContext)();var t0=actx.currentTime+(delay||0);var o=actx.createOscillator(),g=actx.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f,t0);g.gain.setValueAtTime(vol||0.06,t0);g.gain.exponentialRampToValueAtTime(0.001,t0+d);o.connect(g);g.connect(actx.destination);o.start(t0);o.stop(t0+d);}catch(e){}}
+
+/* ============ STARFIELD ============ */
+var starCv=$('stars'),sctx=starCv.getContext('2d'),stars=[];
+function initStars(){
+  starCv.width=$('wrap').clientWidth;starCv.height=$('wrap').clientHeight;
+  stars=[];for(var i=0;i<120;i++)stars.push({x:Math.random()*starCv.width,y:Math.random()*starCv.height,r:Math.random()*1.4+0.3,tw:Math.random()*Math.PI*2});
+}
+function drawStars(){
+  sctx.clearRect(0,0,starCv.width,starCv.height);
+  var t=Date.now()/700;
+  stars.forEach(function(s){var a=0.25+0.45*Math.abs(Math.sin(t+s.tw));sctx.globalAlpha=a;sctx.fillStyle='#f2d27c';sctx.beginPath();sctx.arc(s.x,s.y,s.r,0,Math.PI*2);sctx.fill();});
+  sctx.globalAlpha=1;
+  requestAnimationFrame(drawStars);
+}
+
+/* ============ GAME STATE ============ */
+var board=$('board'),W,H,slots=[],placedCount,score,lives,level,running=false,startTime,lastPlace=0,bayOrder=[],finishTime=0;
+
+function svgEl(tag,attrs){var e=document.createElementNS(SVGNS,tag);for(var k in attrs)e.setAttribute(k,attrs[k]);board.appendChild(e);return e;}
+function svgText(x,y,str,size,fill,wt,anchor){var e=svgEl('text',{x:x,y:y,fill:fill,'font-family':'Rajdhani','font-weight':wt||'700','font-size':size,'text-anchor':anchor||'middle'});e.textContent=str;return e;}
+
+function layout(){
+  W=$('wrap').clientWidth;H=$('wrap').clientHeight;
+  board.setAttribute('viewBox','0 0 '+W+' '+H);
+  var top=H*0.19, bottom=H*0.585;
+  var pad=Math.max(12,W*0.035), gap=Math.max(12,W*0.035);
+  var cw=(W-pad*2-gap)/2, ch=bottom-top;
+  CASES[0].rect={x:pad,            y:top, w:cw, h:ch};
+  CASES[1].rect={x:pad+cw+gap,     y:top, w:cw, h:ch};
+}
+
+function buildScene(){
+  layout();
+  board.innerHTML='';
+  var defs=document.createElementNS(SVGNS,'defs');
+  defs.innerHTML='<radialGradient id="velvet" cx="50%" cy="32%" r="85%">'+
+    '<stop offset="0%" stop-color="#6f2d2d"/><stop offset="100%" stop-color="#3a1616"/></radialGradient>';
+  board.appendChild(defs);
+  slots=[];
+  CASES.forEach(function(c){
+    var r=c.rect;
+    // ornate gold frame with velvet interior
+    var frame=svgEl('rect',{x:r.x,y:r.y,width:r.w,height:r.h,rx:14,fill:'url(#velvet)',stroke:'#E8C36B','stroke-width':5});
+    svgEl('rect',{x:r.x+7,y:r.y+7,width:r.w-14,height:r.h-14,rx:9,fill:'none',stroke:'rgba(242,210,124,0.45)','stroke-width':2});
+    // header label
+    svgText(r.x+r.w/2, r.y+30, c.emoji+'  '+c.label, Math.min(19,r.w*0.10), '#F2D27C','800');
+    svgText(r.x+r.w/2, r.y+48, c.sub, 11, 'rgba(253,243,227,0.72)','600');
+    svgEl('line',{x1:r.x+14,y1:r.y+58,x2:r.x+r.w-14,y2:r.y+58,stroke:'rgba(242,210,124,0.3)','stroke-width':1.5});
+    c.fillN=0;
+    slots.push({id:c.id, x:r.x, y:r.y, w:r.w, h:r.h, rect:r, frame:frame});
+  });
+}
+
+/* sphere-shading + surface gradients for each planet (light from upper-left) */
+function planetDefs(){
+  var d='';
+  // generic 3D shading overlay (dark edge -> light) reused by all
+  d+='<radialGradient id="shade" cx="35%" cy="32%" r="75%">'+
+     '<stop offset="0%" stop-color="rgba(255,255,255,0.45)"/>'+
+     '<stop offset="45%" stop-color="rgba(255,255,255,0)"/>'+
+     '<stop offset="100%" stop-color="rgba(0,0,0,0.55)"/></radialGradient>';
+  // Mercury — grey, cratered
+  d+='<radialGradient id="pMercury" cx="38%" cy="34%" r="75%"><stop offset="0%" stop-color="#b9b3aa"/><stop offset="100%" stop-color="#6e675d"/></radialGradient>';
+  // Venus — pale creamy yellow, swirling clouds
+  d+='<radialGradient id="pVenus" cx="38%" cy="34%" r="75%"><stop offset="0%" stop-color="#f5e6b0"/><stop offset="60%" stop-color="#e3c07a"/><stop offset="100%" stop-color="#b98f48"/></radialGradient>';
+  // Earth — blue oceans
+  d+='<radialGradient id="pEarth" cx="38%" cy="34%" r="78%"><stop offset="0%" stop-color="#5aa9e6"/><stop offset="55%" stop-color="#2f6fc0"/><stop offset="100%" stop-color="#163e74"/></radialGradient>';
+  // Mars — rusty red
+  d+='<radialGradient id="pMars" cx="38%" cy="34%" r="75%"><stop offset="0%" stop-color="#e08454"/><stop offset="60%" stop-color="#c1502e"/><stop offset="100%" stop-color="#7d2f1a"/></radialGradient>';
+  // Jupiter — banded tan/orange
+  d+='<linearGradient id="pJupiter" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#e8d2a8"/><stop offset="20%" stop-color="#c9a06a"/><stop offset="40%" stop-color="#e3c79a"/><stop offset="60%" stop-color="#b07d4a"/><stop offset="80%" stop-color="#dcbf8e"/><stop offset="100%" stop-color="#9c6b3e"/></linearGradient>';
+  // Saturn — pale gold bands
+  d+='<linearGradient id="pSaturn" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#f0e0b0"/><stop offset="35%" stop-color="#d9bd80"/><stop offset="65%" stop-color="#e8d49a"/><stop offset="100%" stop-color="#c2a062"/></linearGradient>';
+  // Uranus — pale cyan
+  d+='<radialGradient id="pUranus" cx="38%" cy="34%" r="78%"><stop offset="0%" stop-color="#c8f4f4"/><stop offset="60%" stop-color="#9fe0e6"/><stop offset="100%" stop-color="#5fa9b8"/></radialGradient>';
+  // Neptune — deep vivid blue
+  d+='<radialGradient id="pNeptune" cx="38%" cy="34%" r="78%"><stop offset="0%" stop-color="#5a7fe0"/><stop offset="55%" stop-color="#2f4fc0"/><stop offset="100%" stop-color="#1a2f7d"/></radialGradient>';
+  // Saturn/Uranus ring gradient
+  d+='<linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="rgba(220,200,150,0)"/><stop offset="25%" stop-color="rgba(230,215,170,0.85)"/><stop offset="50%" stop-color="rgba(255,245,210,0.95)"/><stop offset="75%" stop-color="rgba(230,215,170,0.85)"/><stop offset="100%" stop-color="rgba(220,200,150,0)"/></linearGradient>';
+  return d;
+}
+
+/* draw a realistic planet as an SVG group at (x,y) with radius r */
+function svgPlanet(p,x,y,rOverride){
+  var r=rOverride||p.r;
+  var g=document.createElementNS(SVGNS,'g');
+  // clip so surface features stay inside the disc
+  var clipId='clip'+p.name+Math.floor(Math.random()*1e6);
+  var clip=document.createElementNS(SVGNS,'clipPath');clip.setAttribute('id',clipId);
+  var clipC=document.createElementNS(SVGNS,'circle');clipC.setAttribute('cx',x);clipC.setAttribute('cy',y);clipC.setAttribute('r',r);
+  clip.appendChild(clipC);g.appendChild(clip);
+
+  // back ring half (behind planet) for ringed planets
+  if(p.ring){
+    var ringB=document.createElementNS(SVGNS,'ellipse');
+    ringB.setAttribute('cx',x);ringB.setAttribute('cy',y);ringB.setAttribute('rx',r*2.0);ringB.setAttribute('ry',r*0.5);
+    ringB.setAttribute('fill','none');ringB.setAttribute('stroke','url(#ringGrad)');ringB.setAttribute('stroke-width',r*0.42);
+    ringB.setAttribute('opacity','0.55');ringB.setAttribute('transform','rotate(-20 '+x+' '+y+')');
+    g.appendChild(ringB);
+  }
+
+  // base sphere
+  var base=document.createElementNS(SVGNS,'circle');
+  base.setAttribute('cx',x);base.setAttribute('cy',y);base.setAttribute('r',r);
+  base.setAttribute('fill','url(#p'+p.name+')');
+  g.appendChild(base);
+
+  // surface features (clipped to disc)
+  var feat=document.createElementNS(SVGNS,'g');feat.setAttribute('clip-path','url(#'+clipId+')');
+  function ell(cx,cy,rx,ry,fill,op,rot){var e=document.createElementNS(SVGNS,'ellipse');e.setAttribute('cx',cx);e.setAttribute('cy',cy);e.setAttribute('rx',rx);e.setAttribute('ry',ry);e.setAttribute('fill',fill);e.setAttribute('opacity',op);if(rot)e.setAttribute('transform','rotate('+rot+' '+cx+' '+cy+')');feat.appendChild(e);}
+  function circ(cx,cy,rr,fill,op){var e=document.createElementNS(SVGNS,'circle');e.setAttribute('cx',cx);e.setAttribute('cy',cy);e.setAttribute('r',rr);e.setAttribute('fill',fill);e.setAttribute('opacity',op);feat.appendChild(e);}
+  var n=p.name;
+  if(n==='Mercury'){
+    for(var i=0;i<7;i++)circ(x-r+ (Math.random()*2*r),y-r+(Math.random()*2*r),r*(0.08+Math.random()*0.13),'rgba(60,55,48,0.5)',1);
+    for(var i2=0;i2<5;i2++)circ(x-r+(Math.random()*2*r),y-r+(Math.random()*2*r),r*0.06,'rgba(255,255,255,0.18)',1);
+  }else if(n==='Venus'){
+    ell(x,y-r*0.3,r*0.9,r*0.18,'rgba(255,240,200,0.5)',1,-12);
+    ell(x,y+r*0.1,r*0.95,r*0.2,'rgba(200,150,90,0.4)',1,-12);
+    ell(x,y+r*0.45,r*0.8,r*0.15,'rgba(255,235,190,0.4)',1,-12);
+  }else if(n==='Earth'){
+    // green landmasses
+    ell(x-r*0.3,y-r*0.2,r*0.4,r*0.3,'#3c8a4a',0.95,20);
+    ell(x+r*0.35,y+r*0.25,r*0.35,r*0.45,'#357d42',0.95,-10);
+    ell(x+r*0.1,y-r*0.5,r*0.25,r*0.18,'#3c8a4a',0.9,0);
+    // white clouds
+    ell(x-r*0.1,y+r*0.1,r*0.5,r*0.14,'rgba(255,255,255,0.45)',1,15);
+    circ(x,y+r*0.75,r*0.5,'rgba(255,255,255,0.5)',0.6);
+  }else if(n==='Mars'){
+    circ(x-r*0.3,y-r*0.3,r*0.18,'rgba(120,50,28,0.6)',1);
+    ell(x+r*0.25,y+r*0.3,r*0.3,r*0.2,'rgba(150,70,40,0.5)',1,10);
+    ell(x,y-r*0.7,r*0.5,r*0.18,'rgba(255,255,255,0.7)',1,0); // polar cap
+    ell(x,y+r*0.78,r*0.4,r*0.14,'rgba(255,255,255,0.6)',1,0);
+  }else if(n==='Jupiter'){
+    ell(x,y-r*0.45,r*1.05,r*0.13,'rgba(150,100,60,0.55)',1,0);
+    ell(x,y-r*0.1,r*1.05,r*0.11,'rgba(230,210,170,0.5)',1,0);
+    ell(x,y+r*0.3,r*1.05,r*0.14,'rgba(140,90,55,0.5)',1,0);
+    ell(x+r*0.35,y+r*0.28,r*0.22,r*0.13,'#c0432e',0.85,0); // Great Red Spot
+  }else if(n==='Saturn'){
+    ell(x,y-r*0.4,r*1.05,r*0.12,'rgba(200,165,110,0.5)',1,0);
+    ell(x,y,r*1.05,r*0.12,'rgba(245,228,180,0.5)',1,0);
+    ell(x,y+r*0.4,r*1.05,r*0.12,'rgba(190,155,100,0.5)',1,0);
+  }else if(n==='Uranus'){
+    ell(x,y-r*0.2,r*0.95,r*0.1,'rgba(255,255,255,0.18)',1,0);
+    ell(x,y+r*0.25,r*0.9,r*0.1,'rgba(120,200,210,0.3)',1,0);
+  }else if(n==='Neptune'){
+    ell(x+r*0.2,y+r*0.25,r*0.22,r*0.14,'rgba(20,30,90,0.6)',1,0); // dark spot
+    ell(x,y-r*0.3,r*0.85,r*0.1,'rgba(255,255,255,0.18)',1,0);
+  }
+  g.appendChild(feat);
+
+  // 3D shading overlay
+  var shade=document.createElementNS(SVGNS,'circle');
+  shade.setAttribute('cx',x);shade.setAttribute('cy',y);shade.setAttribute('r',r);
+  shade.setAttribute('fill','url(#shade)');
+  g.appendChild(shade);
+
+  // front ring half (over planet) for ringed planets
+  if(p.ring){
+    var ringF=document.createElementNS(SVGNS,'path');
+    // draw front arc of the ring ellipse
+    var rx=r*2.0,ry=r*0.5;
+    ringF.setAttribute('d','M '+(x-rx)+' '+y+' A '+rx+' '+ry+' 0 0 0 '+(x+rx)+' '+y);
+    ringF.setAttribute('fill','none');ringF.setAttribute('stroke','url(#ringGrad)');ringF.setAttribute('stroke-width',r*0.42);
+    ringF.setAttribute('opacity','0.95');ringF.setAttribute('transform','rotate(-20 '+x+' '+y+')');
+    g.appendChild(ringF);
+  }
+  return g;
+}
+
+/* ============ HOLDING BAY (draggable planets) ============ */
+function lives_render(){
+  var row=$('livesrow');row.innerHTML='';
+  for(var i=0;i<3;i++){
+    var s=document.createElementNS(SVGNS,'svg');
+    s.setAttribute('viewBox','0 0 24 24');s.setAttribute('class','life'+(i<lives?'':' gone'));
+    s.innerHTML='<path d="M12 21 C5 15 2 11.6 2 8.2 2 5.4 4.2 3.4 6.8 3.4 8.6 3.4 10.5 4.4 12 6.4 13.5 4.4 15.4 3.4 17.2 3.4 19.8 3.4 22 5.4 22 8.2 22 11.6 19 15 12 21Z" fill="#FF6B8A"/>';
+    row.appendChild(s);
+  }
+}
+function buildBay(){
+  var bay=$('bay');bay.innerHTML='';
+  // shuffle the objects so they appear in a random order
+  bayOrder=ROUND.map(function(p,i){return i;});
+  for(var k=bayOrder.length-1;k>0;k--){var j=Math.floor(Math.random()*(k+1));var t=bayOrder[k];bayOrder[k]=bayOrder[j];bayOrder[j]=t;}
+  bayOrder.forEach(function(idx){
+    var p=ROUND[idx];
+    var d=document.createElement('div');
+    d.className='bay-planet';d.dataset.planet=idx;
+    d.innerHTML='<span class="emoji">'+p.icon+'</span><span class="pname">'+p.name+'</span>'+
+      (DIFFS[diff].showHint?'<span class="phint">'+p.hint+'</span>':'');
+    attachDrag(d,idx);
+    bay.appendChild(d);
+  });
+}
+
+/* standalone mini-SVG of a planet, sized to fit a box of `sz` px (for bay + drag ghost) */
+function miniPlanetSVG(p,sz){
+  var c=sz/2, r=sz*0.40;
+  // ringed planets need room for the ring, so shrink the body a touch
+  if(p.ring)r=sz*0.32;
+  var inner=svgPlanet(p,c,c,r);
+  var holder=document.createElementNS(SVGNS,'svg');
+  holder.setAttribute('viewBox','0 0 '+sz+' '+sz);
+  holder.setAttribute('width',sz);holder.setAttribute('height',sz);
+  // defs must be included for gradients to resolve in a standalone svg
+  var defs=document.createElementNS(SVGNS,'defs');defs.innerHTML=planetDefs();
+  holder.appendChild(defs);holder.appendChild(inner);
+  return holder.outerHTML;
+}
+
+/* ============ DRAG LOGIC (mouse + touch) ============ */
+var dragging=null,ghost=null;
+function attachDrag(el,planetIdx){
+  function start(clientX,clientY){
+    if(!running)return;
+    dragging={el:el,idx:planetIdx};
+    el.classList.add('dragging');
+    ghost=document.createElement('div');ghost.className='drag-ghost';
+    ghost.textContent=ROUND[planetIdx].icon;
+    document.body.appendChild(ghost);
+    moveGhost(clientX,clientY);
+    tone(440,0.06,'sine',0.04);
+  }
+  function moveGhost(x,y){if(ghost){ghost.style.left=x+'px';ghost.style.top=y+'px';}highlightSlot(x,y);}
+  function end(clientX,clientY){
+    if(!dragging)return;
+    el.classList.remove('dragging');
+    var slot=slotAt(clientX,clientY);
+    if(ghost){ghost.remove();ghost=null;}
+    clearHighlights();
+    if(slot)tryPlace(dragging.idx,slot,el);
+    dragging=null;
+  }
+  el.addEventListener('mousedown',function(e){e.preventDefault();start(e.clientX,e.clientY);
+    var mm=function(ev){moveGhost(ev.clientX,ev.clientY);};
+    var mu=function(ev){end(ev.clientX,ev.clientY);document.removeEventListener('mousemove',mm);document.removeEventListener('mouseup',mu);};
+    document.addEventListener('mousemove',mm);document.addEventListener('mouseup',mu);});
+  el.addEventListener('touchstart',function(e){e.preventDefault();var t=e.touches[0];start(t.clientX,t.clientY);},{passive:false});
+  el.addEventListener('touchmove',function(e){e.preventDefault();var t=e.touches[0];moveGhost(t.clientX,t.clientY);},{passive:false});
+  el.addEventListener('touchend',function(e){e.preventDefault();var t=e.changedTouches[0];end(t.clientX,t.clientY);},{passive:false});
+}
+function boardPoint(clientX,clientY){
+  var rect=board.getBoundingClientRect();
+  return {x:(clientX-rect.left)*(W/rect.width),y:(clientY-rect.top)*(H/rect.height)};
+}
+function slotAt(clientX,clientY){
+  var pt=boardPoint(clientX,clientY);
+  for(var i=0;i<slots.length;i++){
+    var s=slots[i];
+    if(pt.x>=s.x&&pt.x<=s.x+s.w&&pt.y>=s.y&&pt.y<=s.y+s.h)return s;
+  }
+  return null;
+}
+function highlightSlot(clientX,clientY){
+  clearHighlights();
+  var s=slotAt(clientX,clientY);
+  if(s){s.frame.setAttribute('stroke','#5BBE74');s.frame.setAttribute('stroke-width','7');}
+}
+function clearHighlights(){slots.forEach(function(s){s.frame.setAttribute('stroke','#E8C36B');s.frame.setAttribute('stroke-width','5');});}
+
+/* ============ PLACEMENT ============ */
+function tryPlace(itemIdx,slot,bayEl){
+  var item=ROUND[itemIdx];
+  var cx=slot.x+slot.w/2, cy=slot.y+slot.h/2;
+  if(item.cat===slot.id){
+    // correct case!
+    var c=CASES[slot.id];
+    var k=c.fillN++;
+    var cols=Math.max(2,Math.floor(slot.w/64));
+    var stepX=slot.w/cols, stepY=46;
+    var col=k%cols, row=Math.floor(k/cols);
+    var ix=slot.x+stepX*(col+0.5);
+    var iy=slot.y+78+row*stepY;
+    var t=svgText(ix,iy,item.icon,30,'#fff','700');
+    var nm=svgText(ix,iy+15,item.name,9.5,'rgba(253,243,227,0.85)','700');
+    t.style.opacity='0';nm.style.opacity='0';
+    t.style.transition=nm.style.transition='opacity .3s ease';
+    requestAnimationFrame(function(){t.style.opacity='1';nm.style.opacity='1';});
+    bayEl.remove();
+    placedCount++;
+    $('placedval').textContent=placedCount+'/'+ROUND.length;
+    // SPEED SCORING: the quicker you sort each object, the bigger the bonus
+    var now=Date.now();
+    var dt=(now-lastPlace)/1000; lastPlace=now;
+    var speed=Math.max(0,Math.round((4.5-dt)*40)); // up to ~180 for an instant drop, 0 after ~4.5s
+    var pts=Math.round((100+speed)*(DIFFS[diff].mult||1)); score+=pts; $('scoreval').textContent=score;
+    tone(660,0.1,'sine',0.06);tone(990,0.16,'sine',0.06,0.1);
+    flashPop((speed>=120?'⚡ +':'+')+pts,cx,slot.y+64,speed>=120?'#F2D27C':'#5BBE74');
+    if(placedCount>=ROUND.length)setTimeout(stageCleared,500);
+  }else{
+    // wrong case — keep the object so they can try the other one
+    lives--;lives_render();
+    tone(160,0.25,'sawtooth',0.07);
+    flashPop('✗ Not this case!',cx,slot.y+64,'#C0392B');
+    shakeBoard();
+    if(lives<=0)endGame(false);
+  }
+}
+function flashPop(txt,x,y,col){
+  var rect=board.getBoundingClientRect();
+  var px=rect.left+x*(rect.width/W),py=rect.top+y*(rect.height/H);
+  var d=document.createElement('div');
+  d.style.cssText='position:fixed;left:'+px+'px;top:'+py+'px;transform:translate(-50%,-50%);z-index:30;'+
+    'font-family:Orbitron,sans-serif;font-weight:900;font-size:18px;pointer-events:none;color:'+col+';'+
+    'text-shadow:0 0 14px currentColor;transition:all .8s ease-out;white-space:nowrap;';
+  d.textContent=txt;document.body.appendChild(d);
+  requestAnimationFrame(function(){d.style.top=(py-40)+'px';d.style.opacity='0';});
+  setTimeout(function(){d.remove();},800);
+}
+function shakeBoard(){board.animate?board.animate([{transform:'translateX(0)'},{transform:'translateX(-6px)'},{transform:'translateX(5px)'},{transform:'translateX(0)'}],{duration:300}):0;}
+
+/* ============ FLOW ============ */
+function stageCleared(){
+  // bank a speed bonus for finishing the stage quickly
+  var elapsed=(Date.now()-startTime)/1000;
+  var timeBonus=Math.round(Math.max(0,(40-elapsed)*15)*(DIFFS[diff].mult||1));
+  score+=timeBonus;$('scoreval').textContent=score;
+  tone(660,0.1,'sine',0.06);tone(880,0.12,'sine',0.06,0.1);tone(1100,0.2,'sine',0.06,0.2);
+  if(stage>=MAX_STAGES){finishTime=elapsed;endGame(true);return;}
+  showInstruct('✅ Stage '+stage+' — perfect 10!','Get ready: 10 brand-new objects…');
+  stage++;
+  setTimeout(loadStage,1000);
+}
+function loadStage(){
+  ROUND=pickRound(PER_ROUND);
+  placedCount=0;$('placedval').textContent='0/'+ROUND.length;
+  $('levelval').textContent=stage;
+  startTime=Date.now();lastPlace=Date.now();
+  buildScene();buildBay();
+  showInstruct('Stage '+stage+' — sort all 10 to go on!','One wrong ends the game · '+(DIFFS[diff].showHint?'date clues shown':'no clues · double points'));
+}
+function startRound(){loadStage();}
+function showInstruct(big,small){$('instructBig').textContent=big;$('instructSmall').textContent=small;}
+
+/* ============ RANKS / END ============ */
+var pendingScore=0,pendingSaved=false;
+async function endGame(won){
+  running=false;
+  if(timerInt){clearInterval(timerInt);timerInt=null;}
+  var stagesCleared=won?MAX_STAGES:(stage-1);
+  var rank,col;
+  if(won){rank='MUSEUM MASTER';col='#F2D27C';}
+  else if(stagesCleared>=12){rank='HEAD CURATOR';col='#E8C36B';}
+  else if(stagesCleared>=8){rank='SENIOR CURATOR';col='#36C2FF';}
+  else if(stagesCleared>=4){rank='CURATOR';col='#5BBE74';}
+  else if(stagesCleared>=1){rank='TRAINEE';col='#C0653A';}
+  else{rank='VISITOR';col='#D8B894';}
+  $('endbadge').textContent=won?'★':'✦';$('endbadge').style.color=col;$('endbadge').style.borderColor=col;$('endbadge').style.boxShadow='0 0 30px '+col;
+  $('endrank').textContent=rank;$('endrank').style.color=col;
+  $('endtitle').textContent=won?'MUSEUM COMPLETE!':'ONE WRONG — GAME OVER';
+  $('endscore').textContent=score;
+  if(won){
+    $('endstats').innerHTML='Amazing! You cleared all <b style="color:#E8C36B;">'+MAX_STAGES+'</b> stages perfectly!';
+  }else{
+    $('endstats').innerHTML='You cleared <b style="color:#E8C36B;">'+stagesCleared+'</b> perfect '+(stagesCleared===1?'stage':'stages')+' before a slip. Try again, curator!';
+  }
+  if(won){tone(523,0.14,'sine',0.06);tone(659,0.14,'sine',0.06,0.15);tone(784,0.3,'sine',0.06,0.3);}
+  else{tone(220,0.3,'sawtooth',0.07);tone(110,0.5,'sawtooth',0.07,0.25);}
+  $('endpanel').style.display='flex';
+  pendingScore=score;pendingSaved=false;
+  $('hsbadge').style.display='none';$('nameform').style.display='none';
+  if(score>0){
+    var p=currentPlayer();
+    if(p){sbInsert(p.name,score).then(function(){loadEndBoard(p.name,score);});$('hsbadge').textContent='✓ Saved to '+p.name+"'s record";$('hsbadge').style.display='block';}
+    else{sbQualifies(score).then(function(q){if(q){$('hsbadge').textContent='🏆 Top score! Log your name:';$('hsbadge').style.display='block';$('nameform').style.display='flex';$('nameinput').value='';setTimeout(function(){try{$('nameinput').focus();}catch(e){}},300);}});}
+  }
+  loadEndBoard(null,null);
+}
+$('savescore').addEventListener('click',async function(){
+  if(pendingSaved)return;
+  var name=$('nameinput').value.trim().slice(0,14)||'Mystery curator';
+  $('savescore').textContent='Saving…';$('savescore').disabled=true;
+  var ok=await sbInsert(name,pendingScore);
+  if(ok){pendingSaved=true;$('hsbadge').style.display='none';$('nameform').style.display='none';tone(660,0.1,'sine',0.06);tone(990,0.2,'sine',0.06,0.12);loadEndBoard(name,pendingScore);}
+  else{$('savescore').textContent='Save';$('savescore').disabled=false;$('hsbadge').textContent='Connection error — try again';$('hsbadge').style.display='block';}
+});
+$('nameinput').addEventListener('keydown',function(e){if(e.key==='Enter')$('savescore').click();});
+
+/* ============ DIFFICULTY + BUTTONS ============ */
+$('difficulty').addEventListener('click',function(e){
+  var b=e.target.closest('.diffbtn');if(!b)return;
+  diff=parseInt(b.dataset.d,10);
+  document.querySelectorAll('.diffbtn').forEach(function(x){x.classList.toggle('on',x===b);});
+  $('diffNote').textContent=DIFFS[diff].note;
+});
+function openBoard(){$('boardpanel').style.display='flex';loadMainBoard();}
+$('boardbtn').addEventListener('click',openBoard);
+$('boardbtn2').addEventListener('click',openBoard);
+$('closeboard').addEventListener('click',function(){$('boardpanel').style.display='none';});
+$('refreshboard').addEventListener('click',loadMainBoard);
+
+function startGame(){
+  score=0;lives=1;stage=1;usedNames={};running=true;
+  $('scoreval').textContent='0';$('levelval').textContent='1';lives_render();
+  $('startpanel').style.display='none';$('endpanel').style.display='none';$('boardpanel').style.display='none';
+  if(timerInt)clearInterval(timerInt);timerInt=null;
+  startRound();
+}
+var timerInt=null;
+$('launchbtn').addEventListener('click',startGame);
+$('againbtn').addEventListener('click',startGame);
+
+window.addEventListener('resize',function(){initStars();if(running)buildScene();});
+
+/* init */
+initStars();drawStars();lives=1;lives_render();layout();
+})();
+</script>
+</body>
+</html>
