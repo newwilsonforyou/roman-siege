@@ -379,7 +379,9 @@ var WAVES=[
   {label:'Shields XI\u2013XX',      min:11, max:20,  count:6, time:8200},
   {label:'Shields XXI\u2013XXXIX',  min:21, max:39,  count:6, time:7600},
   {label:'Shields XL\u2013LXXXIX',  min:40, max:89,  count:6, time:7200},
-  {label:'The full legion I\u2013C', min:1,  max:100, count:8, time:6200}
+  {label:'The full legion I\u2013C', min:1,  max:100, count:8, time:6200},
+  {label:'Big shields C\u2013D',     min:100,max:500, count:7, time:6400},
+  {label:'Huge shields D\u2013M',    min:500,max:1000,count:7, time:6600}
 ];
 var TAUNTS=['Read my shield!','Veni, vidi!','Too slow!','Hail Caesar!',
             'You cannot count!','For Rome!','Tick tock!','Is it... VII?'];
@@ -392,7 +394,7 @@ var hearts,score,combo,maxCombo,waveIdx,soldierIdx,hits,current,raf,running=fals
    ROMAN NUMERALS
    ═══════════════════════════════════════════ */
 function toRoman(n){
-  var map=[[100,'C'],[90,'XC'],[50,'L'],[40,'XL'],[10,'X'],[9,'IX'],[5,'V'],[4,'IV'],[1,'I']],r='';
+  var map=[[1000,'M'],[900,'CM'],[500,'D'],[400,'CD'],[100,'C'],[90,'XC'],[50,'L'],[40,'XL'],[10,'X'],[9,'IX'],[5,'V'],[4,'IV'],[1,'I']],r='';
   for(var i=0;i<map.length;i++){while(n>=map[i][0]){r+=map[i][1];n-=map[i][0];}}
   return r;
 }
@@ -449,14 +451,20 @@ function setCombo(bump){
     if(bump){comboEl.classList.remove('bump');void comboEl.offsetWidth;comboEl.classList.add('bump');}
   }else comboEl.style.visibility='hidden';
 }
+function waveRoman(i){
+  // roman numeral for wave number i (1-based); covers well beyond what's needed
+  var map=[[10,'X'],[9,'IX'],[5,'V'],[4,'IV'],[1,'I']],n=i+1,r='';
+  for(var k=0;k<map.length;k++){while(n>=map[k][0]){r+=map[k][1];n-=map[k][0];}}
+  return r;
+}
 function setWaveLabel(){
-  waveLabel.innerHTML='WAVE '+ROMANWAVE[waveIdx]+' &middot; '+WAVES[waveIdx].label.toUpperCase().replace('\u2013','&ndash;');
+  waveLabel.innerHTML='WAVE '+waveRoman(waveIdx)+' &middot; '+WAVES[waveIdx].label.toUpperCase().replace('\u2013','&ndash;');
 }
 
 /* ═══════════════════════════════════════════
    SOLDIER SPRITES
    ═══════════════════════════════════════════ */
-function shieldFont(s){return s.length<=2?30:(s.length<=4?24:(s.length<=6?19:15));}
+function shieldFont(s){return s.length<=2?30:(s.length<=4?24:(s.length<=6?19:(s.length<=9?14:11)));}
 function soldierSVG(rom,type){
   var fs=shieldFont(rom);
   var tunic   = type==='gold'?'#C9952B':'#A4302C';
@@ -507,13 +515,17 @@ function buildAnswers(correct,w){
   if(rom.indexOf('XL')>-1)tricks.push(correct+20);
   if(rom.indexOf('LX')>-1)tricks.push(correct-20);
   if(rom.indexOf('XC')>-1)tricks.push(correct-40);
-  tricks.push(correct+1,correct-1,correct+2,correct-2,correct+10,correct-10,correct+5,correct-5);
+  if(rom.indexOf('CD')>-1)tricks.push(correct+200);
+  if(rom.indexOf('CM')>-1)tricks.push(correct-400);
+  var step = correct>=400?100 : correct>=100?50 : correct>=40?10 : 5;
+  tricks.push(correct+1,correct-1,correct+step,correct-step,correct+2*step,correct-2*step,correct+10,correct-10);
+  var hi = Math.max(120, w.max+5);
   var guard=0;
   while(opts.length<4&&guard<300){
     guard++;
     var c=tricks.length&&Math.random()<0.7?tricks.splice(Math.floor(Math.random()*tricks.length),1)[0]
       :w.min+Math.floor(Math.random()*(w.max-w.min+1));
-    if(c>=1&&c<=120&&!pool[c]){pool[c]=1;opts.push(c);}
+    if(c>=1&&c<=hi&&!pool[c]){pool[c]=1;opts.push(c);}
   }
   opts.sort(function(){return Math.random()-.5;});
   answersEl.innerHTML='';
@@ -694,13 +706,21 @@ function next(){
       tone(660,0.15,'triangle',0.07);tone(880,0.25,'triangle',0.07,0.16);
     }
     waveIdx++;
-    if(waveIdx>=WAVES.length){endGame(true);return;}
+    if(waveIdx>=WAVES.length){ addEndlessWave(); }
     soldierIdx=0;mistakesThisWave=0;setWaveLabel();showBanner();
   }else spawn();
 }
+var BASE_WAVE_COUNT=7;
+function addEndlessWave(){
+  var bonusN=waveIdx-BASE_WAVE_COUNT;            // 0,1,2,...
+  // full range up to M, getting faster (less time) each extra wave, with more soldiers
+  var time=Math.max(2600, 5800-bonusN*450);      // shrinks but never below 2.6s
+  WAVES.push({label:'The endless legion I\u2013M', min:1, max:1000, count:8+bonusN, time:time});
+}
 function showBanner(){
-  waveText.innerHTML='WAVE '+ROMANWAVE[waveIdx]+'<small></small>';
-  waveText.querySelector('small').textContent=WAVES[waveIdx].label;
+  var bonus=waveIdx>=BASE_WAVE_COUNT;
+  waveText.innerHTML='WAVE '+waveRoman(waveIdx)+'<small></small>';
+  waveText.querySelector('small').textContent=(bonus?'⚔ ENDLESS — faster! ':'')+WAVES[waveIdx].label;
   banner.style.display='flex';
   tone(440,0.14,'triangle',0.06);tone(660,0.18,'triangle',0.06,0.16);
   setTimeout(function(){banner.style.display='none';spawn();},1600);
@@ -768,23 +788,20 @@ function medalSVG(kind){
 var pendingScore=0,pendingSaved=false;
 async function endGame(won){
   running=false;cancelAnimationFrame(raf);disableAnswers();
-  if(won){
-    var kind=hearts===3?'gold':hearts===2?'silver':'bronze';
-    var lines={gold:'A flawless defence \u2014 not one scratch on the gate!',
-               silver:'The castle stands strong. One more push for gold!',
-               bronze:'Victory, just barely. The legion will return\u2026'};
-    $('endeyebrow').textContent='VICTORY';
-    $('medal').style.display='block';
-    $('medal').innerHTML=medalSVG(kind);
-    $('endtitle').textContent={gold:'Gold medal',silver:'Silver medal',bronze:'Bronze medal'}[kind];
-    $('endstats').textContent=lines[kind]+' \u00b7 '+hits+' soldiers stopped \u00b7 best combo \u00d7'+maxCombo;
+  var reachedBase=waveIdx>=BASE_WAVE_COUNT;  // got into the endless legion
+  var kind = reachedBase ? 'gold' : (waveIdx>=3 ? 'silver' : 'bronze');
+  if(reachedBase){
+    $('endeyebrow').textContent='LEGENDARY STAND';
+    $('medal').style.display='block';$('medal').innerHTML=medalSVG('gold');
+    $('endtitle').textContent='Gold medal';
+    $('endstats').textContent='You held the gate into the endless legion! Reached wave '+waveRoman(waveIdx)+' \u00b7 '+hits+' soldiers stopped \u00b7 best combo \u00d7'+maxCombo;
     tone(523,0.16,'triangle',0.07);tone(659,0.16,'triangle',0.07,0.18);tone(784,0.34,'triangle',0.07,0.36);
     confetti();
   }else{
-    $('endeyebrow').textContent='DEFEAT';
-    $('medal').style.display='none';
-    $('endtitle').textContent='The gate has fallen!';
-    $('endstats').textContent=hits+' soldiers stopped \u00b7 best combo \u00d7'+maxCombo+' \u00b7 train up and try again';
+    $('endeyebrow').textContent='THE GATE HAS FALLEN';
+    $('medal').style.display='block';$('medal').innerHTML=medalSVG(kind);
+    $('endtitle').textContent=(kind==='silver'?'Silver medal':'Bronze medal');
+    $('endstats').textContent='Reached wave '+waveRoman(waveIdx)+' \u00b7 '+hits+' soldiers stopped \u00b7 best combo \u00d7'+maxCombo+' \u00b7 push further next time!';
     tone(220,0.3,'sawtooth',0.08);tone(130,0.55,'sawtooth',0.08,0.28);
   }
   $('finalscore').textContent=score+' pts';
@@ -847,6 +864,7 @@ $('refreshboard').addEventListener('click',loadMainBoard);
    ═══════════════════════════════════════════ */
 function reset(){
   hearts=3;score=0;combo=1;maxCombo=1;waveIdx=0;soldierIdx=0;hits=0;current=null;mistakesThisWave=0;
+  WAVES.length=BASE_WAVE_COUNT; // drop any endless waves from a previous run
   soldiersEl.innerHTML='';fx.innerHTML='';
   particles.forEach(function(p){p.el.remove();});particles=[];
   renderHearts(-1);scoreEl.textContent='0';setCombo(false);setWaveLabel();updateFury();

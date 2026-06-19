@@ -142,10 +142,10 @@
   <!-- START -->
   <div class="panel" id="startpanel">
     <div class="title">THE VICTORIAN<br>MUSEUM</div>
-    <div class="tagline">You're a museum curator in Queen Victoria's England! Drag each object into the right case — would Queen Victoria have seen it, or did it come later? Sort all <b>10</b> correctly and you move up to the next stage with 10 brand-new objects. But be careful — <b>one wrong answer ends the game!</b> How many stages can you clear?</div>
+    <div class="tagline">You're a museum curator in Queen Victoria's England! Drag each object into the right case — would Queen Victoria have seen it, or did it come later? Sort the whole set of <b>10</b>. Get them <b>all correct</b> and you move up to the next stage with 10 brand-new objects. Make a slip and you still finish the set — but it'll be your last stage. How far can you get?</div>
     <div class="chip-row">
-      <div class="chip">🏛️ Clear stages of <b>10</b></div>
-      <div class="chip">💥 One wrong = game over</div>
+      <div class="chip">🏛️ Sort sets of <b>10</b></div>
+      <div class="chip">⭐ All correct = next stage</div>
       <div class="chip">🎲 New objects every stage</div>
       <div class="chip">⚡ Faster = more points</div>
     </div>
@@ -406,7 +406,7 @@ var BANK=[
 ];
 var PER_ROUND=10;              // how many objects appear each stage
 var ROUND=[];                  // the random selection for the current stage
-var stage=1, MAX_STAGES=20, usedNames={};   // stage progression + no-repeat tracking
+var stage=1, MAX_STAGES=20, usedNames={}, stageMistakes=0;   // stage progression + no-repeat tracking + perfect-run flag
 function pickRound(n){
   function take(cat,k){
     var pool=BANK.filter(function(o){return o.cat===cat && !usedNames[o.name];});
@@ -625,12 +625,15 @@ function svgPlanet(p,x,y,rOverride){
 /* ============ HOLDING BAY (draggable planets) ============ */
 function lives_render(){
   var row=$('livesrow');row.innerHTML='';
-  for(var i=0;i<3;i++){
-    var s=document.createElementNS(SVGNS,'svg');
-    s.setAttribute('viewBox','0 0 24 24');s.setAttribute('class','life'+(i<lives?'':' gone'));
-    s.innerHTML='<path d="M12 21 C5 15 2 11.6 2 8.2 2 5.4 4.2 3.4 6.8 3.4 8.6 3.4 10.5 4.4 12 6.4 13.5 4.4 15.4 3.4 17.2 3.4 19.8 3.4 22 5.4 22 8.2 22 11.6 19 15 12 21Z" fill="#FF6B8A"/>';
-    row.appendChild(s);
-  }
+  var s=document.createElementNS(SVGNS,'svg');
+  s.setAttribute('viewBox','0 0 24 24');s.setAttribute('class','life'+(stageMistakes===0?'':' gone'));
+  var col=stageMistakes===0?'#FFD23F':'#7a5a2a';
+  s.innerHTML='<path d="M12 21 C5 15 2 11.6 2 8.2 2 5.4 4.2 3.4 6.8 3.4 8.6 3.4 10.5 4.4 12 6.4 13.5 4.4 15.4 3.4 17.2 3.4 19.8 3.4 22 5.4 22 8.2 22 11.6 19 15 12 21Z" fill="'+col+'"/>';
+  row.appendChild(s);
+  var t=document.createElement('span');
+  t.style.cssText='font-size:11px;font-weight:700;margin-left:6px;color:'+(stageMistakes===0?'#E8C36B':'#C08a4a')+';align-self:center;';
+  t.textContent=stageMistakes===0?'PERFECT':'last stage';
+  row.appendChild(t);
 }
 function buildBay(){
   var bay=$('bay');bay.innerHTML='';
@@ -741,14 +744,13 @@ function tryPlace(itemIdx,slot,bayEl){
     var pts=Math.round((100+speed)*(DIFFS[diff].mult||1)); score+=pts; $('scoreval').textContent=score;
     tone(660,0.1,'sine',0.06);tone(990,0.16,'sine',0.06,0.1);
     flashPop((speed>=120?'⚡ +':'+')+pts,cx,slot.y+64,speed>=120?'#F2D27C':'#5BBE74');
-    if(placedCount>=ROUND.length)setTimeout(stageCleared,500);
+    if(placedCount>=ROUND.length)setTimeout(function(){ stageMistakes===0?stageCleared():stageFailed(); },500);
   }else{
-    // wrong case — keep the object so they can try the other one
-    lives--;lives_render();
+    // wrong case — keep the object so they can try the other one, but the perfect run is broken
+    stageMistakes++;lives_render();
     tone(160,0.25,'sawtooth',0.07);
-    flashPop('✗ Not this case!',cx,slot.y+64,'#C0392B');
+    flashPop('✗ Other case — try again',cx,slot.y+64,'#C0392B');
     shakeBoard();
-    if(lives<=0)endGame(false);
   }
 }
 function flashPop(txt,x,y,col){
@@ -776,13 +778,19 @@ function stageCleared(){
   stage++;
   setTimeout(loadStage,1000);
 }
+function stageFailed(){
+  // they finished all 10, but slipped at least once — game ends here
+  finishTime=(Date.now()-startTime)/1000;
+  endGame(false);
+}
 function loadStage(){
   ROUND=pickRound(PER_ROUND);
-  placedCount=0;$('placedval').textContent='0/'+ROUND.length;
+  placedCount=0;stageMistakes=0;lives_render();
+  $('placedval').textContent='0/'+ROUND.length;
   $('levelval').textContent=stage;
   startTime=Date.now();lastPlace=Date.now();
   buildScene();buildBay();
-  showInstruct('Stage '+stage+' — sort all 10 to go on!','One wrong ends the game · '+(DIFFS[diff].showHint?'date clues shown':'no clues · double points'));
+  showInstruct('Stage '+stage+' — sort all 10!','Get every one right to go on. A slip is OK — you finish this set, but it becomes your last stage.');
 }
 function startRound(){loadStage();}
 function showInstruct(big,small){$('instructBig').textContent=big;$('instructSmall').textContent=small;}
@@ -802,12 +810,14 @@ async function endGame(won){
   else{rank='VISITOR';col='#D8B894';}
   $('endbadge').textContent=won?'★':'✦';$('endbadge').style.color=col;$('endbadge').style.borderColor=col;$('endbadge').style.boxShadow='0 0 30px '+col;
   $('endrank').textContent=rank;$('endrank').style.color=col;
-  $('endtitle').textContent=won?'MUSEUM COMPLETE!':'ONE WRONG — GAME OVER';
+  $('endtitle').textContent=won?'MUSEUM COMPLETE!':'STAGE FINISHED';
   $('endscore').textContent=score;
   if(won){
     $('endstats').innerHTML='Amazing! You cleared all <b style="color:#E8C36B;">'+MAX_STAGES+'</b> stages perfectly!';
   }else{
-    $('endstats').innerHTML='You cleared <b style="color:#E8C36B;">'+stagesCleared+'</b> perfect '+(stagesCleared===1?'stage':'stages')+' before a slip. Try again, curator!';
+    $('endstats').innerHTML=stagesCleared>0
+      ? 'You cleared <b style="color:#E8C36B;">'+stagesCleared+'</b> perfect '+(stagesCleared===1?'stage':'stages')+' before a slip. Try again for more!'
+      : 'You finished the set but slipped up. Try again for a perfect run!';
   }
   if(won){tone(523,0.14,'sine',0.06);tone(659,0.14,'sine',0.06,0.15);tone(784,0.3,'sine',0.06,0.3);}
   else{tone(220,0.3,'sawtooth',0.07);tone(110,0.5,'sawtooth',0.07,0.25);}
@@ -845,7 +855,7 @@ $('closeboard').addEventListener('click',function(){$('boardpanel').style.displa
 $('refreshboard').addEventListener('click',loadMainBoard);
 
 function startGame(){
-  score=0;lives=1;stage=1;usedNames={};running=true;
+  score=0;stage=1;usedNames={};stageMistakes=0;running=true;
   $('scoreval').textContent='0';$('levelval').textContent='1';lives_render();
   $('startpanel').style.display='none';$('endpanel').style.display='none';$('boardpanel').style.display='none';
   if(timerInt)clearInterval(timerInt);timerInt=null;
@@ -858,7 +868,7 @@ $('againbtn').addEventListener('click',startGame);
 window.addEventListener('resize',function(){initStars();if(running)buildScene();});
 
 /* init */
-initStars();drawStars();lives=1;lives_render();layout();
+initStars();drawStars();stageMistakes=0;lives_render();layout();
 })();
 </script>
 </body>

@@ -258,18 +258,20 @@ var $=function(id){return document.getElementById(id);};
 
 /* ============ CONFIG ============ */
 var SECTORS=[
-  {name:'I',   label:'I – X',        min:1,  max:10,  count:7,  baseSpeed:1.7},
-  {name:'II',  label:'XI – XX',      min:11, max:20,  count:7,  baseSpeed:1.9},
-  {name:'III', label:'XXI – XXXIX',  min:21, max:39,  count:8,  baseSpeed:2.1},
-  {name:'IV',  label:'XL – LX',      min:40, max:69,  count:8,  baseSpeed:2.3},
-  {name:'V',   label:'LXX – XC',     min:70, max:90,  count:8,  baseSpeed:2.5},
-  {name:'VI',  label:'Full deck I–C',min:1,  max:100, count:10, baseSpeed:2.7}
+  {name:'I',    label:'I – X',          min:1,  max:10,  count:7,  baseSpeed:1.7},
+  {name:'II',   label:'XI – XX',        min:11, max:20,  count:7,  baseSpeed:1.9},
+  {name:'III',  label:'XXI – XXXIX',    min:21, max:39,  count:8,  baseSpeed:2.1},
+  {name:'IV',   label:'XL – LX',        min:40, max:69,  count:8,  baseSpeed:2.3},
+  {name:'V',    label:'LXX – XC',       min:70, max:90,  count:8,  baseSpeed:2.5},
+  {name:'VI',   label:'Full deck I–C',  min:1,  max:100, count:10, baseSpeed:2.7},
+  {name:'VII',  label:'Big numbers C–D',min:100,max:500, count:8,  baseSpeed:2.6},
+  {name:'VIII', label:'Huge numbers D–M',min:500,max:1000,count:8, baseSpeed:2.7}
 ];
 var DIFF=[{m:0.55,n:'Gentle'},{m:0.75,n:'Cadet'},{m:1.0,n:'Pilot'},{m:1.3,n:'Ace'},{m:1.7,n:'Hotshot'}];
 var diff=2;
 
 function toRoman(n){
-  var map=[[100,'C'],[90,'XC'],[50,'L'],[40,'XL'],[10,'X'],[9,'IX'],[5,'V'],[4,'IV'],[1,'I']],r='';
+  var map=[[1000,'M'],[900,'CM'],[500,'D'],[400,'CD'],[100,'C'],[90,'XC'],[50,'L'],[40,'XL'],[10,'X'],[9,'IX'],[5,'V'],[4,'IV'],[1,'I']],r='';
   for(var i=0;i<map.length;i++){while(n>=map[i][0]){r+=map[i][1];n-=map[i][0];}}
   return r;
 }
@@ -489,7 +491,7 @@ function makeNumeralTexture(rom,kind){
     x.lineTo(128+Math.cos(a)*112,128+Math.sin(a)*112);
     x.stroke();
   }
-  x.fillStyle='#ffffff';x.font='900 '+(rom.length>4?78:rom.length>2?104:124)+'px Orbitron, Arial';
+  x.fillStyle='#ffffff';x.font='900 '+(rom.length>9?52:rom.length>6?64:rom.length>4?78:rom.length>2?104:124)+'px Orbitron, Arial';
   x.textAlign='center';x.textBaseline='middle';
   x.shadowColor=ring;x.shadowBlur=24;
   x.fillText(rom,128,134);
@@ -520,7 +522,7 @@ function makeRockTexture(rom,kind){
   // paint the numeral large, twice (front & back of the wrap) so it's visible while spinning
   var ink=kind==='gold'?'#FFF4C2':(kind==='boss'?'#FFD2DC':'#CFEFFF');
   var glow=kind==='gold'?'#FFD23F':(kind==='boss'?'#FF3D6E':'#36E2FF');
-  var fs=rom.length>4?96:rom.length>2?130:160;
+  var fs=rom.length>9?64:rom.length>6?80:rom.length>4?96:rom.length>2?130:160;
   x.textAlign='center';x.textBaseline='middle';
   x.font='900 '+fs+'px Orbitron, Arial';
   [128,384].forEach(function(cx){
@@ -622,13 +624,18 @@ function buildPad(correct,s){
   if(rom.indexOf('IV')>-1)tricks.push(correct+2);
   if(rom.indexOf('XL')>-1)tricks.push(correct+20);
   if(rom.indexOf('LX')>-1)tricks.push(correct-20);
-  tricks.push(correct+1,correct-1,correct+2,correct-2,correct+10,correct-10,correct+5,correct-5);
+  if(rom.indexOf('CD')>-1)tricks.push(correct+200);
+  if(rom.indexOf('CM')>-1)tricks.push(correct-400);
+  // scale the offsets to the size of the number so big numerals get believable distractors
+  var step = correct>=400?100 : correct>=100?50 : correct>=40?10 : 5;
+  tricks.push(correct+1,correct-1,correct+step,correct-step,correct+2*step,correct-2*step,correct+10,correct-10);
+  var hi = Math.max(120, s.max+5);
   var guard=0;
   while(opts.length<4&&guard<300){
     guard++;
     var c=tricks.length&&Math.random()<0.65?tricks.splice(Math.floor(Math.random()*tricks.length),1)[0]
       :s.min+Math.floor(Math.random()*(s.max-s.min+1));
-    if(c>=1&&c<=120&&!pool[c]){pool[c]=1;opts.push(c);}
+    if(c>=1&&c<=hi&&!pool[c]){pool[c]=1;opts.push(c);}
   }
   opts.sort(function(){return Math.random()-0.5;});
   var pad=$('pad');pad.innerHTML='';
@@ -796,18 +803,18 @@ function nextStep(){
     setTimeout(spawnAsteroid,1700);
   }else spawnAsteroid();
 }
-var BASE_SECTOR_COUNT=6;
-var ROMAN_EXTRA=['VII','VIII','IX','X','XI','XII','XIII','XIV','XV','XVI','XVII','XVIII','XIX','XX'];
+var BASE_SECTOR_COUNT=8;
+var ROMAN_EXTRA=['IX','X','XI','XII','XIII','XIV','XV','XVI','XVII','XVIII','XIX','XX'];
 function addEndlessSector(){
   // how many bonus sectors so far (0-based beyond the base set)
   var bonusN=sectorIdx-BASE_SECTOR_COUNT;
-  var name=ROMAN_EXTRA[bonusN]||('+'+(bonusN+7));
-  // each bonus sector is the full I–C range, faster each time, more asteroids
+  var name=ROMAN_EXTRA[bonusN]||('+'+(bonusN+9));
+  // each bonus sector spans the whole range up to M, faster each time, more asteroids
   var speed=2.7+0.35*(bonusN+1);
   SECTORS.push({
     name:name,
-    label:'Deep space — faster!',
-    min:1,max:100,
+    label:'Deep space — anything to M!',
+    min:1,max:1000,
     count:10+bonusN,           // a couple more each round
     baseSpeed:speed
   });
