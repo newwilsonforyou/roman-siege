@@ -17,6 +17,7 @@
   body{font-family:'Quicksand',sans-serif;background:var(--canopy);color:var(--text);
     display:flex;align-items:center;justify-content:center;
     user-select:none;-webkit-user-select:none;touch-action:none;}
+  button,input,a{touch-action:auto;}
   #wrap{position:relative;width:min(100vw,1000px);height:min(100vh,100dvh);max-height:760px;overflow:hidden;
     background:linear-gradient(180deg,#FFE9B0 0%,#CFE89A 14%,#5C9C5C 38%,#2E6B3E 66%,#163D24 100%);}
   @media(min-width:1020px){#wrap{border-radius:20px;box-shadow:0 30px 80px rgba(0,0,0,.7);}}
@@ -418,8 +419,14 @@ wrap.addEventListener('mousedown',function(e){setBasketFromClientX(e.clientX);
   var mu=function(){document.removeEventListener('mousemove',mm);document.removeEventListener('mouseup',mu);};
   document.addEventListener('mousemove',mm);document.addEventListener('mouseup',mu);
 });
-wrap.addEventListener('touchstart',function(e){e.preventDefault();setBasketFromClientX(e.touches[0].clientX);},{passive:false});
-wrap.addEventListener('touchmove',function(e){e.preventDefault();setBasketFromClientX(e.touches[0].clientX);},{passive:false});
+wrap.addEventListener('touchstart',function(e){
+  if(e.target.closest('button,input,a,.panel,#speedctl'))return;
+  e.preventDefault();setBasketFromClientX(e.touches[0].clientX);
+},{passive:false});
+wrap.addEventListener('touchmove',function(e){
+  if(e.target.closest('button,input,a,.panel,#speedctl'))return;
+  e.preventDefault();setBasketFromClientX(e.touches[0].clientX);
+},{passive:false});
 document.addEventListener('keydown',function(e){
   if(e.key==='ArrowLeft')keyLeft=true;
   if(e.key==='ArrowRight')keyRight=true;
