@@ -61,8 +61,13 @@
   .card-desc{color:#cfc4e8;font-size:14px;font-weight:600;margin-top:7px;line-height:1.4;}
   .play{display:inline-flex;align-items:center;gap:7px;margin-top:14px;font-family:'Orbitron',sans-serif;
     font-weight:700;font-size:13px;letter-spacing:.1em;padding:9px 18px;border-radius:10px;}
-  .siege{background:linear-gradient(160deg,#3a1410,#1c0a08);}
-  .siege:hover{box-shadow:0 18px 50px rgba(192,57,43,.4);border-color:var(--legion);}
+  .lino{background:linear-gradient(160deg,#2e2114,#17100a);}
+  .lino:hover{box-shadow:0 18px 50px rgba(217,165,60,.4);border-color:var(--gold);}
+  .lino .card-art{background:radial-gradient(circle at 50% 120%,rgba(217,165,60,.25),transparent 60%),
+    radial-gradient(circle at 25% 25%,rgba(194,64,44,.18),transparent 55%),#17100a;}
+  .lino .card-tag{color:var(--gold);}
+  .lino .play{background:var(--gold);color:#3a2400;}
+  .siege{background:linear-gradient(160deg,#3a1410,#1c0a08);}  .siege:hover{box-shadow:0 18px 50px rgba(192,57,43,.4);border-color:var(--legion);}
   .siege .card-art{background:radial-gradient(circle at 50% 120%,rgba(242,193,78,.25),transparent 60%),
     linear-gradient(#7fa0c0 0%,#f2d9a6 72%,#7c8a4d 72%,#7c8a4d 100%);}
   .siege .card-tag{color:var(--gold);}
@@ -85,12 +90,6 @@
     radial-gradient(circle at 75% 50%,rgba(91,255,155,.18),transparent 50%),#07180f;}
   .builder .card-tag{color:var(--ok);}
   .builder .play{background:var(--ok);color:#063;}
-  .centurion{background:linear-gradient(160deg,#3a2410,#1c1006);}
-  .centurion:hover{box-shadow:0 18px 50px rgba(217,164,65,.35);border-color:#D9A441;}
-  .centurion .card-art{background:radial-gradient(circle at 60% 70%,rgba(217,164,65,.3),transparent 55%),
-    radial-gradient(circle at 25% 30%,rgba(164,48,44,.25),transparent 50%),#1c1006;}
-  .centurion .card-tag{color:#D9A441;}
-  .centurion .play{background:#D9A441;color:#3a1d05;}
   .badge2d,.badge3d{position:absolute;top:14px;right:14px;font-family:'Orbitron',sans-serif;
     font-weight:900;font-size:12px;letter-spacing:.1em;padding:5px 11px;border-radius:8px;z-index:3;}
   .badge2d{background:rgba(242,193,78,.9);color:#3a2400;}
@@ -173,27 +172,35 @@
   <header>
     <div class="kicker">Choose your game</div>
     <h1>Year 5 Arcade</h1>
-    <p class="sub">Eight games in one place — master Roman numerals from I to C, explore Victorian Britain and the British Empire, and review Year 5 Geography, angles and life cycles. Sign in, and every game you play is saved to your record.</p>
+    <p class="sub">Eight games in one place — carve and print in the lino studio, master Roman numerals from I to C, explore Victorian Britain and the British Empire, and review Year 5 Geography, angles and life cycles. Sign in, and every game you play is saved to your record.</p>
   </header>
 
   <main class="cards">
-    <a class="card centurion" id="card-centurion" href="legion-outpost.html">
-      <span class="badge2d" style="background:rgba(217,164,65,.95);color:#3a1d05;">NEW</span>
+    <a class="card lino" id="card-lino" href="lino-layers.html">
+      <span class="badge2d" style="background:rgba(217,165,60,.92);color:#3a2400;">CARVE</span>
       <div class="lockmsg">🔒 Sign in first</div>
       <div class="card-art">
         <svg class="art-svg pulse" viewBox="0 0 200 150" aria-hidden="true">
-          <rect x="120" y="40" width="55" height="60" fill="#9B968A"/>
-          <rect x="118" y="32" width="10" height="10" fill="#9B968A"/><rect x="136" y="32" width="10" height="10" fill="#9B968A"/><rect x="154" y="32" width="10" height="10" fill="#9B968A"/>
-          <path d="M20 110 Q60 95 100 108 Q140 100 180 112" stroke="#C7AE7C" stroke-width="16" fill="none" stroke-linecap="round"/>
-          <g transform="translate(40,70)"><rect x="0" y="6" width="12" height="14" rx="3" fill="#A4302C"/><circle cx="6" cy="2" r="5" fill="#C98A5E"/></g>
-          <g transform="translate(70,86)"><rect x="14" y="14" width="9" height="13" rx="2" fill="#8A6017"/><circle cx="18" cy="10" r="6" fill="#8A6017" stroke="#2E2A24" stroke-width="1"/></g>
-          <circle cx="25" cy="20" r="3" fill="#FFD23F" opacity=".8"/>
+          <rect x="44" y="28" width="92" height="92" rx="10" fill="#241712" stroke="#D9A53C" stroke-width="2.5"/>
+          <rect x="56" y="40" width="22" height="22" rx="3" fill="#E0699B"/>
+          <rect x="80" y="40" width="22" height="22" rx="3" fill="#F2C53D"/>
+          <rect x="104" y="40" width="22" height="22" rx="3" fill="#3E7FBF"/>
+          <rect x="56" y="64" width="22" height="22" rx="3" fill="#4C8A52"/>
+          <rect x="80" y="64" width="22" height="22" rx="3" fill="#C2402C"/>
+          <rect x="104" y="64" width="22" height="22" rx="3" fill="#9AA3AC"/>
+          <rect x="56" y="88" width="22" height="22" rx="3" fill="#8A5A36"/>
+          <rect x="80" y="88" width="22" height="22" rx="3" fill="#E0822E"/>
+          <rect x="104" y="88" width="22" height="22" rx="3" fill="#FAF6EC"/>
+          <g transform="translate(128,96)">
+            <rect x="0" y="-3" width="34" height="9" rx="4" transform="rotate(40)" fill="#574F40"/>
+            <circle cx="3" cy="2" r="6" fill="#D9A53C"/>
+          </g>
         </svg>
       </div>
       <div class="card-body">
-        <div class="card-tag">Build &amp; Defend</div>
-        <div class="card-title">Centurion's Stand</div>
-        <div class="card-desc">Walk your legionary to answer posts for gold, then build and upgrade towers through five metal tiers — Copper to Gold. Survive 30 raider waves!</div>
+        <div class="card-tag">Print Studio</div>
+        <div class="card-title">Lino Layers</div>
+        <div class="card-desc">Carve a block for each colour, then stack the layers to print the picture — flowers, rockets and more. Tap or drag to carve!</div>
         <span class="play">PLAY ▶</span>
       </div>
     </a>
@@ -444,7 +451,7 @@ function renderUserBar(){
   }
 }
 function setCardsLocked(locked){
-  $('card-centurion').classList.toggle('locked',locked);
+  $('card-lino').classList.toggle('locked',locked);
   $('card-siege').classList.toggle('locked',locked);
   $('card-nebula').classList.toggle('locked',locked);
   $('card-builder').classList.toggle('locked',locked);
@@ -586,14 +593,12 @@ async function loadRecords(p){
   var museum=rows.filter(function(x){return x.game==='vicmuseum';});
   var voyage=rows.filter(function(x){return x.game==='victorians';});
   var jungle=rows.filter(function(x){return x.game==='junglecatch';});
-  var centurion=rows.filter(function(x){return x.game==='outpost';});
   function best(a){return a.length?Math.max.apply(null,a.map(function(x){return x.score;})):0;}
   var totalGames=rows.length;
   var head='<div class="rec-head"><div class="rec-avatar">'+p.avatar+'</div>'+
     '<div><div class="rec-name">'+escapeHtml(p.name)+'</div>'+
     '<div class="rec-sub">'+totalGames+' games played in total</div></div></div>';
   var stats='<div class="rec-stats">'+
-    '<div class="rec-stat"><div class="n">'+best(centurion)+'</div><div class="l">CENTURION BEST</div></div>'+
     '<div class="rec-stat"><div class="n">'+best(siege)+'</div><div class="l">SIEGE BEST</div></div>'+
     '<div class="rec-stat"><div class="n">'+best(neb)+'</div><div class="l">NEBULA BEST</div></div>'+
     '<div class="rec-stat"><div class="n">'+best(empire)+'</div><div class="l">EMPIRE BEST</div></div>'+
@@ -614,7 +619,6 @@ async function loadRecords(p){
     return h+'</tbody></table>';
   }
   $('recBody').innerHTML=head+stats+
-    historyTable('🛡️ CENTURION HISTORY',centurion)+
     historyTable('⚔️ SIEGE HISTORY',siege)+
     historyTable('🚀 NEBULA HISTORY',neb)+
     historyTable('🌍 EMPIRE HISTORY',empire)+
