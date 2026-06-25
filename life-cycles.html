@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Cycle Spotter — Life Cycles</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0E2A1E;--bg2:#0A1F16;--leaf:#5BD97F;--leaf2:#3FA862;--sun:#F4C430;
+    --sky:#56C2E6;--petal:#E86A9B;--ink:#EAF5EE;--muted:#9FBCA8;--danger:#E45B5B;--ok:#3FA862;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;overflow:hidden;}
+  body{font-family:'Rajdhani',sans-serif;background:var(--bg2);color:var(--ink);
+    display:flex;align-items:center;justify-content:center;user-select:none;-webkit-user-select:none;touch-action:manipulation;}
+  #wrap{position:relative;width:min(100vw,1000px);height:min(100vh,100dvh);max-height:760px;overflow:hidden;
+    background:radial-gradient(circle at 20% 18%,rgba(91,217,127,.16),transparent 44%),
+                radial-gradient(circle at 82% 82%,rgba(86,194,230,.14),transparent 46%),
+                linear-gradient(160deg,var(--bg),var(--bg2));}
+  @media(min-width:1020px){#wrap{border-radius:20px;box-shadow:0 30px 80px rgba(0,0,0,.7);}}
+
+  .hud{position:absolute;left:0;right:0;pointer-events:none;z-index:5;}
+  #topbar{top:0;display:flex;justify-content:space-between;align-items:flex-start;padding:14px 16px;
+    background:linear-gradient(rgba(10,31,22,.9) 35%,rgba(10,31,22,0) 100%);}
+  .stat .lbl{font-family:'Orbitron',sans-serif;font-size:10px;letter-spacing:.22em;color:var(--muted);font-weight:700;}
+  .stat .val{font-family:'Orbitron',sans-serif;font-size:20px;font-weight:900;line-height:1;color:var(--leaf);}
+  #shields{display:flex;gap:6px;margin-top:3px;}
+  .shield-pip{width:22px;height:8px;border-radius:2px;background:var(--leaf);transition:all .3s;}
+  .shield-pip.down{background:rgba(255,255,255,.16);}
+  #wavebadge{font-family:'Orbitron',sans-serif;font-weight:700;font-size:12px;letter-spacing:.14em;color:var(--sun);text-align:center;}
+  #comboval{font-family:'Orbitron',sans-serif;font-weight:900;font-size:14px;color:var(--leaf2);text-align:right;visibility:hidden;}
+
+  #timerwrap{position:absolute;top:54px;left:16px;right:16px;height:6px;border-radius:4px;
+    background:rgba(255,255,255,.12);z-index:5;overflow:hidden;display:none;}
+  #timerwrap.show{display:block;}
+  #timerbar{height:100%;width:100%;background:var(--leaf);border-radius:4px;transition:width .08s linear,background .2s;}
+
+  #stage{position:absolute;inset:0;z-index:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:74px 16px 24px;gap:8px;}
+  #cyclename{font-family:'Orbitron',sans-serif;font-weight:700;font-size:clamp(15px,3.4vw,20px);color:var(--ink);text-align:center;}
+  #prompt{font-size:13px;color:var(--muted);font-weight:600;text-align:center;}
+  #prompt b{color:var(--sun);}
+
+  #ring{position:relative;width:min(82vw,420px);height:min(82vw,420px);max-width:420px;max-height:420px;margin-top:4px;}
+  #ringsvg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;}
+  .node{position:absolute;width:23%;height:23%;transform:translate(-50%,-50%);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+    background:rgba(255,255,255,.06);border:2.5px solid rgba(255,255,255,.16);border-radius:18px;cursor:pointer;
+    transition:transform .1s,background .15s,border-color .15s,box-shadow .15s;}
+  .node:active{transform:translate(-50%,-50%) scale(.94);}
+  .node .emoji{font-size:clamp(26px,7vw,40px);line-height:1;}
+  .node .lab{font-size:clamp(10px,2.3vw,13px);font-weight:700;color:var(--ink);text-align:center;line-height:1.05;padding:0 2px;}
+  .node.correct{background:rgba(63,168,98,.85);border-color:var(--ok);box-shadow:0 0 22px rgba(63,168,98,.6);}
+  .node.wrong{background:rgba(228,91,91,.85);border-color:var(--danger);animation:shake .3s;}
+  .node.reveal{background:rgba(244,196,48,.85);border-color:var(--sun);box-shadow:0 0 22px rgba(244,196,48,.6);}
+  @keyframes shake{25%{transform:translate(-50%,-50%) translateX(-5px);}75%{transform:translate(-50%,-50%) translateX(5px);}}
+  #centerhint{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:40%;text-align:center;
+    font-family:'Orbitron',sans-serif;font-weight:700;font-size:clamp(11px,2.6vw,14px);color:var(--muted);line-height:1.3;pointer-events:none;}
+
+  #flash{position:absolute;inset:0;z-index:8;pointer-events:none;display:flex;align-items:center;justify-content:center;opacity:0;}
+  #flash .ftext{font-family:'Orbitron',sans-serif;font-weight:900;font-size:clamp(22px,5.4vw,38px);color:var(--ink);text-align:center;text-shadow:0 2px 20px rgba(0,0,0,.5);}
+  #flash .ftext .sub{font-family:'Rajdhani';font-size:16px;color:var(--muted);margin-top:6px;font-weight:600;letter-spacing:.06em;}
+  #flash.show{animation:flashin 1.6s ease;}
+  @keyframes flashin{0%{opacity:0;transform:scale(.6);}15%{opacity:1;transform:scale(1.05);}28%{transform:scale(1);}78%{opacity:1;}100%{opacity:0;}}
+
+  #practicebanner{position:absolute;top:94px;left:0;right:0;z-index:6;display:none;justify-content:center;pointer-events:none;}
+  #practicebanner.show{display:flex;}
+  #practicebanner span{font-family:'Orbitron',sans-serif;font-weight:700;font-size:11px;letter-spacing:.14em;
+    color:#06301a;background:var(--sun);border-radius:999px;padding:6px 16px;box-shadow:0 4px 12px rgba(0,0,0,.3);}
+
+  .panel{position:absolute;inset:0;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:16px;padding:28px;text-align:center;background:radial-gradient(circle at 50% 28%,rgba(14,42,30,.94),rgba(10,31,22,.98));overflow-y:auto;}
+  .title{font-family:'Orbitron',sans-serif;font-weight:900;font-size:clamp(28px,6.6vw,46px);letter-spacing:.02em;line-height:1.05;
+    background:linear-gradient(180deg,#fff,var(--leaf));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+  .tagline{font-size:16px;color:var(--muted);max-width:480px;line-height:1.45;font-weight:600;}
+  .chip-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;max-width:480px;}
+  .chip{font-size:13px;font-weight:600;color:var(--ink);background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.16);border-radius:999px;padding:7px 15px;}
+  .chip b{color:var(--leaf);}
+  .cta{font-family:'Orbitron',sans-serif;font-weight:700;font-size:17px;letter-spacing:.08em;color:#06301a;background:var(--leaf);
+    border:0;border-radius:14px;padding:15px 42px;cursor:pointer;margin-top:4px;box-shadow:0 8px 20px rgba(91,217,127,.3);transition:transform .08s;}
+  .cta:active{transform:scale(.96);}
+  .cta.ghost{background:none;color:var(--ink);border:2px solid rgba(255,255,255,.3);box-shadow:none;font-size:14px;padding:11px 26px;}
+  #difficulty{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
+  .diffbtn{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:14px;color:var(--muted);background:rgba(255,255,255,.05);
+    border:2px solid rgba(255,255,255,.18);border-radius:10px;padding:9px 16px;cursor:pointer;transition:all .15s;}
+  .diffbtn.on{color:#06301a;background:var(--ink);}
+  .endstat{font-family:'Orbitron',sans-serif;font-size:15px;color:var(--ink);font-weight:500;}
+  .endbig{font-family:'Orbitron',sans-serif;font-size:44px;font-weight:900;color:var(--leaf);}
+  .rank{font-family:'Orbitron',sans-serif;font-weight:900;font-size:22px;color:var(--sun);letter-spacing:.08em;}
+
+  #nameform{display:flex;gap:8px;width:100%;max-width:300px;}
+  #nameinput{flex:1;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:16px;padding:9px 12px;border-radius:10px;
+    border:2px solid rgba(255,255,255,.2);background:rgba(0,0,0,.3);color:var(--ink);min-width:0;}
+  #nameinput:focus{outline:2px solid var(--leaf);}
+  .savebtn{font-family:'Orbitron',sans-serif;font-weight:700;font-size:14px;background:var(--leaf);color:#06301a;border:0;border-radius:10px;padding:8px 16px;cursor:pointer;}
+  .hsbadge{font-family:'Orbitron',sans-serif;font-weight:700;font-size:13px;color:#06301a;background:var(--sun);border-radius:999px;padding:5px 16px;}
+  .lb-wrap{width:100%;max-width:380px;}
+  table.lb{width:100%;border-collapse:collapse;font-size:15px;}
+  table.lb th{font-family:'Orbitron',sans-serif;font-size:10px;letter-spacing:.14em;color:var(--muted);text-align:left;padding:5px 8px;border-bottom:2px solid rgba(255,255,255,.2);font-weight:700;}
+  table.lb th:last-child{text-align:right;}
+  table.lb td{padding:6px 8px;border-bottom:1px solid rgba(255,255,255,.08);font-weight:600;}
+  table.lb td:first-child{width:34px;font-family:'Orbitron',sans-serif;font-weight:900;color:var(--sun);}
+  table.lb td:last-child{text-align:right;font-family:'Orbitron',sans-serif;font-weight:900;color:var(--leaf);}
+  table.lb tr.me td{background:rgba(91,217,127,.16);}
+  .lb-msg{font-size:14px;color:var(--muted);font-weight:600;padding:10px 0;text-align:center;}
+  .lb-loading{display:flex;align-items:center;justify-content:center;gap:8px;font-size:13px;color:var(--muted);font-weight:600;padding:12px 0;}
+  .lb-spin{width:18px;height:18px;border:3px solid rgba(255,255,255,.2);border-top-color:var(--leaf);border-radius:50%;animation:lbspin .7s linear infinite;}
+  @keyframes lbspin{to{transform:rotate(360deg);}}
+  #endbadge{font-size:50px;width:104px;height:104px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    border:3px solid var(--sun);color:var(--sun);background:rgba(0,0,0,.25);animation:badgepop .6s ease;}
+  @keyframes badgepop{0%{transform:scale(0) rotate(-40deg);}60%{transform:scale(1.15);}100%{transform:scale(1);}}
+
+  #speedctl{position:absolute;top:72px;right:14px;z-index:6;display:none;align-items:center;gap:6px;background:rgba(0,0,0,.4);
+    border:2px solid rgba(255,255,255,.2);border-radius:12px;padding:5px 7px;pointer-events:auto;}
+  #speedctl.show{display:flex;}
+  .spd-btn{font-family:'Orbitron',sans-serif;font-weight:900;font-size:20px;line-height:1;width:34px;height:34px;border-radius:8px;
+    color:#06301a;background:var(--ink);border:0;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .07s;}
+  .spd-btn:active{transform:scale(.9);}
+  .spd-mid{display:flex;flex-direction:column;align-items:center;min-width:58px;}
+  .spd-lbl{font-size:8px;letter-spacing:.2em;color:var(--muted);font-weight:700;}
+  #spdName{font-family:'Orbitron',sans-serif;font-weight:700;font-size:13px;color:var(--leaf);}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="practicebanner"><span>PRACTICE ROUND — no lives lost, just learn how it works</span></div>
+
+  <div class="hud" id="topbar">
+    <div class="stat">
+      <div class="lbl">SCORE</div>
+      <div class="val" id="scoreval">0</div>
+      <div id="shields"></div>
+    </div>
+    <div class="stat" style="text-align:center;">
+      <div class="lbl">ROUND</div>
+      <div id="wavebadge">1</div>
+    </div>
+    <div class="stat" style="text-align:right;">
+      <div class="lbl">CHAIN</div>
+      <div id="comboval">x2</div>
+    </div>
+  </div>
+  <div id="timerwrap"><div id="timerbar"></div></div>
+
+  <div id="stage">
+    <div id="cyclename">Loading…</div>
+    <div id="prompt">One stage <b>doesn't belong</b> in this cycle — tap it!</div>
+    <div id="ring">
+      <svg id="ringsvg" viewBox="0 0 100 100" aria-hidden="true">
+        <circle cx="50" cy="50" r="34" fill="none" stroke="rgba(255,255,255,0.14)" stroke-width="2" stroke-dasharray="3 3"/>
+      </svg>
+      <div id="centerhint">Spot the odd stage</div>
+    </div>
+  </div>
+
+  <div id="speedctl">
+    <button class="spd-btn" id="spdDown" aria-label="Easier">&#8722;</button>
+    <div class="spd-mid"><span class="spd-lbl">SPEED</span><span id="spdName">Spotter</span></div>
+    <button class="spd-btn" id="spdUp" aria-label="Harder">+</button>
+  </div>
+
+  <div id="flash"><div class="ftext" id="flashtext"></div></div>
+
+  <div class="panel" id="startpanel">
+    <div class="title">CYCLE<br>SPOTTER</div>
+    <div class="tagline">Each ring shows a life cycle — but one stage has snuck in from a <b>different</b> animal or plant! Read the cycle, find the stage that doesn't belong, and tap it before the timer runs out.</div>
+    <div class="chip-row">
+      <div class="chip">&#128039; <b>6</b> life cycles</div>
+      <div class="chip">&#128064; Spot the impostor</div>
+      <div class="chip">&#9889; Chain bonus for streaks</div>
+      <div class="chip">&#129351; Earn a naturalist rank</div>
+    </div>
+    <div class="chip-row">
+      <div class="chip">&#127891; First round is <b>practice</b> &mdash; no lives lost</div>
+    </div>
+    <div style="margin-top:6px;">
+      <div class="lbl" style="font-family:Orbitron;font-size:11px;letter-spacing:.2em;color:var(--muted);font-weight:700;margin-bottom:8px;">HOW FAST IS THE TIMER?</div>
+      <div id="difficulty">
+        <button class="diffbtn" data-d="0">Gentle</button>
+        <button class="diffbtn" data-d="1">Sprout</button>
+        <button class="diffbtn on" data-d="2">Spotter</button>
+        <button class="diffbtn" data-d="3">Expert</button>
+        <button class="diffbtn" data-d="4">Naturalist</button>
+      </div>
+    </div>
+    <button class="cta" id="launchbtn">START SPOTTING</button>
+    <button class="cta ghost" id="boardbtn">&#127942; Worldwide Leaderboard</button>
+  </div>
+
+  <div class="panel" id="endpanel" style="display:none;">
+    <div id="endbadge">&#9733;</div>
+    <div class="rank" id="endrank">MASTER NATURALIST</div>
+    <div class="title" id="endtitle" style="font-size:clamp(24px,5.6vw,38px);">CYCLE COMPLETE</div>
+    <div class="endbig" id="endscore">0</div>
+    <div class="endstat" id="endstats"></div>
+    <div class="hsbadge" id="hsbadge" style="display:none;">&#127942; Top spotter! Log your name:</div>
+    <div id="nameform" style="display:none;">
+      <input id="nameinput" maxlength="14" placeholder="Your name" autocomplete="off">
+      <button class="savebtn" id="savescore">Save</button>
+    </div>
+    <div class="lb-wrap"><div id="endboard"></div></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;">
+      <button class="cta" id="againbtn">PLAY AGAIN</button>
+      <button class="cta ghost" id="boardbtn2">&#127942; Full board</button>
+    </div>
+  </div>
+
+  <div class="panel" id="boardpanel" style="display:none;">
+    <div class="rank" style="color:var(--sun);">HALL OF NATURALISTS</div>
+    <div class="title" style="font-size:clamp(22px,4.6vw,34px);">&#127757; Leaderboard</div>
+    <div class="lb-wrap"><div id="mainboard"></div></div>
+    <div class="endstat" style="font-size:12px;color:var(--muted);">Top 15 spotters, worldwide</div>
+    <div style="display:flex;gap:10px;">
+      <button class="cta" id="closeboard">BACK</button>
+      <button class="cta ghost" id="refreshboard">&#8635; Refresh</button>
+    </div>
+  </div>
+
+<script>
+(function(){
+"use strict";
+var $=function(id){return document.getElementById(id);};
+
+var CYCLES=[
+  {name:'Bird life cycle', key:'bird', stages:[
+    {icon:'\uD83E\uDD5A', label:'Egg'},{icon:'\uD83D\uDC23', label:'Chick'},{icon:'\uD83D\uDC24', label:'Fledgling'},{icon:'\uD83D\uDC26', label:'Adult bird'}
+  ]},
+  {name:'Amphibian (frog) life cycle', key:'frog', stages:[
+    {icon:'\uD83E\uDEE7', label:'Frogspawn'},{icon:'\uD83D\uDC1F', label:'Tadpole'},{icon:'\uD83D\uDC38', label:'Froglet'},{icon:'\uD83D\uDC38', label:'Adult frog'}
+  ]},
+  {name:'Insect (butterfly) life cycle', key:'butterfly', stages:[
+    {icon:'\uD83E\uDD5A', label:'Egg'},{icon:'\uD83D\uDC1B', label:'Caterpillar'},{icon:'\uD83D\uDFE2', label:'Chrysalis'},{icon:'\uD83E\uDD8B', label:'Butterfly'}
+  ]},
+  {name:'Mammal (human) life cycle', key:'human', stages:[
+    {icon:'\uD83D\uDC76', label:'Baby'},{icon:'\uD83E\uDDD2', label:'Child'},{icon:'\uD83E\uDDD1', label:'Teenager'},{icon:'\uD83E\uDDD3', label:'Adult'}
+  ]},
+  {name:'Chicken life cycle', key:'chicken', stages:[
+    {icon:'\uD83E\uDD5A', label:'Egg'},{icon:'\uD83D\uDC25', label:'Chick'},{icon:'\uD83D\uDC14', label:'Pullet'},{icon:'\uD83D\uDC13', label:'Hen'}
+  ]},
+  {name:'Plant (flower) life cycle', key:'plant', stages:[
+    {icon:'\uD83C\uDF30', label:'Seed'},{icon:'\uD83C\uDF31', label:'Seedling'},{icon:'\uD83C\uDF38', label:'Flower'},{icon:'\uD83C\uDF4E', label:'Fruit & seeds'}
+  ]}
+];
+
+function validImpostors(cycleIdx){
+  var target=CYCLES[cycleIdx];
+  var targetLabels={};
+  target.stages.forEach(function(s){targetLabels[s.label.toLowerCase()]=true;});
+  var pool=[];
+  CYCLES.forEach(function(c,ci){
+    if(ci===cycleIdx)return;
+    c.stages.forEach(function(s){
+      if(!targetLabels[s.label.toLowerCase()]) pool.push({icon:s.icon,label:s.label,from:c.name});
+    });
+  });
+  return pool;
+}
+
+// rounds-per-game and timer per difficulty
+var ROUNDS_PER_GAME=12;
+var DIFF=[{t:11,n:'Gentle'},{t:9,n:'Sprout'},{t:7,n:'Spotter'},{t:5.5,n:'Expert'},{t:4.2,n:'Naturalist'}];
+var diff=2;
+
+/* ============ SUPABASE LEADERBOARD ============ */
+var SB_URL='https://wpohvsjkrskhlrayaubp.supabase.co';
+var SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indwb2h2c2prcnNraGxyYXlhdWJwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzMDEzOTcsImV4cCI6MjA5Njg3NzM5N30.Xi07ayGB5CykR-_7QX-b8UsUmMmTbGIlYpctXYgW9JI';
+function sbH(){return {'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'};}
+var GAME_ID='lifecycles';
+function currentPlayer(){try{return JSON.parse(localStorage.getItem('rna_player')||'null');}catch(e){return null;}}
+function playerName(){var p=currentPlayer();return p?p.name:null;}
+async function sbFetchTop(limit){
+  limit=limit||15;
+  try{
+    var r=await fetch(SB_URL+'/rest/v1/scores?select=name%2Cscore&game=eq.'+GAME_ID+'&order=score.desc&limit='+limit,{headers:sbH()});
+    if(!r.ok){console.error('fetch',r.status,await r.text());return null;}
+    return await r.json();
+  }catch(e){console.error(e);return null;}
+}
+async function sbInsert(name,score){
+  try{
+    var h=sbH();h['Prefer']='return=minimal';
+    var body={name:name,score:score,game:GAME_ID};
+    var pn=playerName();if(pn)body.player=pn;
+    var r=await fetch(SB_URL+'/rest/v1/scores',{method:'POST',headers:h,body:JSON.stringify(body)});
+    if(!r.ok){console.error('insert',r.status,await r.text());return false;}
+    return true;
+  }catch(e){console.error(e);return false;}
+}
+async function sbQualifies(score){
+  try{
+    var r=await fetch(SB_URL+'/rest/v1/scores?select=score&game=eq.'+GAME_ID+'&order=score.desc&limit=15',{headers:sbH()});
+    if(!r.ok)return true;
+    var rows=await r.json();
+    if(!rows||rows.length<15)return true;
+    return score>rows[rows.length-1].score;
+  }catch(e){return true;}
+}
+function lbEsc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function lbLoading(){return '<div class="lb-loading"><div class="lb-spin"></div>Loading spotters&hellip;</div>';}
+function lbTable(rows,hiName,hiScore){
+  if(!rows||!rows.length)return '<div class="lb-msg">No spotters logged yet &mdash; be the first!</div>';
+  var medals=['1','2','3'],html='<table class="lb"><thead><tr><th>RANK</th><th>SPOTTER</th><th>SCORE</th></tr></thead><tbody>',marked=false;
+  rows.forEach(function(row,i){
+    var me=(!marked&&hiName&&row.name===hiName&&row.score===hiScore);if(me)marked=true;
+    html+='<tr class="'+(me?'me':'')+'"><td>'+(i<3?medals[i]:(i+1))+'</td><td>'+lbEsc(row.name)+'</td><td>'+row.score+'</td></tr>';
+  });
+  return html+'</tbody></table>';
+}
+async function loadMainBoard(){$('mainboard').innerHTML=lbLoading();$('mainboard').innerHTML=lbTable(await sbFetchTop(15),null,null);}
+async function loadEndBoard(n,s){$('endboard').innerHTML=lbLoading();$('endboard').innerHTML=lbTable(await sbFetchTop(10),n,s);}
+
+/* ============ AUDIO ============ */
+var actx=null;
+function tone(f,d,type,vol,delay){
+  try{
+    if(!actx)actx=new(window.AudioContext||window.webkitAudioContext)();
+    var t0=actx.currentTime+(delay||0);
+    var o=actx.createOscillator(),g=actx.createGain();
+    o.type=type||'sine';o.frequency.setValueAtTime(f,t0);
+    g.gain.setValueAtTime(vol||0.06,t0);g.gain.exponentialRampToValueAtTime(0.001,t0+d);
+    o.connect(g);g.connect(actx.destination);o.start(t0);o.stop(t0+d);
+  }catch(e){}
+}
+
+/* ============ GAME STATE ============ */
+var shields,score,combo,maxCombo,roundNum,running=false;
+var isPracticeRound=false;
+var current=null; // {cycleIdx, nodes:[{icon,label,odd}], oddIdx}
+var phase='idle';
+var timerId=null,timerStart=0,timerDur=0;
+var nodeEls=[];
+
+function pickRound(forceCycle){
+  var cycleIdx = (forceCycle!=null) ? forceCycle : Math.floor(Math.random()*CYCLES.length);
+  var cyc=CYCLES[cycleIdx];
+  var imp=validImpostors(cycleIdx);
+  var impostor=imp[Math.floor(Math.random()*imp.length)];
+  var oddIdx=Math.floor(Math.random()*4);
+  var nodes=cyc.stages.map(function(s){return {icon:s.icon,label:s.label,odd:false};});
+  nodes[oddIdx]={icon:impostor.icon,label:impostor.label,odd:true,from:impostor.from};
+  return {cycleIdx:cycleIdx, cyc:cyc, nodes:nodes, oddIdx:oddIdx, impostor:impostor};
+}
+
+function layoutRing(){
+  var ring=$('ring');
+  // remove old nodes
+  nodeEls.forEach(function(n){if(n&&n.parentNode)n.parentNode.removeChild(n);});
+  nodeEls=[];
+  var n=current.nodes.length;
+  for(var i=0;i<n;i++){
+    var ang=(-90 + i*(360/n))*Math.PI/180; // start at top, clockwise
+    var cx=50+34*Math.cos(ang), cy=50+34*Math.sin(ang);
+    var el=document.createElement('div');
+    el.className='node';
+    el.style.left=cx+'%';el.style.top=cy+'%';
+    var nd=current.nodes[i];
+    el.innerHTML='<div class="emoji">'+nd.icon+'</div><div class="lab">'+nd.label+'</div>';
+    (function(idx,elem){
+      elem.addEventListener('click',function(){pickNode(idx,elem);});
+    })(i,el);
+    ring.appendChild(el);
+    nodeEls.push(el);
+  }
+}
+
+function beginRound(forceCycle){
+  current=pickRound(forceCycle);
+  phase='spotting';
+  $('cyclename').textContent=current.cyc.name;
+  $('prompt').innerHTML='One stage <b>doesn\u2019t belong</b> in this cycle &mdash; tap it!';
+  $('centerhint').textContent=isPracticeRound?'Find the odd one!':'';
+  layoutRing();
+  startTimer();
+}
+
+function pickNode(idx,el){
+  if(phase!=='spotting'||!current)return;
+  if(current.nodes[idx].odd){
+    phase='resolved';stopTimer();
+    el.classList.add('correct');
+    tone(660,0.1,'sine',0.05);tone(880,0.12,'sine',0.05,0.09);
+    roundWin();
+  }else{
+    el.classList.add('wrong');
+    tone(150,0.18,'sawtooth',0.06);
+    // reveal the correct odd one
+    phase='resolved';stopTimer();
+    nodeEls[current.oddIdx].classList.add('reveal');
+    combo=1;updateCombo();
+    if(!isPracticeRound){ loseShield(); }
+    if(running) setTimeout(nextRound, 1100);
+  }
+}
+
+function roundWin(){
+  if(!isPracticeRound){
+    var base=20;
+    var pts=Math.round(base*combo);
+    score+=pts;$('scoreval').textContent=score;
+    popScore(pts);
+    combo=Math.min(combo+1,6);maxCombo=Math.max(maxCombo,combo);updateCombo();
+  }else{
+    $('centerhint').textContent='Nice!';
+  }
+  setTimeout(nextRound,800);
+}
+
+function popScore(pts){
+  var d=document.createElement('div');
+  d.style.cssText='position:absolute;left:50%;top:46%;transform:translateX(-50%);z-index:9;'+
+    'font-family:Orbitron,sans-serif;font-weight:900;font-size:26px;color:var(--leaf);pointer-events:none;transition:all .85s ease-out;';
+  d.textContent='+'+pts;
+  $('wrap').appendChild(d);
+  requestAnimationFrame(function(){d.style.top='36%';d.style.opacity='0';});
+  setTimeout(function(){d.remove();},850);
+}
+
+function nextRound(){
+  if(!running)return;
+  if(isPracticeRound){
+    isPracticeRound=false;
+    $('practicebanner').classList.remove('show');
+    roundNum=1;
+    $('wavebadge').textContent='1';
+    showFlash('ROUND 1','Spot the odd stage!');
+    setTimeout(function(){beginRound();},1200);
+    return;
+  }
+  roundNum++;
+  if(roundNum>ROUNDS_PER_GAME){ endGame(true); return; }
+  $('wavebadge').textContent=roundNum;
+  beginRound();
+}
+
+/* ============ TIMER ============ */
+function startTimer(){
+  timerDur=isPracticeRound?14:DIFF[diff].t;
+  timerStart=performance.now();
+  $('timerwrap').classList.add('show');
+  $('timerbar').style.width='100%';
+  $('timerbar').style.background='var(--leaf)';
+  tickTimer();
+}
+function tickTimer(){
+  if(phase!=='spotting'){return;}
+  var elapsed=(performance.now()-timerStart)/1000;
+  var frac=Math.max(0,1-elapsed/timerDur);
+  $('timerbar').style.width=(frac*100)+'%';
+  if(frac<0.3)$('timerbar').style.background='var(--danger)';
+  if(frac<=0){ timeOut(); return; }
+  timerId=requestAnimationFrame(tickTimer);
+}
+function stopTimer(){ if(timerId)cancelAnimationFrame(timerId); timerId=null; $('timerwrap').classList.remove('show'); }
+function timeOut(){
+  if(phase!=='spotting')return;
+  phase='resolved';stopTimer();
+  tone(140,0.3,'sawtooth',0.07);
+  nodeEls[current.oddIdx].classList.add('reveal');
+  combo=1;updateCombo();
+  if(isPracticeRound){
+    $('centerhint').textContent='That was the odd one!';
+    setTimeout(nextRound,1300);
+  }else{
+    loseShield();
+    if(running) setTimeout(nextRound,1300);
+  }
+}
+
+/* ============ SHIELDS / COMBO ============ */
+function updateCombo(){
+  var el=$('comboval');
+  if(combo>1){el.style.visibility='visible';el.textContent='x'+combo;}
+  else el.style.visibility='hidden';
+}
+function renderShields(){
+  var el=$('shields');el.innerHTML='';
+  for(var i=0;i<3;i++){var p=document.createElement('div');p.className='shield-pip'+(i<shields?'':' down');el.appendChild(p);}
+}
+function loseShield(){
+  shields--;renderShields();
+  $('wrap').style.transition='filter .15s';
+  $('wrap').style.filter='saturate(1.5) brightness(1.15)';
+  setTimeout(function(){$('wrap').style.filter='';},220);
+  if(shields<=0) endGame(false);
+}
+
+function showFlash(big,small){
+  $('flashtext').innerHTML=big+'<div class="sub">'+small+'</div>';
+  var f=$('flash');f.classList.remove('show');void f.offsetWidth;f.classList.add('show');
+  tone(523,0.12,'sine',0.05);tone(659,0.16,'sine',0.05,0.12);
+}
+
+/* ============ START / END ============ */
+function startGame(){
+  shields=3;score=0;combo=1;maxCombo=1;roundNum=0;current=null;
+  renderShields();
+  $('scoreval').textContent='0';updateCombo();
+  $('wavebadge').textContent='P';
+  $('startpanel').style.display='none';
+  $('endpanel').style.display='none';
+  $('boardpanel').style.display='none';
+  $('speedctl').classList.add('show');
+  $('spdName').textContent=DIFF[diff].n;
+  running=true;
+  isPracticeRound=true;
+  $('practicebanner').classList.add('show');
+  showFlash('PRACTICE ROUND','Find the stage that doesn\u2019t belong');
+  setTimeout(function(){beginRound(0);},1300); // practice uses the bird cycle (clear & familiar)
+}
+
+function endGame(won){
+  running=false;stopTimer();
+  $('speedctl').classList.remove('show');
+  var completed=roundNum-1; if(won) completed=ROUNDS_PER_GAME;
+  var rank,medal,medalCol;
+  if(won && maxCombo>=8){rank='LEGENDARY NATURALIST';medal='\u2605';medalCol='#F4C430';}
+  else if(won){rank='MASTER NATURALIST';medal='\u2605';medalCol='#5BD97F';}
+  else if(completed>=8){rank='FIELD BIOLOGIST';medal='\u2605';medalCol='#56C2E6';}
+  else if(completed>=4){rank='KEEN SPOTTER';medal='\u2726';medalCol='#E86A9B';}
+  else{rank='YOUNG SPROUT';medal='\u2726';medalCol='#9FBCA8';}
+  $('endbadge').textContent=medal;$('endbadge').style.color=medalCol;$('endbadge').style.borderColor=medalCol;
+  $('endrank').textContent=rank;$('endrank').style.color=medalCol;
+  $('endtitle').textContent=won?'ALL ROUNDS CLEARED!':'GAME OVER';
+  $('endscore').textContent=score;
+  $('endstats').innerHTML=completed+' of '+ROUNDS_PER_GAME+' rounds &middot; best chain x'+maxCombo+
+    (won?'<br>You spotted every odd stage \u2014 brilliant!':'<br>Keep going \u2014 you\u2019ll know every cycle soon!');
+  if(won){tone(523,0.14,'sine',0.06);tone(659,0.14,'sine',0.06,0.15);tone(784,0.3,'sine',0.06,0.3);}
+  else{tone(220,0.3,'sawtooth',0.07);tone(110,0.5,'sawtooth',0.07,0.25);}
+  $('endpanel').style.display='flex';
+  pendingScore=score;pendingSaved=false;
+  $('hsbadge').style.display='none';$('nameform').style.display='none';
+  if(score>0){
+    var p=currentPlayer();
+    if(p){
+      sbInsert(p.name,score).then(function(){loadEndBoard(p.name,score);});
+      $('hsbadge').textContent='\u2713 Saved to '+p.name+"'s record";$('hsbadge').style.display='block';
+    }else{
+      sbQualifies(score).then(function(q){
+        if(q){
+          $('hsbadge').textContent='\uD83C\uDFC6 Top spotter! Log your name:';
+          $('hsbadge').style.display='block';$('nameform').style.display='flex';
+          $('nameinput').value='';setTimeout(function(){try{$('nameinput').focus();}catch(e){}},300);
+        }
+      });
+    }
+  }
+  loadEndBoard(null,null);
+}
+
+var pendingScore=0,pendingSaved=false;
+
+$('difficulty').addEventListener('click',function(e){
+  var b=e.target.closest('.diffbtn');if(!b)return;
+  setDiff(parseInt(b.dataset.d,10));
+});
+function setDiff(d){
+  diff=Math.max(0,Math.min(DIFF.length-1,d));
+  document.querySelectorAll('.diffbtn').forEach(function(x){x.classList.toggle('on',parseInt(x.dataset.d,10)===diff);});
+  $('spdName').textContent=DIFF[diff].n;
+}
+$('spdUp').addEventListener('click',function(){setDiff(diff+1);tone(660,0.08,'square',0.05);});
+$('spdDown').addEventListener('click',function(){setDiff(diff-1);tone(440,0.08,'square',0.05);});
+
+$('launchbtn').addEventListener('click',startGame);
+$('againbtn').addEventListener('click',startGame);
+
+$('savescore').addEventListener('click',async function(){
+  if(pendingSaved)return;
+  var name=$('nameinput').value.trim().slice(0,14)||'Mystery spotter';
+  $('savescore').textContent='Saving\u2026';$('savescore').disabled=true;
+  var ok=await sbInsert(name,pendingScore);
+  if(ok){
+    pendingSaved=true;$('hsbadge').style.display='none';$('nameform').style.display='none';
+    tone(660,0.1,'sine',0.06);tone(990,0.2,'sine',0.06,0.12);
+    loadEndBoard(name,pendingScore);
+  }else{
+    $('savescore').textContent='Save';$('savescore').disabled=false;
+    $('hsbadge').textContent='Connection error &mdash; try again';$('hsbadge').style.display='block';
+  }
+});
+$('nameinput').addEventListener('keydown',function(e){if(e.key==='Enter')$('savescore').click();e.stopPropagation();});
+function openBoard(){$('boardpanel').style.display='flex';loadMainBoard();}
+$('boardbtn').addEventListener('click',openBoard);
+$('boardbtn2').addEventListener('click',openBoard);
+$('closeboard').addEventListener('click',function(){$('boardpanel').style.display='none';});
+$('refreshboard').addEventListener('click',loadMainBoard);
+
+})();
+</script>
+</body>
+</html>

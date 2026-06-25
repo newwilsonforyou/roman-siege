@@ -67,6 +67,12 @@
     radial-gradient(circle at 25% 25%,rgba(194,64,44,.18),transparent 55%),#17100a;}
   .lino .card-tag{color:var(--gold);}
   .lino .play{background:var(--gold);color:#3a2400;}
+  .lifecycle{background:linear-gradient(160deg,#123626,#0A1F16);}
+  .lifecycle:hover{box-shadow:0 18px 50px rgba(91,217,127,.35);border-color:#5BD97F;}
+  .lifecycle .card-art{background:radial-gradient(circle at 30% 28%,rgba(91,217,127,.3),transparent 55%),
+    radial-gradient(circle at 75% 75%,rgba(86,194,230,.22),transparent 52%),#0A1F16;}
+  .lifecycle .card-tag{color:#5BD97F;}
+  .lifecycle .play{background:#5BD97F;color:#06301a;}
   .siege{background:linear-gradient(160deg,#3a1410,#1c0a08);}  .siege:hover{box-shadow:0 18px 50px rgba(192,57,43,.4);border-color:var(--legion);}
   .siege .card-art{background:radial-gradient(circle at 50% 120%,rgba(242,193,78,.25),transparent 60%),
     linear-gradient(#7fa0c0 0%,#f2d9a6 72%,#7c8a4d 72%,#7c8a4d 100%);}
@@ -90,6 +96,12 @@
     radial-gradient(circle at 75% 50%,rgba(91,255,155,.18),transparent 50%),#07180f;}
   .builder .card-tag{color:var(--ok);}
   .builder .play{background:var(--ok);color:#063;}
+  .outpost{background:linear-gradient(160deg,#3a2410,#1c1006);}
+  .outpost:hover{box-shadow:0 18px 50px rgba(217,164,65,.35);border-color:#D9A441;}
+  .outpost .card-art{background:radial-gradient(circle at 60% 70%,rgba(217,164,65,.3),transparent 55%),
+    radial-gradient(circle at 25% 30%,rgba(164,48,44,.25),transparent 50%),#1c1006;}
+  .outpost .card-tag{color:#D9A441;}
+  .outpost .play{background:#D9A441;color:#3a1d05;}
   .badge2d,.badge3d{position:absolute;top:14px;right:14px;font-family:'Orbitron',sans-serif;
     font-weight:900;font-size:12px;letter-spacing:.1em;padding:5px 11px;border-radius:8px;z-index:3;}
   .badge2d{background:rgba(242,193,78,.9);color:#3a2400;}
@@ -172,7 +184,7 @@
   <header>
     <div class="kicker">Choose your game</div>
     <h1>Year 5 Arcade</h1>
-    <p class="sub">Eight games in one place — carve and print in the lino studio, master Roman numerals from I to C, explore Victorian Britain and the British Empire, and review Year 5 Geography, angles and life cycles. Sign in, and every game you play is saved to your record.</p>
+    <p class="sub">Ten games in one place — carve and print in the lino studio, spot the odd stage in life cycles, defend your Legion outpost, master Roman numerals from I to C, explore Victorian Britain and the British Empire, and review Year 5 Geography and angles. Sign in, and every game you play is saved to your record.</p>
   </header>
 
   <main class="cards">
@@ -201,6 +213,30 @@
         <div class="card-tag">Print Studio</div>
         <div class="card-title">Lino Layers</div>
         <div class="card-desc">Carve a block for each colour, then stack the layers to print the picture — flowers, rockets and more. Tap or drag to carve!</div>
+        <span class="play">PLAY ▶</span>
+      </div>
+    </a>
+
+    <a class="card lifecycle" id="card-lifecycle" href="life-cycles.html">
+      <span class="badge2d" style="background:rgba(91,217,127,.92);color:#06301a;">SPOT</span>
+      <div class="lockmsg">🔒 Sign in first</div>
+      <div class="card-art">
+        <svg class="art-svg pulse" viewBox="0 0 200 150" aria-hidden="true">
+          <circle cx="100" cy="75" r="44" fill="none" stroke="rgba(91,217,127,.5)" stroke-width="2.5" stroke-dasharray="5 5"/>
+          <g font-size="26" text-anchor="middle">
+            <text x="100" y="42">🥚</text>
+            <text x="143" y="84">🐛</text>
+            <text x="100" y="124">🦋</text>
+            <text x="57" y="84">🐸</text>
+          </g>
+          <circle cx="57" cy="76" r="15" fill="none" stroke="#E45B5B" stroke-width="3"/>
+          <path d="M150 30 l8 8 M158 30 l-8 8" stroke="#F4C430" stroke-width="2.5" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="card-body">
+        <div class="card-tag">Spot the Odd One</div>
+        <div class="card-title">Cycle Spotter</div>
+        <div class="card-desc">Each ring shows a life cycle — but one stage has snuck in from a different animal or plant! Find the impostor before the timer runs out.</div>
         <span class="play">PLAY ▶</span>
       </div>
     </a>
@@ -272,6 +308,27 @@
         <div class="card-tag">Build It</div>
         <div class="card-title">Solar System Builder</div>
         <div class="card-desc">Drag each planet into its orbit, in order from the Sun. Hands-on, no waiting — race the clock for bonus points.</div>
+        <span class="play">PLAY ▶</span>
+      </div>
+    </a>
+
+    <a class="card outpost" id="card-outpost" href="legion-outpost.html">
+      <span class="badge2d" style="background:rgba(217,164,65,.95);color:#3a1d05;">NEW</span>
+      <div class="lockmsg">🔒 Sign in first</div>
+      <div class="card-art">
+        <svg class="art-svg pulse" viewBox="0 0 200 150" aria-hidden="true">
+          <rect x="120" y="40" width="55" height="60" fill="#9B968A"/>
+          <rect x="118" y="32" width="10" height="10" fill="#9B968A"/><rect x="136" y="32" width="10" height="10" fill="#9B968A"/><rect x="154" y="32" width="10" height="10" fill="#9B968A"/>
+          <path d="M20 110 Q60 95 100 108 Q140 100 180 112" stroke="#C7AE7C" stroke-width="16" fill="none" stroke-linecap="round"/>
+          <g transform="translate(40,70)"><rect x="0" y="6" width="12" height="14" rx="3" fill="#A4302C"/><circle cx="6" cy="2" r="5" fill="#C98A5E"/></g>
+          <g transform="translate(70,86)"><rect x="14" y="14" width="9" height="13" rx="2" fill="#8A6017"/><circle cx="18" cy="10" r="6" fill="#8A6017" stroke="#2E2A24" stroke-width="1"/></g>
+          <circle cx="25" cy="20" r="3" fill="#FFD23F" opacity=".8"/>
+        </svg>
+      </div>
+      <div class="card-body">
+        <div class="card-tag">Build &amp; Defend</div>
+        <div class="card-title">Legion Outpost</div>
+        <div class="card-desc">Hunt, sell, and hire workers to grow your outpost. Build towers to survive 30 raider waves — every price is in Roman numerals.</div>
         <span class="play">PLAY ▶</span>
       </div>
     </a>
@@ -452,9 +509,11 @@ function renderUserBar(){
 }
 function setCardsLocked(locked){
   $('card-lino').classList.toggle('locked',locked);
+  $('card-lifecycle').classList.toggle('locked',locked);
   $('card-siege').classList.toggle('locked',locked);
   $('card-nebula').classList.toggle('locked',locked);
   $('card-builder').classList.toggle('locked',locked);
+  $('card-outpost').classList.toggle('locked',locked);
   $('card-empire').classList.toggle('locked',locked);
   $('card-museum').classList.toggle('locked',locked);
   $('card-voyage').classList.toggle('locked',locked);
