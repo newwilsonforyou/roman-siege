@@ -65,6 +65,25 @@
   #inkoverlay.rolling{animation:rollin .5s ease forwards;}
   @keyframes rollin{0%{opacity:0;clip-path:inset(0 100% 0 0);}100%{opacity:.55;clip-path:inset(0 0% 0 0);}}
 
+  /* ---- intensity effects for higher levels ---- */
+  #dim{position:absolute;inset:0;z-index:7;pointer-events:none;opacity:0;transition:opacity .6s;
+    background:radial-gradient(circle at 50% 42%,transparent 30%,rgba(0,0,0,.55) 100%);
+    mix-blend-mode:multiply;}
+  #flicker{position:absolute;inset:0;z-index:7;pointer-events:none;opacity:0;background:#000;}
+  @keyframes wrapshake{
+    0%,100%{transform:translate(0,0);}
+    20%{transform:translate(-2px,1px);}40%{transform:translate(2px,-1px);}
+    60%{transform:translate(-1px,-2px);}80%{transform:translate(1px,2px);}}
+  #wrap.shake{animation:wrapshake .35s linear;}
+  #wrap.shake-hard{animation:wrapshake .5s linear;}
+  #carvetimer{position:absolute;top:54px;left:16px;right:16px;height:6px;border-radius:4px;
+    background:rgba(0,0,0,.18);z-index:6;overflow:hidden;display:none;}
+  #carvetimer.show{display:block;}
+  #carvetimerfill{height:100%;width:100%;background:var(--plate);border-radius:4px;transition:width .1s linear,background .2s;}
+  #leveltag{position:absolute;top:96px;left:0;right:0;text-align:center;z-index:6;pointer-events:none;
+    font-family:'Orbitron',sans-serif;font-weight:700;font-size:11px;letter-spacing:.18em;color:var(--plate);opacity:0;transition:opacity .3s;}
+  #leveltag.show{opacity:.85;}
+
   #pressbtn{position:absolute;bottom:0;left:0;right:0;z-index:6;display:flex;justify-content:center;gap:10px;
     padding:0 14px 18px;background:linear-gradient(rgba(244,236,220,0) 0%,var(--paper) 55%);}
   #pressbtn button{pointer-events:auto;font-family:'Orbitron',sans-serif;font-weight:700;font-size:16px;
@@ -148,6 +167,10 @@
 <body>
 <div id="wrap">
   <div id="grain"></div>
+  <div id="dim"></div>
+  <div id="flicker"></div>
+  <div id="carvetimer"><div id="carvetimerfill"></div></div>
+  <div id="leveltag"></div>
 
   <div id="practicebanner"><span>PRACTICE PRINT — no lives lost, just learn how it works</span></div>
 
@@ -329,6 +352,30 @@ var RAW=[
   {name:'Star', layers:[
     {label:'Gold star', color:'#F2C53D', cells:['...##...','...##...','########','.######.','..####..','.##..##.','##....##','........']},
     {label:'Orange centre', color:'#E0822E', cells:['........','........','...##...','...##...','........','........','........','........']}
+  ]},
+  {name:'Ladybird', layers:[
+    {label:'Red shell', color:'#C2402C', cells:['........','..####..','.######.','.######.','.######.','.######.','..####..','........']},
+    {label:'Black head & spots', color:'#2B2018', cells:['...##...','..#..#..','........','..#..#..','........','..#..#..','........','........']}
+  ]},
+  {name:'Snail', layers:[
+    {label:'Brown body', color:'#8A5A36', cells:['........','........','........','........','........','#.......','#####...','########']},
+    {label:'Spiral shell', color:'#E0A030', cells:['........','..####..','.#....#.','.#.##.#.','.#.##.#.','.#....#.','..####..','........']},
+    {label:'Eye stalks', color:'#6E4B2A', cells:['#...#...','#...#...','........','........','........','........','........','........']}
+  ]},
+  {name:'Hot air balloon', layers:[
+    {label:'Red balloon', color:'#C2402C', cells:['..####..','.######.','########','########','.######.','..####..','........','........']},
+    {label:'Yellow stripe', color:'#F2C53D', cells:['........','........','...##...','...##...','........','........','........','........']},
+    {label:'Brown basket', color:'#8A5A36', cells:['........','........','........','........','........','........','...##...','...##...']}
+  ]},
+  {name:'Crab', layers:[
+    {label:'Orange body', color:'#E0822E', cells:['........','........','..####..','.######.','.######.','..####..','........','........']},
+    {label:'Claws', color:'#C2402C', cells:['........','##....##','##....##','........','........','........','........','........']},
+    {label:'Legs', color:'#8A4A2A', cells:['........','........','........','........','........','#......#','##....##','........']}
+  ]},
+  {name:'Tree', layers:[
+    {label:'Green leaves', color:'#4C8A52', cells:['..####..','.######.','########','########','.######.','..####..','........','........']},
+    {label:'Brown trunk', color:'#6E4B2A', cells:['........','........','........','........','........','...##...','...##...','...##...']},
+    {label:'Red apples', color:'#C2402C', cells:['........','..#..#..','........','#......#','........','........','........','........']}
   ]}
 ];
 var DESIGNS=RAW.map(function(d){
@@ -337,7 +384,12 @@ var DESIGNS=RAW.map(function(d){
   })};
 });
 
-var SECTOR_ORDER=[0,1,2,3,4,5,6,7,8,9,10];
+function shuffledOrder(){
+  var a=[];for(var i=0;i<DESIGNS.length;i++)a.push(i);
+  for(var j=a.length-1;j>0;j--){var k=Math.floor(Math.random()*(j+1));var t=a[j];a[j]=a[k];a[k]=t;}
+  return a;
+}
+var SECTOR_ORDER=shuffledOrder();
 var BASE_EDITION_COUNT=DESIGNS.length;
 var DIFF=[{pass:0.55,n:'Gentle'},{pass:0.68,n:'Apprentice'},{pass:0.80,n:'Printer'},{pass:0.90,n:'Master'},{pass:0.97,n:'Maestro'}];
 var diff=2;
@@ -537,10 +589,101 @@ function startEdition(designIdx,practice){
   isPracticeRound=!!practice;
   $('practicebanner').classList.toggle('show',isPracticeRound);
   if(!carveCells) buildCarveGrid();
+  applyIntensity();
   renderTarget();
   renderPrint();
   beginLayer();
 }
+
+/* ============ INTENSITY: higher editions get faster, dimmer, shakier ============ */
+var carveTimerId=null, carveTimerStart=0, carveTimerDur=0;
+var ambientShakeId=null;
+function levelNum(){ return isPracticeRound?0:(editionIdx+1); }
+function applyIntensity(){
+  var lvl=levelNum();
+  // dim deepens from level 3, capped so it stays playable
+  var dimAmt=lvl<3?0:Math.min(0.55,(lvl-2)*0.10);
+  $('dim').style.opacity=dimAmt;
+  // level tag
+  if(lvl>=3){
+    $('leveltag').textContent='LEVEL '+lvl+' \u2014 PRESS HEATING UP';
+    $('leveltag').classList.add('show');
+  }else{
+    $('leveltag').classList.remove('show');
+  }
+  // ambient shake: occasional tremors from level 4, more frequent higher up
+  if(ambientShakeId){clearInterval(ambientShakeId);ambientShakeId=null;}
+  if(lvl>=4 && running){
+    var every=Math.max(2200, 7000-(lvl-3)*900); // shakes get more frequent
+    ambientShakeId=setInterval(function(){
+      if(!running||phase!=='carving')return;
+      doShake(lvl>=7?'hard':'soft');
+      if(lvl>=6) flicker();
+    }, every);
+  }
+}
+function doShake(kind){
+  var w=$('wrap');
+  w.classList.remove('shake','shake-hard');void w.offsetWidth;
+  w.classList.add(kind==='hard'?'shake-hard':'shake');
+  setTimeout(function(){w.classList.remove('shake','shake-hard');}, 520);
+}
+function flicker(){
+  var f=$('flicker');
+  f.style.transition='none';f.style.opacity='0.4';
+  requestAnimationFrame(function(){ f.style.transition='opacity .18s'; f.style.opacity='0'; });
+}
+function carveTimeLimit(){
+  // a time limit applies on every real layer; practice gets a relaxed limit.
+  // it shortens as the level (edition) climbs, with a 6-second floor.
+  var lvl=levelNum();
+  if(lvl<=0) return 22;                  // practice: gentle
+  return Math.max(6, 20 - (lvl-1)*1.4);  // L1 ~20s down to 6s floor
+}
+function startCarveTimer(){
+  stopCarveTimer();
+  carveTimerDur=carveTimeLimit();
+  if(carveTimerDur<=0){ $('carvetimer').classList.remove('show'); return; }
+  $('carvetimer').classList.add('show');
+  $('carvetimerfill').style.width='100%';
+  $('carvetimerfill').style.background='var(--plate)';
+  carveTimerStart=performance.now();
+  tickCarveTimer();
+}
+function tickCarveTimer(){
+  if(phase!=='carving'){return;}
+  var frac=Math.max(0,1-(performance.now()-carveTimerStart)/1000/carveTimerDur);
+  $('carvetimerfill').style.width=(frac*100)+'%';
+  if(frac<0.3)$('carvetimerfill').style.background='var(--danger)';
+  if(frac<=0){ timeUp(); return; }
+  carveTimerId=requestAnimationFrame(tickCarveTimer);
+}
+function timeUp(){
+  if(phase!=='carving')return;
+  phase='timeup';
+  stopCarveTimer();
+  doShake('hard'); flicker();
+  tone(140,0.3,'sawtooth',0.07);
+  // still stamp whatever was carved, so the print builds up and the picture continues
+  var L=current.design.layers[layerIdx];
+  var printedSet={};
+  for(var r=0;r<GRID;r++)for(var c=0;c<GRID;c++){ if(!carved[r][c]) printedSet[r+','+c]=true; }
+  pressedLayers.push({set:printedSet,color:L.color});
+  renderPrint();
+  // show a time-out flash
+  $('scorepct').textContent='\u23F0';
+  $('scorepct').style.color='var(--danger)';
+  $('scoremsg').textContent=isPracticeRound?'Out of time! (no life lost in practice)':'Out of time \u2014 you lose a shield!';
+  $('scoreflash').classList.add('show');
+  combo=1;updateCombo();
+  setTimeout(function(){
+    $('scoreflash').classList.remove('show');
+    if(!isPracticeRound){ loseShield(); if(!running) return; }
+    setTimeout(advance,250);
+  },1350);
+}
+function stopCarveTimer(){ if(carveTimerId)cancelAnimationFrame(carveTimerId); carveTimerId=null; $('carvetimer').classList.remove('show'); }
+
 function beginLayer(){
   var L=current.design.layers[layerIdx];
   phase='carving';
@@ -554,6 +697,7 @@ function beginLayer(){
   $('actionbtn').disabled=false;
   $('clearbtn').style.visibility='visible';
   $('scoreflash').classList.remove('show');
+  startCarveTimer();
 }
 
 $('clearbtn').addEventListener('click',function(){
@@ -566,17 +710,24 @@ $('clearbtn').addEventListener('click',function(){
 $('actionbtn').addEventListener('click',function(){
   if(!running||!current||phase!=='carving')return;
   phase='inked';
+  stopCarveTimer();
   $('actionbtn').disabled=true;
   $('clearbtn').style.visibility='hidden';
   var L=current.design.layers[layerIdx];
   $('inkoverlay').style.background=L.color;
   $('inkoverlay').className='rolling';
   tone(360,0.12,'triangle',0.05);
-  setTimeout(doPress,560);
+  // higher levels press faster
+  var lvl=levelNum();
+  var inkDelay=Math.max(280, 560-lvl*30);
+  setTimeout(doPress,inkDelay);
 });
 
 function doPress(){
   thud(0.22);tone(170,0.18,'sawtooth',0.06);
+  var lvl=levelNum();
+  doShake(lvl>=5?'hard':'soft'); // press always thumps; harder at higher levels
+  if(lvl>=6) flicker();
   var L=current.design.layers[layerIdx];
   var acc=layerAccuracy();
   var printedSet={};
@@ -617,7 +768,7 @@ function advance(){
 
 function finishEdition(){
   if(isPracticeRound){
-    isPracticeRound=false;printsDone++;
+    isPracticeRound=false;
     $('practicebanner').classList.remove('show');
     $('wavebadge').textContent='I';
     showFlash('EDITION I',DESIGNS[SECTOR_ORDER[0]].name);
@@ -627,11 +778,14 @@ function finishEdition(){
   printsDone++;
   popBigScore();
   editionIdx++;
-  if(editionIdx>=SECTOR_ORDER.length) addEndlessEdition();
+  if(editionIdx>=SECTOR_ORDER.length){
+    // all 16 pictures printed — the student has finished the game (a win!)
+    setTimeout(function(){ endGame(true); }, 1100);
+    return;
+  }
   var nextDesignIdx=SECTOR_ORDER[editionIdx];
   $('wavebadge').textContent=toRoman(editionIdx+1);
-  var isBonus=editionIdx>=BASE_EDITION_COUNT;
-  showFlash((isBonus?'BONUS EDITION ':'EDITION ')+toRoman(editionIdx+1),DESIGNS[nextDesignIdx].name);
+  showFlash('EDITION '+toRoman(editionIdx+1),DESIGNS[nextDesignIdx].name);
   setTimeout(function(){startEdition(nextDesignIdx,false);},1500);
 }
 function popBigScore(){
@@ -671,7 +825,7 @@ function showFlash(big,small){
 
 function startGame(){
   shields=3;score=0;combo=1;maxCombo=1;editionIdx=0;printsDone=0;current=null;
-  SECTOR_ORDER=[0,1,2,3,4,5,6,7,8,9,10];
+  SECTOR_ORDER=shuffledOrder();
   renderShields();
   $('scoreval').textContent='0';updateCombo();
   $('wavebadge').textContent='PRACTICE';
@@ -680,29 +834,36 @@ function startGame(){
   $('boardpanel').style.display='none';
   $('speedctl').classList.add('show');
   $('spdName').textContent=DIFF[diff].n;
+  // reset intensity
+  $('dim').style.opacity=0;$('leveltag').classList.remove('show');
+  if(ambientShakeId){clearInterval(ambientShakeId);ambientShakeId=null;}
+  stopCarveTimer();
   running=true;
   showFlash('PRACTICE PRINT','Learn how it works &mdash; no lives lost');
   setTimeout(function(){startEdition(0,true);},1300);
 }
 
-function endGame(){
+function endGame(won){
   running=false;
+  if(ambientShakeId){clearInterval(ambientShakeId);ambientShakeId=null;}
+  stopCarveTimer();
+  $('dim').style.opacity=0;$('leveltag').classList.remove('show');
   $('speedctl').classList.remove('show');
-  var reached=editionIdx+1;
-  var clearedAll=editionIdx>=BASE_EDITION_COUNT;
+  var printed=printsDone; // how many real editions completed
+  var allDone=!!won;       // true only when all 16 were printed
   var rank,medal,medalCol;
-  if(clearedAll&&reached>=BASE_EDITION_COUNT+2){rank='LEGENDARY PRESS MASTER';medal='\u2605';medalCol='#D9A53C';}
-  else if(clearedAll){rank='MASTER PRINTER';medal='\u2605';medalCol='#C2402C';}
-  else if(reached>=3){rank='SKILLED PRINTER';medal='\u2605';medalCol='#3E8E5C';}
-  else if(reached>=2){rank='APPRENTICE PRINTER';medal='\u2726';medalCol='#8A4A3A';}
+  if(allDone){rank='MASTER PRINTER';medal='\u2605';medalCol='#D9A53C';}
+  else if(printed>=11){rank='EXPERT PRINTER';medal='\u2605';medalCol='#C2402C';}
+  else if(printed>=6){rank='SKILLED PRINTER';medal='\u2605';medalCol='#3E8E5C';}
+  else if(printed>=2){rank='APPRENTICE PRINTER';medal='\u2726';medalCol='#8A4A3A';}
   else{rank='FIRST EDITION';medal='\u2726';medalCol='#7A6A55';}
   $('endbadge').textContent=medal;$('endbadge').style.color=medalCol;$('endbadge').style.borderColor=medalCol;
   $('endrank').textContent=rank;$('endrank').style.color=medalCol;
-  $('endtitle').textContent=clearedAll?'FULL COLLECTION PRINTED!':'PRESS STOPPED';
+  $('endtitle').textContent=allDone?'ALL 16 PICTURES PRINTED!':'OUT OF SHIELDS';
   $('endscore').textContent=score;
-  $('endstats').innerHTML=printsDone+' editions printed &middot; best chain x'+maxCombo+
-    '<br>You reached edition '+toRoman(editionIdx+1)+(clearedAll?' &mdash; the full collection!':'. Keep practising!');
-  if(clearedAll){tone(523,0.14,'sine',0.06);tone(659,0.14,'sine',0.06,0.15);tone(784,0.3,'sine',0.06,0.3);}
+  $('endstats').innerHTML=printed+' of '+BASE_EDITION_COUNT+' pictures printed &middot; best chain x'+maxCombo+
+    (allDone?'<br>You finished the whole collection &mdash; amazing!':'<br>Keep practising to print all 16!');
+  if(allDone){tone(523,0.14,'sine',0.06);tone(659,0.14,'sine',0.06,0.15);tone(784,0.3,'sine',0.06,0.3);}
   else{tone(220,0.3,'sawtooth',0.07);tone(110,0.5,'sawtooth',0.07,0.25);}
   $('endpanel').style.display='flex';
   pendingScore=score;pendingSaved=false;
