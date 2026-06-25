@@ -301,6 +301,34 @@ var RAW=[
   {name:'Cat', layers:[
     {label:'Grey face & ears', color:'#9AA3AC', cells:['.#....#.','.##..##.','.######.','.######.','.######.','.######.','..####..','........']},
     {label:'Pink ears & nose', color:'#E0699B', cells:['........','..#..#..','........','........','...##...','........','........','........']}
+  ]},
+  {name:'Butterfly', layers:[
+    {label:'Purple wings', color:'#8E5DBE', cells:['##....##','###..###','.##..##.','..####..','..####..','.##..##.','###..###','##....##']},
+    {label:'Black body', color:'#2B2018', cells:['........','........','...##...','...##...','...##...','...##...','........','........']}
+  ]},
+  {name:'Toadstool', layers:[
+    {label:'Red cap', color:'#C2402C', cells:['..####..','.######.','########','########','........','........','........','........']},
+    {label:'Cream stalk', color:'#EFD9A8', cells:['........','........','........','........','..####..','..####..','..####..','.######.']},
+    {label:'White spots', color:'#FAF6EC', cells:['...##...','#......#','..#..#..','.#....#.','........','........','........','........']}
+  ]},
+  {name:'Robot', layers:[
+    {label:'Grey head', color:'#9AA3AC', cells:['...##...','.######.','.######.','.######.','........','........','........','........']},
+    {label:'Blue body', color:'#3E7FBF', cells:['........','........','........','........','########','########','#.####.#','..#..#..']},
+    {label:'Red eyes & bolt', color:'#C2402C', cells:['........','..#..#..','........','...##...','........','........','........','........']}
+  ]},
+  {name:'Apple', layers:[
+    {label:'Red apple', color:'#C2402C', cells:['........','.##..##.','########','########','########','.######.','..####..','........']},
+    {label:'Brown stalk', color:'#6E4B2A', cells:['...##...','...#....','........','........','........','........','........','........']},
+    {label:'Green leaf', color:'#4C8A52', cells:['........','....##..','.....#..','........','........','........','........','........']}
+  ]},
+  {name:'Penguin', layers:[
+    {label:'Black body', color:'#2B2018', cells:['..####..','.######.','.######.','.######.','.######.','.######.','.######.','##....##']},
+    {label:'White tummy', color:'#FAF6EC', cells:['........','..####..','..####..','..####..','..####..','...##...','........','........']},
+    {label:'Orange beak & feet', color:'#E0822E', cells:['........','...##...','........','........','........','........','........','##....##']}
+  ]},
+  {name:'Star', layers:[
+    {label:'Gold star', color:'#F2C53D', cells:['...##...','...##...','########','.######.','..####..','.##..##.','##....##','........']},
+    {label:'Orange centre', color:'#E0822E', cells:['........','........','...##...','...##...','........','........','........','........']}
   ]}
 ];
 var DESIGNS=RAW.map(function(d){
@@ -309,7 +337,7 @@ var DESIGNS=RAW.map(function(d){
   })};
 });
 
-var SECTOR_ORDER=[0,1,2,3,4];
+var SECTOR_ORDER=[0,1,2,3,4,5,6,7,8,9,10];
 var BASE_EDITION_COUNT=DESIGNS.length;
 var DIFF=[{pass:0.55,n:'Gentle'},{pass:0.68,n:'Apprentice'},{pass:0.80,n:'Printer'},{pass:0.90,n:'Master'},{pass:0.97,n:'Maestro'}];
 var diff=2;
@@ -643,7 +671,7 @@ function showFlash(big,small){
 
 function startGame(){
   shields=3;score=0;combo=1;maxCombo=1;editionIdx=0;printsDone=0;current=null;
-  SECTOR_ORDER=[0,1,2,3,4];
+  SECTOR_ORDER=[0,1,2,3,4,5,6,7,8,9,10];
   renderShields();
   $('scoreval').textContent='0';updateCombo();
   $('wavebadge').textContent='PRACTICE';
