@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Lino Layers — Multi-Colour Print Press</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F4ECDC;--paper-2:#EAE0C8;--ink:#1B1410;--ink-2:#2B2018;
+    --plate:#C2402C;--plate-dim:#8A4A3A;--gold:#D9A53C;--danger:#C23B3B;--ok:#3E8E5C;
+    --text:#2B2018;--text-dim:#7A6A55;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;overflow:hidden;}
+  body{font-family:'Rajdhani',sans-serif;background:var(--ink);color:var(--text);
+    display:flex;align-items:center;justify-content:center;user-select:none;-webkit-user-select:none;touch-action:none;}
+  #wrap{position:relative;width:min(100vw,1000px);height:min(100vh,100dvh);max-height:760px;overflow:hidden;
+    background:radial-gradient(circle at 18% 22%,rgba(194,64,44,.10),transparent 40%),
+                radial-gradient(circle at 82% 75%,rgba(217,165,60,.10),transparent 45%),var(--paper);}
+  @media(min-width:1020px){#wrap{border-radius:20px;box-shadow:0 30px 80px rgba(0,0,0,.7);}}
+  #grain{position:absolute;inset:0;z-index:0;opacity:.5;pointer-events:none;
+    background-image:repeating-linear-gradient(0deg,rgba(0,0,0,.02) 0 2px,transparent 2px 4px);}
+
+  .hud{position:absolute;left:0;right:0;pointer-events:none;z-index:5;}
+  #topbar{top:0;display:flex;justify-content:space-between;align-items:flex-start;padding:14px 16px;
+    background:linear-gradient(var(--paper) 35%,rgba(244,236,220,0) 100%);}
+  .stat{font-family:'Orbitron',sans-serif;}
+  .stat .lbl{font-size:10px;letter-spacing:.22em;color:var(--text-dim);font-weight:700;}
+  .stat .val{font-size:20px;font-weight:900;line-height:1;color:var(--plate);}
+  #shields{display:flex;gap:6px;margin-top:3px;}
+  .shield-pip{width:22px;height:8px;border-radius:2px;background:var(--plate);transition:all .3s;}
+  .shield-pip.down{background:#D8CBAA;}
+  #wavebadge{font-family:'Orbitron',sans-serif;font-weight:700;font-size:12px;letter-spacing:.14em;color:var(--gold);text-align:center;}
+  #comboval{font-family:'Orbitron',sans-serif;font-weight:900;font-size:14px;color:var(--plate-dim);text-align:right;visibility:hidden;}
+
+  #stage{position:absolute;inset:0;z-index:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:62px 12px 142px;gap:8px;}
+
+  #layerline{display:flex;align-items:center;gap:9px;font-family:'Rajdhani',sans-serif;}
+  #layerline .ask{font-size:11px;letter-spacing:.2em;color:var(--text-dim);font-weight:700;text-transform:uppercase;}
+  #layerswatch{width:20px;height:20px;border-radius:6px;border:2px solid var(--ink);display:inline-block;}
+  #layername{font-weight:700;font-size:16px;color:var(--ink);}
+
+  #instruction{font-size:13px;color:var(--text-dim);font-weight:600;text-align:center;max-width:520px;min-height:18px;}
+  #instruction b{color:var(--plate);}
+
+  #panels{display:flex;gap:14px;align-items:flex-start;justify-content:center;width:100%;max-width:760px;}
+  .panelcol{display:flex;flex-direction:column;align-items:center;gap:5px;}
+  .panellbl{font-family:'Orbitron',sans-serif;font-size:9px;letter-spacing:.16em;color:var(--text-dim);font-weight:700;}
+
+  .minigrid{width:min(26vw,128px);height:min(26vw,128px);border-radius:9px;border:3px solid var(--ink);
+    background:#fff;display:grid;overflow:hidden;flex-shrink:0;}
+  .minicell{width:100%;height:100%;}
+
+  #blockzone{position:relative;width:min(56vw,300px);height:min(56vw,300px);max-width:300px;max-height:300px;flex-shrink:0;}
+  #carvegrid{position:absolute;inset:0;border-radius:14px;overflow:hidden;display:grid;touch-action:none;cursor:pointer;
+    box-shadow:0 14px 30px rgba(0,0,0,.32);background:#241712;}
+  .cell{position:relative;border:1px solid rgba(0,0,0,0.18);transition:background .08s,box-shadow .12s;}
+  .cell.raised{background:linear-gradient(150deg,#3a2418,#241712);}
+  .cell.carved{background:var(--paper-2);box-shadow:inset 0 0 6px rgba(0,0,0,.3);}
+  .cell.shape.raised{box-shadow:inset 0 0 0 2px var(--gold);}
+  .cell.shape.raised::after{content:'';position:absolute;inset:18%;border-radius:3px;background:rgba(217,165,60,0.25);}
+  #inkoverlay{position:absolute;inset:0;border-radius:14px;opacity:0;pointer-events:none;z-index:3;}
+  #inkoverlay.rolling{animation:rollin .5s ease forwards;}
+  @keyframes rollin{0%{opacity:0;clip-path:inset(0 100% 0 0);}100%{opacity:.55;clip-path:inset(0 0% 0 0);}}
+
+  #pressbtn{position:absolute;bottom:0;left:0;right:0;z-index:6;display:flex;justify-content:center;gap:10px;
+    padding:0 14px 18px;background:linear-gradient(rgba(244,236,220,0) 0%,var(--paper) 55%);}
+  #pressbtn button{pointer-events:auto;font-family:'Orbitron',sans-serif;font-weight:700;font-size:16px;
+    letter-spacing:.08em;color:#fff;background:var(--plate);border:0;border-radius:14px;
+    padding:13px 34px;cursor:pointer;box-shadow:0 8px 22px rgba(194,64,44,.4);transition:transform .08s,background .2s,opacity .2s;}
+  #pressbtn button:active{transform:scale(.96);}
+  #pressbtn button:disabled{opacity:.35;}
+  #clearbtn{background:none !important;color:var(--ink) !important;border:2px solid var(--ink) !important;
+    box-shadow:none !important;font-size:13px !important;padding:11px 18px !important;}
+
+  #scoreflash{position:absolute;inset:0;z-index:9;display:none;align-items:center;justify-content:center;
+    flex-direction:column;gap:8px;background:rgba(27,20,16,.55);}
+  #scoreflash.show{display:flex;}
+  #scoreflash .pct{font-family:'Orbitron',sans-serif;font-weight:900;font-size:54px;color:var(--gold);}
+  #scoreflash .msg{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:16px;color:#fff;max-width:300px;text-align:center;}
+
+  #practicebanner{position:absolute;top:94px;left:0;right:0;z-index:6;display:none;justify-content:center;pointer-events:none;}
+  #practicebanner.show{display:flex;}
+  #practicebanner span{font-family:'Orbitron',sans-serif;font-weight:700;font-size:11px;letter-spacing:.14em;
+    color:#fff;background:var(--plate-dim);border-radius:999px;padding:6px 16px;box-shadow:0 4px 12px rgba(0,0,0,.25);}
+
+  .panel{position:absolute;inset:0;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:16px;padding:28px;text-align:center;background:radial-gradient(circle at 50% 30%,rgba(234,224,200,.96),rgba(244,236,220,.99));overflow-y:auto;}
+  .title{font-family:'Orbitron',sans-serif;font-weight:900;font-size:clamp(28px,6.6vw,48px);letter-spacing:.02em;line-height:1.05;color:var(--ink);}
+  .title .accent{color:var(--plate);}
+  .tagline{font-size:16px;color:var(--text-dim);max-width:470px;line-height:1.45;font-weight:600;}
+  .chip-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;max-width:470px;}
+  .chip{font-size:13px;font-weight:600;color:var(--ink);background:#fff;border:1.5px solid var(--ink);border-radius:999px;padding:7px 15px;}
+  .chip b{color:var(--plate);}
+  .cta{font-family:'Orbitron',sans-serif;font-weight:700;font-size:17px;letter-spacing:.1em;color:#fff;background:var(--plate);
+    border:0;border-radius:14px;padding:15px 42px;cursor:pointer;margin-top:4px;box-shadow:0 8px 20px rgba(194,64,44,.4);transition:transform .08s;}
+  .cta:active{transform:scale(.96);}
+  .cta.ghost{background:none;color:var(--ink);border:2px solid var(--ink);box-shadow:none;font-size:14px;padding:11px 26px;}
+  #difficulty{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
+  .diffbtn{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:14px;color:var(--text-dim);background:#fff;
+    border:2px solid var(--ink);border-radius:10px;padding:9px 16px;cursor:pointer;transition:all .15s;}
+  .diffbtn.on{color:#fff;background:var(--ink);}
+  .endstat{font-family:'Orbitron',sans-serif;font-size:15px;color:var(--ink);font-weight:500;}
+  .endbig{font-family:'Orbitron',sans-serif;font-size:44px;font-weight:900;color:var(--plate);}
+  .rank{font-family:'Orbitron',sans-serif;font-weight:900;font-size:22px;color:var(--gold);letter-spacing:.08em;}
+
+  #flash{position:absolute;inset:0;z-index:8;pointer-events:none;display:flex;align-items:center;justify-content:center;opacity:0;}
+  #flash .ftext{font-family:'Orbitron',sans-serif;font-weight:900;font-size:clamp(24px,5.6vw,40px);color:var(--ink);text-align:center;}
+  #flash .ftext .sub{font-family:'Rajdhani';font-size:16px;color:var(--text-dim);margin-top:6px;font-weight:600;letter-spacing:.06em;}
+  #flash.show{animation:flashin 1.7s ease;}
+  @keyframes flashin{0%{opacity:0;transform:scale(.6);}15%{opacity:1;transform:scale(1.05);}28%{transform:scale(1);}80%{opacity:1;}100%{opacity:0;}}
+
+  #nameform{display:flex;gap:8px;width:100%;max-width:300px;}
+  #nameinput{flex:1;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:16px;padding:9px 12px;border-radius:10px;
+    border:2px solid var(--ink);background:#fff;color:var(--ink);min-width:0;}
+  #nameinput:focus{outline:2px solid var(--plate);}
+  .savebtn{font-family:'Orbitron',sans-serif;font-weight:700;font-size:14px;background:var(--plate);color:#fff;border:0;border-radius:10px;padding:8px 16px;cursor:pointer;}
+  .hsbadge{font-family:'Orbitron',sans-serif;font-weight:700;font-size:13px;color:#fff;background:var(--gold);border-radius:999px;padding:5px 16px;}
+  .lb-wrap{width:100%;max-width:380px;}
+  table.lb{width:100%;border-collapse:collapse;font-size:15px;}
+  table.lb th{font-family:'Orbitron',sans-serif;font-size:10px;letter-spacing:.14em;color:var(--text-dim);text-align:left;padding:5px 8px;border-bottom:2px solid var(--ink);font-weight:700;}
+  table.lb th:last-child{text-align:right;}
+  table.lb td{padding:6px 8px;border-bottom:1px solid rgba(43,32,24,.15);font-weight:600;color:var(--ink);}
+  table.lb td:first-child{width:34px;font-family:'Orbitron',sans-serif;font-weight:900;color:var(--gold);}
+  table.lb td:last-child{text-align:right;font-family:'Orbitron',sans-serif;font-weight:900;color:var(--plate);}
+  table.lb tr.me td{background:rgba(194,64,44,.12);}
+  .lb-msg{font-size:14px;color:var(--text-dim);font-weight:600;padding:10px 0;text-align:center;}
+  .lb-loading{display:flex;align-items:center;justify-content:center;gap:8px;font-size:13px;color:var(--text-dim);font-weight:600;padding:12px 0;}
+  .lb-spin{width:18px;height:18px;border:3px solid rgba(122,106,85,.3);border-top-color:var(--plate);border-radius:50%;animation:lbspin .7s linear infinite;}
+  @keyframes lbspin{to{transform:rotate(360deg);}}
+  #endbadge{font-size:50px;width:104px;height:104px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    border:3px solid var(--gold);color:var(--gold);background:#fff;animation:badgepop .6s ease;}
+  @keyframes badgepop{0%{transform:scale(0) rotate(-40deg);}60%{transform:scale(1.15);}100%{transform:scale(1);}}
+
+  #speedctl{position:absolute;top:72px;right:14px;z-index:6;display:none;align-items:center;gap:6px;background:#fff;
+    border:2px solid var(--ink);border-radius:12px;padding:5px 7px;pointer-events:auto;}
+  #speedctl.show{display:flex;}
+  .spd-btn{font-family:'Orbitron',sans-serif;font-weight:900;font-size:20px;line-height:1;width:34px;height:34px;border-radius:8px;
+    color:#fff;background:var(--ink);border:0;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .07s;}
+  .spd-btn:active{transform:scale(.9);}
+  .spd-mid{display:flex;flex-direction:column;align-items:center;min-width:64px;}
+  .spd-lbl{font-size:8px;letter-spacing:.2em;color:var(--text-dim);font-weight:700;}
+  #spdName{font-family:'Orbitron',sans-serif;font-weight:700;font-size:13px;color:var(--plate);}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="grain"></div>
+
+  <div id="practicebanner"><span>PRACTICE PRINT — no lives lost, just learn how it works</span></div>
+
+  <div class="hud" id="topbar">
+    <div class="stat">
+      <div class="lbl">SCORE</div>
+      <div class="val" id="scoreval">0</div>
+      <div id="shields"></div>
+    </div>
+    <div class="stat" style="text-align:center;">
+      <div class="lbl">EDITION</div>
+      <div id="wavebadge">I</div>
+    </div>
+    <div class="stat" style="text-align:right;">
+      <div class="lbl">CHAIN</div>
+      <div id="comboval">x2</div>
+    </div>
+  </div>
+
+  <div id="stage">
+    <div id="layerline">
+      <span class="ask">Layer</span>
+      <span id="layerswatch"></span>
+      <span id="layername">Loading…</span>
+    </div>
+    <div id="instruction"></div>
+    <div id="panels">
+      <div class="panelcol">
+        <div class="panellbl">TARGET</div>
+        <div class="minigrid" id="targetgrid"></div>
+      </div>
+      <div class="panelcol" style="position:relative;">
+        <div class="panellbl">YOUR BLOCK</div>
+        <div id="blockzone">
+          <div id="carvegrid"></div>
+          <div id="inkoverlay"></div>
+        </div>
+      </div>
+      <div class="panelcol">
+        <div class="panellbl">YOUR PRINT</div>
+        <div class="minigrid" id="printgrid"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="pressbtn">
+    <button id="clearbtn">&#8634; Undo all</button>
+    <button id="actionbtn">INK &amp; PRESS</button>
+  </div>
+
+  <div id="scoreflash">
+    <div class="pct" id="scorepct">0%</div>
+    <div class="msg" id="scoremsg">Layer printed!</div>
+  </div>
+
+  <div id="speedctl">
+    <button class="spd-btn" id="spdDown" aria-label="Easier">&#8722;</button>
+    <div class="spd-mid"><span class="spd-lbl">DIFFICULTY</span><span id="spdName">Printer</span></div>
+    <button class="spd-btn" id="spdUp" aria-label="Harder">+</button>
+  </div>
+
+  <div id="flash"><div class="ftext" id="flashtext"></div></div>
+
+  <div class="panel" id="startpanel">
+    <div class="title">LINO<br><span class="accent">LAYERS</span></div>
+    <div class="tagline">Real prints are built from layers &mdash; one carved block per colour. For each layer, <b>carve away every cell that ISN'T glowing gold</b> (tap or drag to gouge them out). What's left raised is what prints! Stack the layers to match the picture.</div>
+    <div class="chip-row">
+      <div class="chip">&#127912; <b>2&ndash;3</b> colour layers</div>
+      <div class="chip">&#9999;&#65039; Tap or drag to carve</div>
+      <div class="chip">&#11088; Match score per layer</div>
+      <div class="chip">&#129351; Earn a printer's rank</div>
+    </div>
+    <div class="chip-row">
+      <div class="chip">&#127891; First print is <b>practice</b> &mdash; no lives lost</div>
+    </div>
+    <div style="margin-top:6px;">
+      <div class="lbl" style="font-size:11px;letter-spacing:.2em;color:var(--text-dim);font-weight:700;margin-bottom:8px;">HOW STRICT IS THE PRINTER?</div>
+      <div id="difficulty">
+        <button class="diffbtn" data-d="0">Gentle</button>
+        <button class="diffbtn" data-d="1">Apprentice</button>
+        <button class="diffbtn on" data-d="2">Printer</button>
+        <button class="diffbtn" data-d="3">Master</button>
+        <button class="diffbtn" data-d="4">Maestro</button>
+      </div>
+    </div>
+    <button class="cta" id="launchbtn">START PRINTING</button>
+    <button class="cta ghost" id="boardbtn">&#127942; Worldwide Leaderboard</button>
+  </div>
+
+  <div class="panel" id="endpanel" style="display:none;">
+    <div id="endbadge">&#9733;</div>
+    <div class="rank" id="endrank">MASTER PRINTER</div>
+    <div class="title" id="endtitle" style="font-size:clamp(24px,5.6vw,38px);">EDITION COMPLETE</div>
+    <div class="endbig" id="endscore">0</div>
+    <div class="endstat" id="endstats"></div>
+    <div class="hsbadge" id="hsbadge" style="display:none;">&#127942; Top printer! Log your name:</div>
+    <div id="nameform" style="display:none;">
+      <input id="nameinput" maxlength="14" placeholder="Printer name" autocomplete="off">
+      <button class="savebtn" id="savescore">Save</button>
+    </div>
+    <div class="lb-wrap"><div id="endboard"></div></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;">
+      <button class="cta" id="againbtn">PRINT AGAIN</button>
+      <button class="cta ghost" id="boardbtn2">&#127942; Full board</button>
+    </div>
+  </div>
+
+  <div class="panel" id="boardpanel" style="display:none;">
+    <div class="rank" style="color:var(--gold);">HALL OF PRINTERS</div>
+    <div class="title" style="font-size:clamp(22px,4.6vw,34px);">&#127757; Leaderboard</div>
+    <div class="lb-wrap"><div id="mainboard"></div></div>
+    <div class="endstat" style="font-size:12px;color:var(--text-dim);">Top 15 printers, worldwide</div>
+    <div style="display:flex;gap:10px;">
+      <button class="cta" id="closeboard">BACK</button>
+      <button class="cta ghost" id="refreshboard">&#8635; Refresh</button>
+    </div>
+  </div>
+
+<script>
+(function(){
+"use strict";
+var $=function(id){return document.getElementById(id);};
+var GRID=8;
+var PAPER='#F4ECDC';
+
+function cellsToSet(arr){
+  var set={};
+  for(var r=0;r<arr.length;r++)for(var c=0;c<arr[r].length;c++) if(arr[r][c]==='#') set[r+','+c]=true;
+  return set;
+}
+var RAW=[
+  {name:'Flower', layers:[
+    {label:'Green stem & leaves', color:'#4C8A52', cells:['........','........','........','........','...##...','.#.##...','...##.#.','...##...']},
+    {label:'Pink blossom', color:'#E0699B', cells:['..#..#..','.######.','.######.','..####..','........','........','........','........']}
+  ]},
+  {name:'House', layers:[
+    {label:'Red roof', color:'#C2402C', cells:['...##...','..####..','.######.','########','........','........','........','........']},
+    {label:'Yellow walls', color:'#F2C53D', cells:['........','........','........','........','.######.','.######.','.######.','.######.']},
+    {label:'Brown door', color:'#8A5A36', cells:['........','........','........','........','........','...##...','...##...','...##...']}
+  ]},
+  {name:'Sailboat', layers:[
+    {label:'Blue water', color:'#3E7FBF', cells:['........','........','........','........','........','........','........','########']},
+    {label:'Brown hull', color:'#8A5A36', cells:['........','........','........','........','........','........','.######.','........']},
+    {label:'White sail', color:'#FAF6EC', cells:['...#....','...##...','...###..','...####.','...#....','...#....','........','........']}
+  ]},
+  {name:'Rocket', layers:[
+    {label:'Yellow flame', color:'#F0B23A', cells:['........','........','........','........','........','........','...##...','..#..#..']},
+    {label:'Red rocket', color:'#C2402C', cells:['...##...','..####..','..####..','..####..','.######.','#..##..#','...##...','........']},
+    {label:'Grey window', color:'#9AA3AC', cells:['........','........','...##...','...##...','........','........','........','........']}
+  ]},
+  {name:'Cat', layers:[
+    {label:'Grey face & ears', color:'#9AA3AC', cells:['.#....#.','.##..##.','.######.','.######.','.######.','.######.','..####..','........']},
+    {label:'Pink ears & nose', color:'#E0699B', cells:['........','..#..#..','........','........','...##...','........','........','........']}
+  ]}
+];
+var DESIGNS=RAW.map(function(d){
+  return {name:d.name, layers:d.layers.map(function(L){
+    return {label:L.label, color:L.color, set:cellsToSet(L.cells)};
+  })};
+});
+
+var SECTOR_ORDER=[0,1,2,3,4];
+var BASE_EDITION_COUNT=DESIGNS.length;
+var DIFF=[{pass:0.55,n:'Gentle'},{pass:0.68,n:'Apprentice'},{pass:0.80,n:'Printer'},{pass:0.90,n:'Master'},{pass:0.97,n:'Maestro'}];
+var diff=2;
+
+var SB_URL = 'https://wpohvsjkrskhlrayaubp.supabase.co';
+var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indwb2h2c2prcnNraGxyYXlhdWJwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzMDEzOTcsImV4cCI6MjA5Njg3NzM5N30.Xi07ayGB5CykR-_7QX-b8UsUmMmTbGIlYpctXYgW9JI';
+function sbH(){return {'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'};}
+var GAME_ID='linolayers';
+function currentPlayer(){try{return JSON.parse(localStorage.getItem('rna_player')||'null');}catch(e){return null;}}
+function playerName(){var p=currentPlayer();return p?p.name:null;}
+async function sbFetchTop(limit){
+  limit=limit||15;
+  try{
+    var r=await fetch(SB_URL+'/rest/v1/scores?select=name%2Cscore&game=eq.'+GAME_ID+'&order=score.desc&limit='+limit,{headers:sbH()});
+    if(!r.ok){console.error('fetch',r.status,await r.text());return null;}
+    return await r.json();
+  }catch(e){console.error(e);return null;}
+}
+async function sbInsert(name,score){
+  try{
+    var h=sbH();h['Prefer']='return=minimal';
+    var body={name:name,score:score,game:GAME_ID};
+    var pn=playerName();if(pn)body.player=pn;
+    var r=await fetch(SB_URL+'/rest/v1/scores',{method:'POST',headers:h,body:JSON.stringify(body)});
+    if(!r.ok){console.error('insert',r.status,await r.text());return false;}
+    return true;
+  }catch(e){console.error(e);return false;}
+}
+async function sbQualifies(score){
+  try{
+    var r=await fetch(SB_URL+'/rest/v1/scores?select=score&game=eq.'+GAME_ID+'&order=score.desc&limit=15',{headers:sbH()});
+    if(!r.ok)return true;
+    var rows=await r.json();
+    if(!rows||rows.length<15)return true;
+    return score>rows[rows.length-1].score;
+  }catch(e){return true;}
+}
+function lbEsc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function lbLoading(){return '<div class="lb-loading"><div class="lb-spin"></div>Loading printers&hellip;</div>';}
+function lbTable(rows,hiName,hiScore){
+  if(!rows||!rows.length)return '<div class="lb-msg">No printers logged yet &mdash; be the first!</div>';
+  var medals=['I','II','III'],html='<table class="lb"><thead><tr><th>RANK</th><th>PRINTER</th><th>SCORE</th></tr></thead><tbody>',marked=false;
+  rows.forEach(function(row,i){
+    var me=(!marked&&hiName&&row.name===hiName&&row.score===hiScore);if(me)marked=true;
+    html+='<tr class="'+(me?'me':'')+'"><td>'+(i<3?medals[i]:(i+1))+'</td><td>'+lbEsc(row.name)+'</td><td>'+row.score+'</td></tr>';
+  });
+  return html+'</tbody></table>';
+}
+async function loadMainBoard(){$('mainboard').innerHTML=lbLoading();$('mainboard').innerHTML=lbTable(await sbFetchTop(15),null,null);}
+async function loadEndBoard(n,s){$('endboard').innerHTML=lbLoading();$('endboard').innerHTML=lbTable(await sbFetchTop(10),n,s);}
+
+var actx=null;
+function tone(f,d,type,vol,delay){
+  try{
+    if(!actx)actx=new(window.AudioContext||window.webkitAudioContext)();
+    var t0=actx.currentTime+(delay||0);
+    var o=actx.createOscillator(),g=actx.createGain();
+    o.type=type||'sine';o.frequency.setValueAtTime(f,t0);
+    g.gain.setValueAtTime(vol||0.06,t0);g.gain.exponentialRampToValueAtTime(0.001,t0+d);
+    o.connect(g);g.connect(actx.destination);o.start(t0);o.stop(t0+d);
+  }catch(e){}
+}
+function thud(vol){
+  try{
+    if(!actx)actx=new(window.AudioContext||window.webkitAudioContext)();
+    var len=actx.sampleRate*0.18,buf=actx.createBuffer(1,len,actx.sampleRate),d=buf.getChannelData(0);
+    for(var i=0;i<len;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/len,3);
+    var s=actx.createBufferSource(),g=actx.createGain(),f=actx.createBiquadFilter();
+    f.type='lowpass';f.frequency.value=600;g.gain.value=vol||0.2;
+    s.buffer=buf;s.connect(f);f.connect(g);g.connect(actx.destination);s.start();
+  }catch(e){}
+}
+
+var shields,score,combo,maxCombo,editionIdx,layerIdx,printsDone,running=false;
+var isPracticeRound=false;
+var current=null;
+var carved=null;
+var pressedLayers=[];
+var phase='carving';
+var dragging=false, dragMode=true;
+
+function buildMiniGrid(el){
+  el.style.gridTemplateColumns='repeat('+GRID+',1fr)';
+  el.style.gridTemplateRows='repeat('+GRID+',1fr)';
+  el.innerHTML='';
+  var cells=[];
+  for(var i=0;i<GRID*GRID;i++){var c=document.createElement('div');c.className='minicell';el.appendChild(c);cells.push(c);}
+  return cells;
+}
+var targetCells=null, printCells=null;
+function colorAt(layers,r,c){
+  for(var i=layers.length-1;i>=0;i--){ if(layers[i].set[r+','+c]) return layers[i].color; }
+  return null;
+}
+function renderTarget(){
+  if(!targetCells) targetCells=buildMiniGrid($('targetgrid'));
+  for(var r=0;r<GRID;r++)for(var c=0;c<GRID;c++){
+    var col=colorAt(current.design.layers,r,c);
+    targetCells[r*GRID+c].style.background=col||PAPER;
+  }
+}
+function renderPrint(){
+  if(!printCells) printCells=buildMiniGrid($('printgrid'));
+  for(var r=0;r<GRID;r++)for(var c=0;c<GRID;c++){
+    var col=colorAt(pressedLayers,r,c);
+    printCells[r*GRID+c].style.background=col||PAPER;
+  }
+}
+
+var carveCells=null;
+function buildCarveGrid(){
+  var el=$('carvegrid');
+  el.style.gridTemplateColumns='repeat('+GRID+',1fr)';
+  el.style.gridTemplateRows='repeat('+GRID+',1fr)';
+  el.innerHTML='';
+  carveCells=[];
+  for(var i=0;i<GRID*GRID;i++){var c=document.createElement('div');c.className='cell raised';el.appendChild(c);carveCells.push(c);}
+}
+function refreshCarveGrid(){
+  var layer=current.design.layers[layerIdx];
+  for(var r=0;r<GRID;r++)for(var c=0;c<GRID;c++){
+    var cell=carveCells[r*GRID+c];
+    var inShape=!!layer.set[r+','+c];
+    var isCarved=carved[r][c];
+    cell.className='cell '+(isCarved?'carved':'raised')+(inShape?' shape':'');
+  }
+}
+function cellFromPoint(clientX,clientY){
+  var el=$('carvegrid');
+  var rect=el.getBoundingClientRect();
+  if(rect.width<=0||rect.height<=0) return null;
+  var x=clientX-rect.left, y=clientY-rect.top;
+  if(x<0||y<0||x>=rect.width||y>=rect.height) return null;
+  var c=Math.floor(x/(rect.width/GRID));
+  var r=Math.floor(y/(rect.height/GRID));
+  if(r<0||c<0||r>=GRID||c>=GRID) return null;
+  return [r,c];
+}
+function applyCarve(r,c,mode){
+  if(phase!=='carving')return;
+  if(carved[r][c]===mode)return;
+  carved[r][c]=mode;
+  var cell=carveCells[r*GRID+c];
+  var inShape=!!current.design.layers[layerIdx].set[r+','+c];
+  cell.className='cell '+(mode?'carved':'raised')+(inShape?' shape':'');
+  if(mode){ tone(220+Math.random()*120,0.05,'square',0.04); spawnFleck(cell); }
+  else { tone(180,0.04,'sine',0.03); }
+}
+function spawnFleck(cell){
+  var bz=$('blockzone');var rect=cell.getBoundingClientRect();var bzr=bz.getBoundingClientRect();
+  var x=rect.left-bzr.left+rect.width/2, y=rect.top-bzr.top+rect.height/2;
+  var f=document.createElement('div');
+  f.style.cssText='position:absolute;width:5px;height:5px;border-radius:50%;background:#caa45e;'+
+    'z-index:5;pointer-events:none;left:'+x+'px;top:'+y+'px;opacity:.9;transition:all .45s ease-out;';
+  bz.appendChild(f);
+  var dx=(Math.random()-0.5)*40,dy=(Math.random()-0.5)*40-14;
+  requestAnimationFrame(function(){f.style.transform='translate('+dx+'px,'+dy+'px)';f.style.opacity='0';});
+  setTimeout(function(){f.remove();},460);
+}
+(function attachGridListenersOnce(){
+  var el=$('carvegrid');
+  el.addEventListener('pointerdown',function(evt){
+    if(phase!=='carving')return;
+    var rc=cellFromPoint(evt.clientX,evt.clientY); if(!rc)return;
+    dragging=true;
+    dragMode=!carved[rc[0]][rc[1]];
+    try{el.setPointerCapture(evt.pointerId);}catch(e){}
+    applyCarve(rc[0],rc[1],dragMode);
+    evt.preventDefault();
+  });
+  el.addEventListener('pointermove',function(evt){
+    if(!dragging||phase!=='carving')return;
+    var rc=cellFromPoint(evt.clientX,evt.clientY); if(!rc)return;
+    applyCarve(rc[0],rc[1],dragMode);
+    evt.preventDefault();
+  });
+  function end(){dragging=false;}
+  el.addEventListener('pointerup',end);
+  el.addEventListener('pointercancel',end);
+})();
+
+function layerAccuracy(){
+  var layer=current.design.layers[layerIdx];
+  var correct=0;
+  for(var r=0;r<GRID;r++)for(var c=0;c<GRID;c++){
+    var inShape=!!layer.set[r+','+c];
+    var isCarved=carved[r][c];
+    if(inShape ? !isCarved : isCarved) correct++;
+  }
+  return correct/(GRID*GRID);
+}
+
+function startEdition(designIdx,practice){
+  current={design:DESIGNS[designIdx]};
+  pressedLayers=[];
+  layerIdx=0;
+  isPracticeRound=!!practice;
+  $('practicebanner').classList.toggle('show',isPracticeRound);
+  if(!carveCells) buildCarveGrid();
+  renderTarget();
+  renderPrint();
+  beginLayer();
+}
+function beginLayer(){
+  var L=current.design.layers[layerIdx];
+  phase='carving';
+  carved=[];for(var r=0;r<GRID;r++){carved.push([]);for(var c=0;c<GRID;c++)carved[r].push(false);}
+  refreshCarveGrid();
+  $('layerswatch').style.background=L.color;
+  $('layername').textContent=L.label;
+  $('instruction').innerHTML='Carve away every cell that is <b>not glowing gold</b> &mdash; tap or drag.';
+  $('inkoverlay').className='';
+  $('actionbtn').textContent='INK & PRESS';
+  $('actionbtn').disabled=false;
+  $('clearbtn').style.visibility='visible';
+  $('scoreflash').classList.remove('show');
+}
+
+$('clearbtn').addEventListener('click',function(){
+  if(phase!=='carving')return;
+  for(var r=0;r<GRID;r++)for(var c=0;c<GRID;c++) carved[r][c]=false;
+  refreshCarveGrid();
+  tone(160,0.12,'sine',0.05);
+});
+
+$('actionbtn').addEventListener('click',function(){
+  if(!running||!current||phase!=='carving')return;
+  phase='inked';
+  $('actionbtn').disabled=true;
+  $('clearbtn').style.visibility='hidden';
+  var L=current.design.layers[layerIdx];
+  $('inkoverlay').style.background=L.color;
+  $('inkoverlay').className='rolling';
+  tone(360,0.12,'triangle',0.05);
+  setTimeout(doPress,560);
+});
+
+function doPress(){
+  thud(0.22);tone(170,0.18,'sawtooth',0.06);
+  var L=current.design.layers[layerIdx];
+  var acc=layerAccuracy();
+  var printedSet={};
+  for(var r=0;r<GRID;r++)for(var c=0;c<GRID;c++){ if(!carved[r][c]) printedSet[r+','+c]=true; }
+  pressedLayers.push({set:printedSet,color:L.color});
+  renderPrint();
+  showLayerScore(Math.round(acc*100),acc);
+}
+
+function showLayerScore(pct,acc){
+  var passNeed=DIFF[diff].pass;
+  var clean=acc>=passNeed;
+  $('scorepct').textContent=pct+'%';
+  $('scorepct').style.color=pct>=Math.round(passNeed*100)?(pct>=90?'var(--ok)':'var(--gold)'):'var(--danger)';
+  $('scoremsg').textContent=clean?(pct>=95?'Perfect carving!':'Nicely matched!'):'Messy &mdash; the printer wants it cleaner.';
+  $('scoreflash').classList.add('show');
+  if(!isPracticeRound){
+    var pts=Math.round(50*acc*combo);
+    score+=pts;$('scoreval').textContent=score;
+    if(clean){combo=Math.min(combo+1,6);maxCombo=Math.max(maxCombo,combo);}else{combo=1;}
+    updateCombo();
+  }
+  if(clean){tone(660,0.1,'sine',0.05);tone(880,0.12,'sine',0.05,0.09);}
+  else{tone(200,0.25,'sawtooth',0.06);}
+  setTimeout(function(){
+    $('scoreflash').classList.remove('show');
+    if(!clean && !isPracticeRound){ loseShield(); if(!running) return; }
+    setTimeout(advance,250);
+  },1350);
+}
+
+function advance(){
+  if(!running)return;
+  layerIdx++;
+  if(layerIdx>=current.design.layers.length) finishEdition();
+  else beginLayer();
+}
+
+function finishEdition(){
+  if(isPracticeRound){
+    isPracticeRound=false;printsDone++;
+    $('practicebanner').classList.remove('show');
+    $('wavebadge').textContent='I';
+    showFlash('EDITION I',DESIGNS[SECTOR_ORDER[0]].name);
+    setTimeout(function(){startEdition(SECTOR_ORDER[0],false);},1400);
+    return;
+  }
+  printsDone++;
+  popBigScore();
+  editionIdx++;
+  if(editionIdx>=SECTOR_ORDER.length) addEndlessEdition();
+  var nextDesignIdx=SECTOR_ORDER[editionIdx];
+  $('wavebadge').textContent=toRoman(editionIdx+1);
+  var isBonus=editionIdx>=BASE_EDITION_COUNT;
+  showFlash((isBonus?'BONUS EDITION ':'EDITION ')+toRoman(editionIdx+1),DESIGNS[nextDesignIdx].name);
+  setTimeout(function(){startEdition(nextDesignIdx,false);},1500);
+}
+function popBigScore(){
+  var d=document.createElement('div');
+  d.style.cssText='position:absolute;left:50%;top:40%;transform:translateX(-50%);z-index:9;'+
+    'font-family:Orbitron,sans-serif;font-weight:900;font-size:24px;color:var(--ok);pointer-events:none;transition:all .9s ease-out;';
+  d.textContent='EDITION COMPLETE!';
+  $('wrap').appendChild(d);
+  requestAnimationFrame(function(){d.style.top='28%';d.style.opacity='0';});
+  setTimeout(function(){d.remove();},950);
+}
+function toRoman(n){var v=['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV','XV'];return v[n-1]||('+'+n);}
+function addEndlessEdition(){ SECTOR_ORDER.push(Math.floor(Math.random()*DESIGNS.length)); }
+
+function updateCombo(){
+  var el=$('comboval');
+  if(combo>1){el.style.visibility='visible';el.textContent='x'+combo;}
+  else el.style.visibility='hidden';
+}
+function renderShields(){
+  var el=$('shields');el.innerHTML='';
+  for(var i=0;i<3;i++){var p=document.createElement('div');p.className='shield-pip'+(i<shields?'':' down');el.appendChild(p);}
+}
+function loseShield(){
+  shields--;renderShields();
+  $('wrap').style.transition='filter .15s';
+  $('wrap').style.filter='sepia(.3) saturate(1.6)';
+  setTimeout(function(){$('wrap').style.filter='';},250);
+  if(shields<=0) endGame();
+}
+
+function showFlash(big,small){
+  $('flashtext').innerHTML=big+'<div class="sub">'+small+'</div>';
+  var f=$('flash');f.classList.remove('show');void f.offsetWidth;f.classList.add('show');
+  tone(523,0.12,'sine',0.05);tone(659,0.16,'sine',0.05,0.12);
+}
+
+function startGame(){
+  shields=3;score=0;combo=1;maxCombo=1;editionIdx=0;printsDone=0;current=null;
+  SECTOR_ORDER=[0,1,2,3,4];
+  renderShields();
+  $('scoreval').textContent='0';updateCombo();
+  $('wavebadge').textContent='PRACTICE';
+  $('startpanel').style.display='none';
+  $('endpanel').style.display='none';
+  $('boardpanel').style.display='none';
+  $('speedctl').classList.add('show');
+  $('spdName').textContent=DIFF[diff].n;
+  running=true;
+  showFlash('PRACTICE PRINT','Learn how it works &mdash; no lives lost');
+  setTimeout(function(){startEdition(0,true);},1300);
+}
+
+function endGame(){
+  running=false;
+  $('speedctl').classList.remove('show');
+  var reached=editionIdx+1;
+  var clearedAll=editionIdx>=BASE_EDITION_COUNT;
+  var rank,medal,medalCol;
+  if(clearedAll&&reached>=BASE_EDITION_COUNT+2){rank='LEGENDARY PRESS MASTER';medal='\u2605';medalCol='#D9A53C';}
+  else if(clearedAll){rank='MASTER PRINTER';medal='\u2605';medalCol='#C2402C';}
+  else if(reached>=3){rank='SKILLED PRINTER';medal='\u2605';medalCol='#3E8E5C';}
+  else if(reached>=2){rank='APPRENTICE PRINTER';medal='\u2726';medalCol='#8A4A3A';}
+  else{rank='FIRST EDITION';medal='\u2726';medalCol='#7A6A55';}
+  $('endbadge').textContent=medal;$('endbadge').style.color=medalCol;$('endbadge').style.borderColor=medalCol;
+  $('endrank').textContent=rank;$('endrank').style.color=medalCol;
+  $('endtitle').textContent=clearedAll?'FULL COLLECTION PRINTED!':'PRESS STOPPED';
+  $('endscore').textContent=score;
+  $('endstats').innerHTML=printsDone+' editions printed &middot; best chain x'+maxCombo+
+    '<br>You reached edition '+toRoman(editionIdx+1)+(clearedAll?' &mdash; the full collection!':'. Keep practising!');
+  if(clearedAll){tone(523,0.14,'sine',0.06);tone(659,0.14,'sine',0.06,0.15);tone(784,0.3,'sine',0.06,0.3);}
+  else{tone(220,0.3,'sawtooth',0.07);tone(110,0.5,'sawtooth',0.07,0.25);}
+  $('endpanel').style.display='flex';
+  pendingScore=score;pendingSaved=false;
+  $('hsbadge').style.display='none';$('nameform').style.display='none';
+  if(score>0){
+    var p=currentPlayer();
+    if(p){
+      sbInsert(p.name,score).then(function(){loadEndBoard(p.name,score);});
+      $('hsbadge').textContent='\u2713 Saved to '+p.name+"'s record";$('hsbadge').style.display='block';
+    }else{
+      sbQualifies(score).then(function(q){
+        if(q){
+          $('hsbadge').textContent='\uD83C\uDFC6 Top printer! Log your name:';
+          $('hsbadge').style.display='block';$('nameform').style.display='flex';
+          $('nameinput').value='';setTimeout(function(){try{$('nameinput').focus();}catch(e){}},300);
+        }
+      });
+    }
+  }
+  loadEndBoard(null,null);
+}
+
+var pendingScore=0,pendingSaved=false;
+
+$('difficulty').addEventListener('click',function(e){
+  var b=e.target.closest('.diffbtn');if(!b)return;
+  setDiff(parseInt(b.dataset.d,10));
+});
+function setDiff(d){
+  diff=Math.max(0,Math.min(DIFF.length-1,d));
+  document.querySelectorAll('.diffbtn').forEach(function(x){x.classList.toggle('on',parseInt(x.dataset.d,10)===diff);});
+  $('spdName').textContent=DIFF[diff].n;
+}
+$('spdUp').addEventListener('click',function(){setDiff(diff+1);tone(660,0.08,'square',0.05);});
+$('spdDown').addEventListener('click',function(){setDiff(diff-1);tone(440,0.08,'square',0.05);});
+
+$('launchbtn').addEventListener('click',startGame);
+$('againbtn').addEventListener('click',startGame);
+
+$('savescore').addEventListener('click',async function(){
+  if(pendingSaved)return;
+  var name=$('nameinput').value.trim().slice(0,14)||'Mystery printer';
+  $('savescore').textContent='Saving\u2026';$('savescore').disabled=true;
+  var ok=await sbInsert(name,pendingScore);
+  if(ok){
+    pendingSaved=true;$('hsbadge').style.display='none';$('nameform').style.display='none';
+    tone(660,0.1,'sine',0.06);tone(990,0.2,'sine',0.06,0.12);
+    loadEndBoard(name,pendingScore);
+  }else{
+    $('savescore').textContent='Save';$('savescore').disabled=false;
+    $('hsbadge').textContent='Connection error &mdash; try again';$('hsbadge').style.display='block';
+  }
+});
+$('nameinput').addEventListener('keydown',function(e){if(e.key==='Enter')$('savescore').click();e.stopPropagation();});
+function openBoard(){$('boardpanel').style.display='flex';loadMainBoard();}
+$('boardbtn').addEventListener('click',openBoard);
+$('boardbtn2').addEventListener('click',openBoard);
+$('closeboard').addEventListener('click',function(){$('boardpanel').style.display='none';});
+$('refreshboard').addEventListener('click',loadMainBoard);
+
+})();
+</script>
+</body>
+</html>
