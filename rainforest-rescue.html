@@ -1,0 +1,1054 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Rainforest Rescue — South America</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0B2B1E;--bg2:#072017;--leaf:#4CC26A;--leaf2:#2E9C4D;--sun:#F4C430;
+    --river:#3E9BD6;--soil:#8A5A36;--ink:#EAF5EE;--muted:#9FBCA8;--danger:#E45B5B;--ok:#3FA862;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;overflow:hidden;}
+  body{font-family:'Rajdhani',sans-serif;background:var(--bg2);color:var(--ink);
+    display:flex;align-items:center;justify-content:center;user-select:none;-webkit-user-select:none;touch-action:none;}
+  #wrap{position:relative;width:min(100vw,1000px);height:min(100vh,100dvh);max-height:760px;overflow:hidden;
+    background:radial-gradient(circle at 20% 15%,rgba(76,194,106,.16),transparent 44%),
+                radial-gradient(circle at 85% 85%,rgba(62,155,214,.14),transparent 46%),
+                linear-gradient(160deg,var(--bg),var(--bg2));}
+  @media(min-width:1020px){#wrap{border-radius:20px;box-shadow:0 30px 80px rgba(0,0,0,.7);}}
+
+  .hud{position:absolute;left:0;right:0;pointer-events:none;z-index:5;}
+  #topbar{top:0;display:flex;justify-content:space-between;align-items:flex-start;padding:14px 16px;
+    background:linear-gradient(rgba(7,32,23,.92) 35%,rgba(7,32,23,0) 100%);}
+  .stat .lbl{font-family:'Orbitron',sans-serif;font-size:10px;letter-spacing:.22em;color:var(--muted);font-weight:700;}
+  .stat .val{font-family:'Orbitron',sans-serif;font-size:20px;font-weight:900;line-height:1;color:var(--leaf);}
+  #shields{display:flex;gap:6px;margin-top:3px;}
+  .shield-pip{width:22px;height:8px;border-radius:2px;background:var(--leaf);transition:all .3s;}
+  .shield-pip.down{background:rgba(255,255,255,.16);}
+  #wavebadge{font-family:'Orbitron',sans-serif;font-weight:700;font-size:11px;letter-spacing:.1em;color:var(--sun);text-align:center;max-width:140px;}
+  #comboval{font-family:'Orbitron',sans-serif;font-weight:900;font-size:14px;color:var(--leaf2);text-align:right;visibility:hidden;}
+
+  #timerwrap{position:absolute;top:54px;left:16px;right:16px;height:6px;border-radius:4px;
+    background:rgba(255,255,255,.12);z-index:5;overflow:hidden;display:none;}
+  #timerwrap.show{display:block;}
+  #timerbar{height:100%;width:100%;background:var(--leaf);border-radius:4px;transition:width .08s linear,background .2s;}
+
+  #modetag{position:absolute;top:64px;left:0;right:0;text-align:center;z-index:5;pointer-events:none;}
+  #modetag span{font-family:'Orbitron',sans-serif;font-weight:700;font-size:11px;letter-spacing:.14em;
+    color:#06301a;background:var(--sun);border-radius:999px;padding:5px 14px;box-shadow:0 4px 10px rgba(0,0,0,.3);}
+
+  #stageArea{position:absolute;inset:0;z-index:1;}
+
+  /* ---------------- MODE 1: map ---------------- */
+  #mode1{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;padding:74px 8px 54px;gap:4px;}
+  #mode1.show{display:flex;}
+  #m1prompt{font-size:13px;color:var(--muted);font-weight:600;text-align:center;max-width:480px;}
+  #m1prompt b{color:var(--sun);}
+  #mapwrap{position:relative;width:min(82vw,320px);height:min(100vw,418px);max-width:320px;max-height:418px;margin-top:2px;flex-shrink:1;}
+  #mapsvg{position:absolute;inset:0;width:100%;height:100%;}
+  #m1progress{display:flex;gap:5px;justify-content:center;flex-wrap:wrap;max-width:300px;min-height:14px;}
+  #m1progress .pdot{width:11px;height:11px;border-radius:50%;background:rgba(255,255,255,.14);border:1.5px solid rgba(255,255,255,.25);transition:all .25s;}
+  #m1progress .pdot.done{background:var(--leaf);border-color:var(--leaf);box-shadow:0 0 8px rgba(76,194,106,.6);}
+  .zone{fill:rgba(244,196,48,.14);stroke:rgba(244,196,48,.55);stroke-width:1.5;stroke-dasharray:3 2.5;transition:fill .15s,stroke .15s;cursor:pointer;}
+  .zone.hover{fill:rgba(244,196,48,.4);stroke:var(--sun);stroke-width:2.5;}
+  .zone.filled{fill:rgba(76,194,106,.42);stroke:var(--leaf);stroke-dasharray:none;}
+  .zonelabel{font-family:'Orbitron',sans-serif;font-size:6px;fill:#EAF5EE;text-anchor:middle;letter-spacing:.02em;pointer-events:none;paint-order:stroke;stroke:rgba(0,0,0,.5);stroke-width:1.6px;}
+  .placedicon{font-size:17px;text-anchor:middle;dominant-baseline:middle;pointer-events:none;}
+  @keyframes zonepop{0%{transform:scale(1);}45%{transform:scale(1.4);}100%{transform:scale(1);}}
+  .placedicon.pop{animation:zonepop .45s ease;transform-box:fill-box;transform-origin:center;}
+  #dragtray{display:flex;justify-content:center;width:100%;min-height:74px;}
+  #dragitem{display:flex;flex-direction:column;align-items:center;gap:2px;background:rgba(255,255,255,.07);
+    border:2px solid var(--sun);border-radius:14px;padding:8px 16px;cursor:grab;touch-action:none;
+    box-shadow:0 6px 16px rgba(0,0,0,.3);}
+  #dragitem.dragging{position:fixed;z-index:20;cursor:grabbing;box-shadow:0 14px 30px rgba(0,0,0,.5);}
+  #dragitem .emoji{font-size:30px;}
+  #dragitem .lab{font-family:'Orbitron',sans-serif;font-weight:700;font-size:10px;color:var(--ink);text-align:center;max-width:120px;}
+
+  /* ---------------- MODE 2: climate match ---------------- */
+  #mode2{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;padding:96px 12px 16px;gap:6px;}
+  #mode2.show{display:flex;}
+  #m2prompt{font-size:13px;color:var(--muted);font-weight:600;text-align:center;max-width:480px;}
+  #m2prompt b{color:var(--sun);}
+  #fallzone{position:relative;width:100%;max-width:480px;flex:1;overflow:hidden;}
+  .falling{position:absolute;display:flex;flex-direction:column;align-items:center;gap:1px;cursor:pointer;touch-action:none;}
+  .falling .emoji{font-size:38px;filter:drop-shadow(0 4px 8px rgba(0,0,0,.4));}
+  .falling .lab{font-family:'Orbitron',sans-serif;font-size:9px;color:var(--ink);background:rgba(0,0,0,.4);border-radius:6px;padding:1px 6px;}
+  #baskets{display:flex;gap:8px;width:100%;max-width:480px;justify-content:center;padding-bottom:8px;}
+  .basket{flex:1;max-width:150px;display:flex;flex-direction:column;align-items:center;gap:3px;
+    background:rgba(255,255,255,.06);border:2.5px solid rgba(255,255,255,.18);border-radius:14px;padding:10px 4px;
+    transition:transform .1s,border-color .15s,background .15s;cursor:pointer;}
+  .basket .emoji{font-size:30px;}
+  .basket .lab{font-family:'Orbitron',sans-serif;font-weight:700;font-size:10px;color:var(--ink);text-align:center;}
+  .basket.hit{border-color:var(--ok);background:rgba(63,168,98,.3);transform:scale(1.08);}
+  .basket.miss{border-color:var(--danger);background:rgba(228,91,91,.3);animation:bshake .3s;}
+  @keyframes bshake{25%{transform:translateX(-4px);}75%{transform:translateX(4px);}}
+  @keyframes basketbounce{0%{transform:scale(1.08);}40%{transform:scale(1.2) translateY(-4px);}100%{transform:scale(1);}}
+  .basket.bounce{animation:basketbounce .4s ease;}
+  #streakbanner{position:absolute;left:50%;top:118px;transform:translateX(-50%) scale(.5);z-index:8;pointer-events:none;
+    font-family:'Orbitron',sans-serif;font-weight:900;font-size:24px;color:var(--sun);opacity:0;
+    text-shadow:0 2px 14px rgba(0,0,0,.6);transition:none;}
+  #streakbanner.show{animation:streakpop 1.1s ease;}
+  @keyframes streakpop{0%{opacity:0;transform:translateX(-50%) scale(.4) rotate(-8deg);}25%{opacity:1;transform:translateX(-50%) scale(1.15) rotate(3deg);}40%{transform:translateX(-50%) scale(1) rotate(0);}80%{opacity:1;}100%{opacity:0;transform:translateX(-50%) scale(1) translateY(-20px);}}
+
+  /* ---------------- MODE 3: save the rainforest ---------------- */
+  #rescuemeter{font-family:'Orbitron',sans-serif;font-weight:700;font-size:12px;color:var(--leaf);letter-spacing:.04em;
+    display:flex;align-items:center;gap:6px;min-height:18px;}
+  #rescuecount{font-size:16px;color:var(--sun);}
+  #rescuetrees{font-size:13px;letter-spacing:1px;}
+  #mode3{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;padding:96px 12px 16px;gap:6px;}
+  #mode3.show{display:flex;}
+  #m3prompt{font-size:13px;color:var(--muted);font-weight:600;text-align:center;max-width:480px;}
+  #m3prompt b.good{color:var(--ok);} #m3prompt b.bad{color:var(--danger);}
+  #lanes{position:relative;width:100%;max-width:480px;flex:1;overflow:hidden;
+    background:linear-gradient(180deg,rgba(76,194,106,.05),rgba(0,0,0,.15));border-radius:14px;}
+  .laneline{position:absolute;top:0;bottom:0;width:1px;background:rgba(255,255,255,.08);}
+  .lanecatch{position:absolute;bottom:0;height:64px;display:flex;align-items:flex-end;justify-content:center;
+    padding-bottom:6px;cursor:pointer;}
+  .lanecatch .basketicon{font-size:34px;filter:drop-shadow(0 4px 6px rgba(0,0,0,.4));transition:transform .08s;}
+  .lanecatch.tap .basketicon{transform:scale(1.25);}
+  .faller{position:absolute;font-size:34px;filter:drop-shadow(0 4px 8px rgba(0,0,0,.4));pointer-events:none;}
+  .faller.popgood{animation:popgood .3s forwards;}
+  .faller.popbad{animation:popbad .3s forwards;}
+  @keyframes popgood{to{transform:scale(1.7);opacity:0;}}
+  @keyframes popbad{to{transform:scale(.3) rotate(25deg);opacity:0;}}
+
+  /* shared flash / panels (reused pattern) */
+  #flash{position:absolute;inset:0;z-index:8;pointer-events:none;display:flex;align-items:center;justify-content:center;opacity:0;}
+  #flash .ftext{font-family:'Orbitron',sans-serif;font-weight:900;font-size:clamp(20px,5vw,36px);color:var(--ink);text-align:center;text-shadow:0 2px 20px rgba(0,0,0,.5);}
+  #flash .ftext .sub{font-family:'Rajdhani';font-size:14px;color:var(--muted);margin-top:6px;font-weight:600;letter-spacing:.04em;max-width:440px;}
+  #flash.show{animation:flashin 2s ease;}
+  @keyframes flashin{0%{opacity:0;transform:scale(.6);}12%{opacity:1;transform:scale(1.05);}22%{transform:scale(1);}82%{opacity:1;}100%{opacity:0;}}
+
+  .panel{position:absolute;inset:0;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:14px;padding:26px;text-align:center;background:radial-gradient(circle at 50% 28%,rgba(11,43,30,.94),rgba(7,32,23,.98));overflow-y:auto;}
+  .title{font-family:'Orbitron',sans-serif;font-weight:900;font-size:clamp(26px,6vw,42px);letter-spacing:.02em;line-height:1.05;
+    background:linear-gradient(180deg,#fff,var(--leaf));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+  .tagline{font-size:15px;color:var(--muted);max-width:480px;line-height:1.42;font-weight:600;}
+  .chip-row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;max-width:480px;}
+  .chip{font-size:12.5px;font-weight:600;color:var(--ink);background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.16);border-radius:999px;padding:6px 13px;}
+  .chip b{color:var(--leaf);}
+  .cta{font-family:'Orbitron',sans-serif;font-weight:700;font-size:16px;letter-spacing:.07em;color:#06301a;background:var(--leaf);
+    border:0;border-radius:14px;padding:14px 38px;cursor:pointer;margin-top:2px;box-shadow:0 8px 20px rgba(76,194,106,.3);transition:transform .08s;}
+  .cta:active{transform:scale(.96);}
+  .cta.ghost{background:none;color:var(--ink);border:2px solid rgba(255,255,255,.3);box-shadow:none;font-size:13px;padding:10px 24px;}
+  #difficulty{display:flex;gap:7px;flex-wrap:wrap;justify-content:center;}
+  .diffbtn{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:13px;color:var(--muted);background:rgba(255,255,255,.05);
+    border:2px solid rgba(255,255,255,.18);border-radius:10px;padding:8px 14px;cursor:pointer;transition:all .15s;}
+  .diffbtn.on{color:#06301a;background:var(--ink);}
+  .endstat{font-family:'Orbitron',sans-serif;font-size:14px;color:var(--ink);font-weight:500;}
+  .endbig{font-family:'Orbitron',sans-serif;font-size:40px;font-weight:900;color:var(--leaf);}
+  .rank{font-family:'Orbitron',sans-serif;font-weight:900;font-size:20px;color:var(--sun);letter-spacing:.07em;}
+
+  #nameform{display:flex;gap:8px;width:100%;max-width:300px;}
+  #nameinput{flex:1;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:16px;padding:9px 12px;border-radius:10px;
+    border:2px solid rgba(255,255,255,.2);background:rgba(0,0,0,.3);color:var(--ink);min-width:0;}
+  #nameinput:focus{outline:2px solid var(--leaf);}
+  .savebtn{font-family:'Orbitron',sans-serif;font-weight:700;font-size:14px;background:var(--leaf);color:#06301a;border:0;border-radius:10px;padding:8px 16px;cursor:pointer;}
+  .hsbadge{font-family:'Orbitron',sans-serif;font-weight:700;font-size:13px;color:#06301a;background:var(--sun);border-radius:999px;padding:5px 16px;}
+  .lb-wrap{width:100%;max-width:380px;}
+  table.lb{width:100%;border-collapse:collapse;font-size:14px;}
+  table.lb th{font-family:'Orbitron',sans-serif;font-size:10px;letter-spacing:.1em;color:var(--muted);text-align:left;padding:5px 8px;border-bottom:2px solid rgba(255,255,255,.2);font-weight:700;}
+  table.lb th:last-child{text-align:right;}
+  table.lb td{padding:6px 8px;border-bottom:1px solid rgba(255,255,255,.08);font-weight:600;}
+  table.lb td:first-child{width:34px;font-family:'Orbitron',sans-serif;font-weight:900;color:var(--sun);}
+  table.lb td:last-child{text-align:right;font-family:'Orbitron',sans-serif;font-weight:900;color:var(--leaf);}
+  table.lb tr.me td{background:rgba(76,194,106,.16);}
+  .lb-msg{font-size:13px;color:var(--muted);font-weight:600;padding:10px 0;text-align:center;}
+  .lb-loading{display:flex;align-items:center;justify-content:center;gap:8px;font-size:13px;color:var(--muted);font-weight:600;padding:12px 0;}
+  .lb-spin{width:18px;height:18px;border:3px solid rgba(255,255,255,.2);border-top-color:var(--leaf);border-radius:50%;animation:lbspin .7s linear infinite;}
+  @keyframes lbspin{to{transform:rotate(360deg);}}
+  #endbadge{font-size:46px;width:96px;height:96px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    border:3px solid var(--sun);color:var(--sun);background:rgba(0,0,0,.25);animation:badgepop .6s ease;}
+  @keyframes badgepop{0%{transform:scale(0) rotate(-40deg);}60%{transform:scale(1.15);}100%{transform:scale(1);}}
+
+  #speedctl{position:absolute;top:72px;right:14px;z-index:6;display:none;align-items:center;gap:6px;background:rgba(0,0,0,.4);
+    border:2px solid rgba(255,255,255,.2);border-radius:12px;padding:5px 7px;pointer-events:auto;}
+  #speedctl.show{display:flex;}
+  .spd-btn{font-family:'Orbitron',sans-serif;font-weight:900;font-size:20px;line-height:1;width:32px;height:32px;border-radius:8px;
+    color:#06301a;background:var(--ink);border:0;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .07s;}
+  .spd-btn:active{transform:scale(.9);}
+  .spd-mid{display:flex;flex-direction:column;align-items:center;min-width:50px;}
+  .spd-lbl{font-size:7px;letter-spacing:.16em;color:var(--muted);font-weight:700;}
+  #spdName{font-family:'Orbitron',sans-serif;font-weight:700;font-size:12px;color:var(--leaf);}
+
+  #factpop{position:absolute;left:50%;bottom:20px;transform:translateX(-50%);z-index:9;max-width:90%;width:max-content;
+    background:rgba(0,0,0,.88);border:1.5px solid var(--sun);border-radius:12px;padding:9px 16px;
+    font-size:12.5px;color:var(--ink);font-weight:600;text-align:center;opacity:0;transition:opacity .25s;pointer-events:none;
+    box-shadow:0 6px 18px rgba(0,0,0,.5);}
+  #factpop.show{opacity:1;}
+</style>
+</head>
+<body>
+<div id="wrap">
+
+  <div class="hud" id="topbar">
+    <div class="stat">
+      <div class="lbl">SCORE</div>
+      <div class="val" id="scoreval">0</div>
+      <div id="shields"></div>
+    </div>
+    <div class="stat" style="text-align:center;">
+      <div class="lbl">ROUND</div>
+      <div id="wavebadge">1</div>
+    </div>
+    <div class="stat" style="text-align:right;">
+      <div class="lbl">CHAIN</div>
+      <div id="comboval">x2</div>
+    </div>
+  </div>
+  <div id="timerwrap"><div id="timerbar"></div></div>
+  <div id="modetag"><span id="modetagtext">MODE 1</span></div>
+
+  <div id="stageArea">
+    <div id="mode1">
+      <div id="m1prompt">Drag <b id="m1cur">&hellip;</b> to its home on the map of South America!</div>
+      <div id="m1progress"></div>
+      <div id="mapwrap">
+        <svg id="mapsvg" viewBox="0 0 200 280">
+          <defs>
+            <radialGradient id="seaGrad" cx="50%" cy="40%" r="80%">
+              <stop offset="0%" stop-color="#0e3a52"/><stop offset="100%" stop-color="#072433"/>
+            </radialGradient>
+            <linearGradient id="landGrad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#2f7d46"/><stop offset="100%" stop-color="#1d5a31"/>
+            </linearGradient>
+          </defs>
+          <rect x="0" y="0" width="200" height="280" fill="url(#seaGrad)"/>
+          <path id="samland" d="M 51.4 128.1 L 47.3 124.3 L 33.3 116.9 L 30.1 113.9 L 28.4 110.9 L 29.0 108.9 L 23.4 100.8 L 19.0 90.3 L 14.2 83.1 L 9.7 80.3 L 10.7 78.7 L 8.9 74.9 L 9.4 73.2 L 14.1 69.2 L 15.2 66.7 L 14.8 64.7 L 14.5 66.6 L 14.1 65.8 L 13.1 67.2 L 10.4 65.2 L 11.2 64.2 L 10.6 60.8 L 13.1 59.0 L 12.3 58.1 L 14.0 56.0 L 13.8 53.5 L 18.5 51.9 L 18.0 50.3 L 19.7 49.7 L 19.7 47.4 L 22.7 46.0 L 25.6 41.3 L 23.9 40.1 L 24.8 38.1 L 23.8 34.9 L 24.9 34.0 L 24.5 30.9 L 22.4 28.3 L 22.9 26.5 L 23.8 27.0 L 25.1 25.4 L 24.2 23.1 L 26.7 25.6 L 26.2 23.1 L 31.2 19.6 L 31.6 16.7 L 31.0 16.9 L 32.0 15.1 L 34.4 13.1 L 36.4 13.6 L 36.1 14.5 L 37.1 12.3 L 40.3 12.4 L 46.6 8.0 L 48.9 9.5 L 45.7 11.3 L 47.1 14.9 L 45.0 18.2 L 46.7 21.1 L 49.1 20.0 L 47.6 13.7 L 54.1 11.7 L 52.2 10.1 L 53.3 8.9 L 54.8 11.7 L 59.6 12.9 L 60.6 15.5 L 68.0 15.0 L 72.4 17.2 L 77.8 15.5 L 75.6 15.0 L 85.1 14.6 L 81.0 15.4 L 81.7 17.3 L 82.5 16.7 L 83.4 18.3 L 84.3 17.6 L 85.7 18.9 L 86.2 17.9 L 89.3 20.0 L 87.6 22.9 L 86.1 23.0 L 87.3 23.7 L 91.8 22.9 L 97.1 26.3 L 98.4 27.9 L 97.6 31.6 L 98.7 29.8 L 100.3 30.1 L 103.3 32.4 L 103.5 35.0 L 104.3 33.2 L 108.5 34.3 L 109.5 33.2 L 115.7 33.9 L 114.1 37.7 L 116.0 42.6 L 113.9 47.8 L 120.2 48.0 L 125.5 39.7 L 126.4 40.1 L 128.8 48.3 L 131.8 50.1 L 132.0 52.1 L 126.6 56.9 L 123.8 62.0 L 121.2 62.7 L 124.0 62.8 L 128.1 60.3 L 130.0 64.5 L 134.3 63.4 L 133.0 67.0 L 134.7 64.1 L 138.0 62.4 L 137.7 61.1 L 139.0 59.5 L 142.3 59.1 L 149.4 61.9 L 149.9 63.3 L 150.9 62.3 L 152.5 63.4 L 152.1 65.5 L 153.6 65.9 L 152.2 69.2 L 154.2 66.3 L 154.3 67.6 L 157.5 65.9 L 164.9 68.0 L 170.9 67.8 L 176.7 71.2 L 181.8 75.8 L 188.1 76.7 L 189.4 78.4 L 191.1 85.1 L 190.4 89.5 L 188.0 94.0 L 181.1 100.7 L 177.6 106.9 L 175.2 106.7 L 174.3 109.8 L 175.1 118.7 L 174.0 125.9 L 172.1 128.0 L 171.6 133.2 L 167.0 139.7 L 166.8 142.7 L 164.1 143.9 L 162.7 146.4 L 159.1 146.5 L 158.4 145.6 L 158.1 146.6 L 152.6 146.8 L 152.8 147.7 L 149.3 149.8 L 143.9 151.5 L 138.6 156.1 L 136.6 155.9 L 137.8 156.8 L 136.5 159.4 L 137.2 163.1 L 136.3 168.5 L 132.6 171.5 L 128.0 179.0 L 123.6 182.3 L 123.5 181.2 L 126.6 179.8 L 129.3 175.7 L 126.5 174.2 L 126.6 177.0 L 123.9 179.4 L 121.2 186.3 L 115.3 192.3 L 107.3 193.2 L 103.5 191.5 L 100.9 191.6 L 98.6 188.6 L 99.9 185.6 L 99.5 183.7 L 98.1 188.4 L 98.2 190.8 L 103.5 195.0 L 102.7 197.1 L 105.3 199.0 L 105.3 201.3 L 102.1 205.7 L 99.6 207.0 L 88.1 209.2 L 83.3 208.5 L 84.4 210.7 L 83.1 216.7 L 78.3 217.7 L 72.6 216.3 L 72.9 221.4 L 75.1 222.7 L 77.6 221.4 L 78.3 223.7 L 76.7 224.4 L 74.9 223.0 L 73.0 223.6 L 75.5 224.8 L 71.9 227.1 L 70.4 232.8 L 65.3 233.7 L 62.7 236.9 L 63.1 238.4 L 65.9 240.6 L 69.5 241.2 L 69.8 242.8 L 68.1 243.8 L 69.7 244.2 L 63.2 248.2 L 61.5 252.2 L 60.1 252.7 L 58.5 251.3 L 57.3 252.3 L 59.5 252.9 L 57.5 253.8 L 55.8 256.3 L 57.0 258.4 L 55.4 258.5 L 57.4 258.9 L 59.6 261.3 L 56.3 260.9 L 50.2 263.1 L 49.4 267.1 L 48.2 267.5 L 43.9 265.4 L 45.7 265.0 L 46.3 265.9 L 48.5 263.3 L 44.4 264.6 L 43.3 265.8 L 41.4 265.0 L 42.6 263.1 L 47.4 262.5 L 42.7 262.2 L 41.1 264.3 L 39.0 263.4 L 40.6 262.9 L 41.1 262.0 L 37.6 262.6 L 36.5 260.6 L 38.3 261.0 L 42.4 259.9 L 42.7 261.5 L 43.4 261.1 L 43.4 259.0 L 40.9 258.0 L 43.1 259.3 L 39.5 260.3 L 36.9 258.9 L 37.9 258.6 L 37.9 257.3 L 34.5 256.5 L 33.4 255.0 L 35.0 254.9 L 35.1 253.7 L 37.1 255.5 L 38.4 256.0 L 39.0 254.2 L 37.7 255.5 L 36.9 254.7 L 37.9 254.3 L 35.2 253.1 L 37.8 252.3 L 36.5 250.8 L 38.3 250.8 L 37.3 250.1 L 37.9 248.5 L 36.2 250.0 L 36.3 246.8 L 37.6 246.3 L 35.8 246.3 L 35.4 244.5 L 40.0 245.0 L 38.8 243.1 L 36.8 244.4 L 35.1 243.3 L 37.1 242.9 L 35.8 242.2 L 37.0 241.3 L 36.4 239.7 L 33.7 239.5 L 33.7 238.6 L 31.6 239.4 L 32.1 240.3 L 31.0 239.7 L 34.0 237.3 L 33.5 236.2 L 37.0 235.7 L 37.8 234.3 L 37.6 236.9 L 36.1 237.5 L 37.8 237.3 L 38.7 235.9 L 38.3 238.9 L 39.3 236.3 L 38.7 234.6 L 41.8 234.5 L 40.0 233.1 L 42.8 231.1 L 40.5 229.5 L 42.5 225.1 L 42.5 222.0 L 43.9 222.5 L 43.5 220.9 L 42.3 220.6 L 44.1 219.6 L 44.2 219.0 L 38.7 220.0 L 37.7 217.0 L 40.7 210.1 L 39.0 202.8 L 40.7 202.1 L 44.6 194.0 L 47.6 184.4 L 46.6 176.5 L 48.2 172.7 L 47.4 169.8 L 50.8 159.7 L 51.8 148.8 L 51.0 147.6 L 53.0 140.7 L 51.4 128.1 Z M 59.8 264.1 L 59.2 265.1 L 63.9 268.2 L 72.2 270.6 L 67.0 272.0 L 45.9 270.3 L 50.2 269.2 L 52.1 270.0 L 49.9 268.4 L 51.2 266.5 L 51.8 267.9 L 50.8 268.0 L 52.4 269.3 L 57.0 269.6 L 53.0 268.0 L 52.7 267.0 L 55.8 265.7 L 52.0 265.5 L 51.6 264.4 L 52.8 263.8 L 51.8 263.1 L 53.6 263.3 L 55.6 262.0 L 58.2 262.4 L 59.8 264.1 Z" fill-rule="evenodd"
+                fill="url(#landGrad)" stroke="#7CE0A0" stroke-width="1" stroke-linejoin="round"/>
+          <g id="dropzones"></g>
+          <g id="placedicons"></g>
+        </svg>
+      </div>
+      <div id="dragtray"></div>
+    </div>
+
+    <div id="mode2">
+      <div id="m2prompt">Sort each one into the right climate before it lands &mdash; <b>tap the basket</b>!</div>
+      <div id="fallzone"></div>
+      <div id="baskets"></div>
+    </div>
+
+    <div id="mode3">
+      <div id="m3prompt">Tap <b class="good">good things</b> to save them, dodge <b class="bad">hazards</b>!</div>
+      <div id="rescuemeter"><span id="rescuecount">0</span> saved <span id="rescuetrees"></span></div>
+      <div id="lanes"></div>
+    </div>
+  </div>
+
+  <div id="streakbanner"></div>
+  <div id="factpop"></div>
+
+  <div id="speedctl">
+    <button class="spd-btn" id="spdDown" aria-label="Easier">&#8722;</button>
+    <div class="spd-mid"><span class="spd-lbl">SPEED</span><span id="spdName">Ranger</span></div>
+    <button class="spd-btn" id="spdUp" aria-label="Harder">+</button>
+  </div>
+
+  <div id="flash"><div class="ftext" id="flashtext"></div></div>
+
+  <div class="panel" id="startpanel">
+    <div class="title">RAINFOREST<br>RESCUE</div>
+    <div class="tagline">Explore South America in three missions: map its key features, sort climates and creatures, then race to save the rainforest from harm!</div>
+    <div class="chip-row">
+      <div class="chip">&#127757; Mission 1: Map the Land</div>
+      <div class="chip">&#127807; Mission 2: Climate Match</div>
+      <div class="chip">&#128062; Mission 3: Save the Rainforest</div>
+    </div>
+    <div class="chip-row">
+      <div class="chip">&#128737;&#65039; <b>3</b> shields</div>
+      <div class="chip">&#129534; <b>9</b> features to map &middot; <b>12</b> creatures to sort</div>
+    </div>
+    <div style="margin-top:4px;">
+      <div class="lbl" style="font-family:Orbitron;font-size:10px;letter-spacing:.18em;color:var(--muted);font-weight:700;margin-bottom:7px;">RANGER LEVEL</div>
+      <div id="difficulty">
+        <button class="diffbtn" data-d="0">Gentle</button>
+        <button class="diffbtn" data-d="1">Scout</button>
+        <button class="diffbtn on" data-d="2">Ranger</button>
+        <button class="diffbtn" data-d="3">Expert</button>
+        <button class="diffbtn" data-d="4">Guardian</button>
+      </div>
+    </div>
+    <button class="cta" id="launchbtn">START MISSION</button>
+    <button class="cta ghost" id="boardbtn">&#127942; Worldwide Leaderboard</button>
+  </div>
+
+  <div class="panel" id="endpanel" style="display:none;">
+    <div id="endbadge">&#9733;</div>
+    <div class="rank" id="endrank">RAINFOREST GUARDIAN</div>
+    <div class="title" id="endtitle" style="font-size:clamp(22px,5vw,34px);">MISSION COMPLETE</div>
+    <div class="endbig" id="endscore">0</div>
+    <div class="endstat" id="endstats"></div>
+    <div class="hsbadge" id="hsbadge" style="display:none;">&#127942; Top ranger! Log your name:</div>
+    <div id="nameform" style="display:none;">
+      <input id="nameinput" maxlength="14" placeholder="Your name" autocomplete="off">
+      <button class="savebtn" id="savescore">Save</button>
+    </div>
+    <div class="lb-wrap"><div id="endboard"></div></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;">
+      <button class="cta" id="againbtn">PLAY AGAIN</button>
+      <button class="cta ghost" id="boardbtn2">&#127942; Full board</button>
+    </div>
+  </div>
+
+  <div class="panel" id="boardpanel" style="display:none;">
+    <div class="rank" style="color:var(--sun);">HALL OF RANGERS</div>
+    <div class="title" style="font-size:clamp(20px,4.2vw,30px);">&#127757; Leaderboard</div>
+    <div class="lb-wrap"><div id="mainboard"></div></div>
+    <div class="endstat" style="font-size:11px;color:var(--muted);">Top 15 rangers, worldwide</div>
+    <div style="display:flex;gap:10px;">
+      <button class="cta" id="closeboard">BACK</button>
+      <button class="cta ghost" id="refreshboard">&#8635; Refresh</button>
+    </div>
+  </div>
+
+<script>
+(function(){
+"use strict";
+var $=function(id){return document.getElementById(id);};
+
+/* ============ CONTENT ============ */
+var ZONES={
+  caribbean:{cx:58,cy:30,r:14,label:'North Coast'},
+  andesN:{cx:32,cy:98,r:13,label:'Andes North'},
+  amazon:{cx:86,cy:72,r:18,label:'Amazon Basin'},
+  highlands:{cx:147,cy:119,r:16,label:'Brazil Highlands'},
+  andesS:{cx:63,cy:148,r:13,label:'Andes South'},
+  pampas:{cx:82,cy:193,r:14,label:'Pampas'},
+  patagonia:{cx:58,cy:238,r:12,label:'Patagonia'}
+};
+var FEATURES=[
+  {key:'amazonRiver',label:'Amazon River',emoji:'\uD83C\uDF0A',zone:'amazon',fact:'The Amazon River carries more water than any other river on Earth.'},
+  {key:'amazonRainforest',label:'Amazon Rainforest',emoji:'\uD83C\uDF33',zone:'amazon',fact:'The Amazon Rainforest covers about 40% of South America.'},
+  {key:'andes',label:'Andes Mountains',emoji:'\u26F0\uFE0F',zone:'andesN',fact:'The Andes is the longest mountain range in the world, running down the west coast.'},
+  {key:'atacama',label:'Atacama Desert',emoji:'\uD83C\uDFDC\uFE0F',zone:'andesS',fact:'The Atacama is one of the driest deserts on Earth.'},
+  {key:'titicaca',label:'Lake Titicaca',emoji:'\uD83D\uDCA7',zone:'andesS',fact:'Lake Titicaca, high in the Andes, is the highest large lake boats can sail on.'},
+  {key:'highlands',label:'Brazilian Highlands',emoji:'\uD83C\uDF04',zone:'highlands',fact:'The Brazilian Highlands are vast hills and plateaus in the east.'},
+  {key:'pampas',label:'Pampas Grassland',emoji:'\uD83C\uDF3E',zone:'pampas',fact:'The Pampas are fertile grasslands used for farming and cattle.'},
+  {key:'patagonia',label:'Patagonia',emoji:'\uD83E\uDDCA',zone:'patagonia',fact:'Patagonia in the far south has cold winds and glaciers.'},
+  {key:'caribbean',label:'Caribbean Coast',emoji:'\uD83C\uDFD6\uFE0F',zone:'caribbean',fact:'The warm Caribbean coast lies along the north of the continent.'}
+];
+var CLIMATES=[
+  {key:'rainforest',label:'Rainforest',emoji:'\uD83C\uDF34'},
+  {key:'savanna',label:'Grassland',emoji:'\uD83C\uDF3E'},
+  {key:'desert',label:'Desert',emoji:'\uD83C\uDFDC\uFE0F'}
+];
+var CREATURES=[
+  {label:'Jaguar',emoji:'\uD83D\uDC06',home:'rainforest'},
+  {label:'Tree frog',emoji:'\uD83D\uDC38',home:'rainforest'},
+  {label:'Macaw',emoji:'\uD83E\uDD9C',home:'rainforest'},
+  {label:'Sloth',emoji:'\uD83E\uDDA5',home:'rainforest'},
+  {label:'Orchid',emoji:'\uD83C\uDF3A',home:'rainforest'},
+  {label:'Capybara',emoji:'\uD83D\uDC39',home:'savanna'},
+  {label:'Rhea',emoji:'\uD83E\uDD83',home:'savanna'},
+  {label:'Cattle',emoji:'\uD83D\uDC04',home:'savanna'},
+  {label:'Tall grass',emoji:'\uD83C\uDF3E',home:'savanna'},
+  {label:'Armadillo',emoji:'\uD83E\uDD94',home:'desert'},
+  {label:'Cactus',emoji:'\uD83C\uDF35',home:'desert'},
+  {label:'Llama',emoji:'\uD83E\uDD99',home:'desert'}
+];
+var GOOD_ITEMS=[
+  {label:'Oxygen',emoji:'\uD83D\uDCA8',fact:'Rainforest plants take in carbon dioxide and breathe out the oxygen we need.'},
+  {label:'Medicine plant',emoji:'\uD83C\uDF3F',fact:'About 1 in 4 natural medicines come from rainforest plants.'},
+  {label:'Rain cloud',emoji:'\uD83C\uDF27\uFE0F',fact:'The Amazon makes its own rain \u2014 trees release water that falls back as rain.'},
+  {label:'Macaw',emoji:'\uD83E\uDD9C',fact:'1 in 10 of all known animal species on Earth lives in the Amazon.'},
+  {label:'River fish',emoji:'\uD83D\uDC1F',fact:'The Amazon River is home to thousands of fish species.'},
+  {label:'Indigenous home',emoji:'\uD83C\uDFD5\uFE0F',fact:'Around 400 indigenous tribes call the Amazon rainforest home.'}
+];
+var BAD_HAZARDS=[
+  {label:'Fire',emoji:'\uD83D\uDD25',fact:'Fires destroy huge areas of rainforest every year.'},
+  {label:'Logging axe',emoji:'\uD83E\uDE93',fact:'An area of rainforest the size of a football pitch is cut down every second.'},
+  {label:'Bulldozer',emoji:'\uD83D\uDE9C',fact:'Land is cleared for farming and cattle, destroying rainforest habitats.'}
+];
+
+var DIFF=[{n:'Gentle',speedMul:0.7,timeMul:1.5},{n:'Scout',speedMul:0.85,timeMul:1.2},{n:'Ranger',speedMul:1,timeMul:1},{n:'Expert',speedMul:1.25,timeMul:0.8},{n:'Guardian',speedMul:1.5,timeMul:0.62}];
+var diff=2;
+
+/* ============ SUPABASE LEADERBOARD ============ */
+var SB_URL='https://wpohvsjkrskhlrayaubp.supabase.co';
+var SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indwb2h2c2prcnNraGxyYXlhdWJwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzMDEzOTcsImV4cCI6MjA5Njg3NzM5N30.Xi07ayGB5CykR-_7QX-b8UsUmMmTbGIlYpctXYgW9JI';
+function sbH(){return {'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'};}
+var GAME_ID='rainforestrescue';
+function currentPlayer(){try{return JSON.parse(localStorage.getItem('rna_player')||'null');}catch(e){return null;}}
+function playerName(){var p=currentPlayer();return p?p.name:null;}
+async function sbFetchTop(limit){
+  limit=limit||15;
+  try{
+    var r=await fetch(SB_URL+'/rest/v1/scores?select=name%2Cscore&game=eq.'+GAME_ID+'&order=score.desc&limit='+limit,{headers:sbH()});
+    if(!r.ok){console.error('fetch',r.status,await r.text());return null;}
+    return await r.json();
+  }catch(e){console.error(e);return null;}
+}
+async function sbInsert(name,score){
+  try{
+    var h=sbH();h['Prefer']='return=minimal';
+    var body={name:name,score:score,game:GAME_ID};
+    var pn=playerName();if(pn)body.player=pn;
+    var r=await fetch(SB_URL+'/rest/v1/scores',{method:'POST',headers:h,body:JSON.stringify(body)});
+    if(!r.ok){console.error('insert',r.status,await r.text());return false;}
+    return true;
+  }catch(e){console.error(e);return false;}
+}
+async function sbQualifies(score){
+  try{
+    var r=await fetch(SB_URL+'/rest/v1/scores?select=score&game=eq.'+GAME_ID+'&order=score.desc&limit=15',{headers:sbH()});
+    if(!r.ok)return true;
+    var rows=await r.json();
+    if(!rows||rows.length<15)return true;
+    return score>rows[rows.length-1].score;
+  }catch(e){return true;}
+}
+function lbEsc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function lbLoading(){return '<div class="lb-loading"><div class="lb-spin"></div>Loading rangers&hellip;</div>';}
+function lbTable(rows,hiName,hiScore){
+  if(!rows||!rows.length)return '<div class="lb-msg">No rangers logged yet &mdash; be the first!</div>';
+  var medals=['1','2','3'],html='<table class="lb"><thead><tr><th>RANK</th><th>RANGER</th><th>SCORE</th></tr></thead><tbody>',marked=false;
+  rows.forEach(function(row,i){
+    var me=(!marked&&hiName&&row.name===hiName&&row.score===hiScore);if(me)marked=true;
+    html+='<tr class="'+(me?'me':'')+'"><td>'+(i<3?medals[i]:(i+1))+'</td><td>'+lbEsc(row.name)+'</td><td>'+row.score+'</td></tr>';
+  });
+  return html+'</tbody></table>';
+}
+async function loadMainBoard(){$('mainboard').innerHTML=lbLoading();$('mainboard').innerHTML=lbTable(await sbFetchTop(15),null,null);}
+async function loadEndBoard(n,s){$('endboard').innerHTML=lbLoading();$('endboard').innerHTML=lbTable(await sbFetchTop(10),n,s);}
+
+/* ============ AUDIO ============ */
+var actx=null;
+function tone(f,d,type,vol,delay){
+  try{
+    if(!actx)actx=new(window.AudioContext||window.webkitAudioContext)();
+    var t0=actx.currentTime+(delay||0);
+    var o=actx.createOscillator(),g=actx.createGain();
+    o.type=type||'sine';o.frequency.setValueAtTime(f,t0);
+    g.gain.setValueAtTime(vol||0.06,t0);g.gain.exponentialRampToValueAtTime(0.001,t0+d);
+    o.connect(g);g.connect(actx.destination);o.start(t0);o.stop(t0+d);
+  }catch(e){}
+}
+
+/* ============ GAME STATE ============ */
+var shields,score,combo,maxCombo,running=false;
+var roundInMode=0, totalRoundsCleared=0;
+var MODE_SEQUENCE=['mode1','mode1','mode1','mode1','mode1','mode1', // 6 features
+                    'mode2','mode2','mode2','mode2','mode2','mode2','mode2','mode2','mode2','mode2','mode2','mode2', // 12 creatures
+                    'mode3']; // mode3 is its own timed mini-game, counted as 1 "round" block
+var seqIdx=0;
+var currentMode=null;
+
+function showFlash(big,small){
+  $('flashtext').innerHTML=big+(small?'<div class="sub">'+small+'</div>':'');
+  var f=$('flash');f.classList.remove('show');void f.offsetWidth;f.classList.add('show');
+  tone(523,0.12,'sine',0.05);tone(659,0.16,'sine',0.05,0.12);
+}
+function showFact(text){
+  var el=$('factpop');
+  el.textContent=text;
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t=setTimeout(function(){el.classList.remove('show');},2600);
+}
+function setModeTag(t){$('modetagtext').textContent=t;}
+
+function updateCombo(){
+  var el=$('comboval');
+  if(combo>1){el.style.visibility='visible';el.textContent='x'+combo;}
+  else el.style.visibility='hidden';
+}
+function renderShields(){
+  var el=$('shields');el.innerHTML='';
+  for(var i=0;i<3;i++){var p=document.createElement('div');p.className='shield-pip'+(i<shields?'':' down');el.appendChild(p);}
+}
+function loseShield(){
+  shields--;renderShields();
+  $('wrap').style.transition='filter .15s';
+  $('wrap').style.filter='saturate(1.5) brightness(1.15)';
+  setTimeout(function(){$('wrap').style.filter='';},220);
+  if(shields<=0) endGame(false);
+}
+function awardPoints(base){
+  var pts=Math.round(base*combo);
+  score+=pts;$('scoreval').textContent=score;
+  combo=Math.min(combo+1,6);maxCombo=Math.max(maxCombo,combo);
+  updateCombo();
+  floatPoints(pts);
+}
+function floatPoints(pts){
+  var d=document.createElement('div');
+  d.style.cssText='position:absolute;left:50%;top:42%;transform:translateX(-50%);z-index:9;'+
+    'font-family:Orbitron,sans-serif;font-weight:900;font-size:26px;color:var(--leaf);pointer-events:none;'+
+    'text-shadow:0 2px 12px rgba(0,0,0,.5);transition:all .85s ease-out;';
+  d.textContent='+'+pts+(combo>2?'  x'+(combo-1>6?6:combo-1):'');
+  $('wrap').appendChild(d);
+  requestAnimationFrame(function(){d.style.top='32%';d.style.opacity='0';});
+  setTimeout(function(){d.remove();},850);
+}
+function penalize(){
+  combo=1;updateCombo();
+  loseShield();
+}
+
+/* ============ MODE 1: drag feature to its map zone ============ */
+var m1queue=[], m1placed={}, m1total=0;
+function buildDropZones(){
+  var g=$('dropzones');g.innerHTML='';
+  Object.keys(ZONES).forEach(function(key){
+    var z=ZONES[key];
+    var c=document.createElementNS('http://www.w3.org/2000/svg','circle');
+    c.setAttribute('class','zone');c.setAttribute('cx',z.cx);c.setAttribute('cy',z.cy);c.setAttribute('r',z.r);
+    c.setAttribute('data-zone',key);
+    g.appendChild(c);
+    var t=document.createElementNS('http://www.w3.org/2000/svg','text');
+    t.setAttribute('class','zonelabel');t.setAttribute('x',z.cx);t.setAttribute('y',z.cy+z.r+7);
+    t.textContent=z.label;
+    g.appendChild(t);
+  });
+}
+function buildProgress(){
+  var p=$('m1progress');p.innerHTML='';
+  for(var i=0;i<m1total;i++){var d=document.createElement('div');d.className='pdot';p.appendChild(d);}
+}
+function updateProgress(){
+  var dots=$('m1progress').querySelectorAll('.pdot');
+  var done=Object.keys(m1placed).length;
+  dots.forEach(function(d,i){d.classList.toggle('done',i<done);});
+}
+function m1Start(){
+  m1queue=shuffle(FEATURES.slice());
+  m1total=FEATURES.length;
+  m1placed={};
+  buildDropZones();
+  buildProgress();
+  $('placedicons').innerHTML='';
+  m1Next();
+}
+function shuffle(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
+function m1Next(){
+  if(m1queue.length===0){ modeComplete(); return; }
+  var f=m1queue[0];
+  $('m1cur').textContent=f.label;
+  $('dragtray').innerHTML='';
+  var item=document.createElement('div');
+  item.id='dragitem';
+  item.innerHTML='<div class="emoji">'+f.emoji+'</div><div class="lab">'+f.label+'</div>';
+  $('dragtray').appendChild(item);
+  attachDrag(item,f);
+  startTimer(m1TimeLimit());
+}
+function m1TimeLimit(){ return Math.max(5,11*DIFF[diff].timeMul); }
+function attachDrag(item,f){
+  var startX=0,startY=0,origRect=null,dragging=false;
+  function getMapZoneAt(clientX,clientY){
+    var zones=document.querySelectorAll('.zone');
+    var bestZone=null,bestDist=1e9;
+    for(var i=0;i<zones.length;i++){
+      var r=zones[i].getBoundingClientRect();
+      var ccx=r.left+r.width/2, ccy=r.top+r.height/2;
+      var dist=Math.hypot(clientX-ccx,clientY-ccy);
+      // accept if within ~ the circle radius (a bit generous for touch)
+      var radius=Math.max(r.width,r.height)/2*1.25;
+      if(dist<=radius && dist<bestDist){ bestDist=dist; bestZone=zones[i]; }
+    }
+    return bestZone;
+  }
+  function onDown(evt){
+    if(currentMode!=='mode1')return;
+    dragging=true;
+    origRect=item.getBoundingClientRect();
+    item.classList.add('dragging');
+    item.style.left=origRect.left+'px';item.style.top=origRect.top+'px';
+    item.style.width=origRect.width+'px';
+    startX=evt.clientX;startY=evt.clientY;
+    try{item.setPointerCapture(evt.pointerId);}catch(e){}
+    evt.preventDefault();
+  }
+  function onMove(evt){
+    if(!dragging)return;
+    var dx=evt.clientX-startX, dy=evt.clientY-startY;
+    item.style.left=(origRect.left+dx)+'px';
+    item.style.top=(origRect.top+dy)+'px';
+    document.querySelectorAll('.zone').forEach(function(z){z.classList.remove('hover');});
+    var z=getMapZoneAt(evt.clientX,evt.clientY);
+    if(z)z.classList.add('hover');
+    evt.preventDefault();
+  }
+  function onUp(evt){
+    if(!dragging)return;
+    dragging=false;
+    item.classList.remove('dragging');
+    var z=getMapZoneAt(evt.clientX,evt.clientY);
+    document.querySelectorAll('.zone').forEach(function(zz){zz.classList.remove('hover');});
+    if(z && z.dataset.zone===f.zone){
+      stopTimer();
+      $('dragtray').innerHTML='';
+      placeOnMap(f,z);
+      tone(660,0.1,'sine',0.05);tone(880,0.12,'sine',0.05,0.09);
+      awardPoints(15);
+      showFact(f.emoji+' '+f.fact);
+      m1queue.shift();
+      updateProgress();
+      setTimeout(m1Next,950);
+    }else if(z){
+      z.classList.add('hover');
+      tone(150,0.15,'sawtooth',0.05);
+      item.style.left=origRect.left+'px';item.style.top=origRect.top+'px';
+      setTimeout(function(){z.classList.remove('hover');},250);
+    }else{
+      item.style.left='';item.style.top='';item.style.width='';
+    }
+  }
+  item.addEventListener('pointerdown',onDown);
+  item.addEventListener('pointermove',onMove);
+  item.addEventListener('pointerup',onUp);
+  item.addEventListener('pointercancel',onUp);
+}
+function placeOnMap(f,zoneEl){
+  zoneEl.classList.add('filled');
+  m1placed[f.key]=true;
+  var z=ZONES[f.zone];
+  var existing=Object.keys(m1placed).filter(function(k){
+    return FEATURES.find(function(x2){return x2.key===k;}).zone===f.zone;
+  }).length;
+  // stack multiple icons within a zone in a small cluster
+  var offsets=[[0,0],[-9,-2],[9,-2],[0,9]];
+  var off=offsets[(existing-1)%offsets.length];
+  var txt=document.createElementNS('http://www.w3.org/2000/svg','text');
+  txt.setAttribute('x',z.cx+off[0]);txt.setAttribute('y',z.cy+off[1]);
+  txt.setAttribute('class','placedicon pop');
+  txt.textContent=f.emoji;
+  $('placedicons').appendChild(txt);
+}
+
+/* ============ MODE 2: climate matching ============ */
+var m2queue=[], m2active=null, m2fallId=null, m2startY=0, m2dur=0, m2startT=0;
+function m2Start(){
+  m2queue=shuffle(CREATURES.slice());
+  streak=0;
+  $('fallzone').innerHTML='';
+  $('baskets').innerHTML='';
+  CLIMATES.forEach(function(c){
+    var b=document.createElement('div');
+    b.className='basket';b.dataset.zone=c.key;
+    b.innerHTML='<div class="emoji">'+c.emoji+'</div><div class="lab">'+c.label+'</div>';
+    b.addEventListener('click',function(){ m2Answer(c.key,b); });
+    $('baskets').appendChild(b);
+  });
+  m2Next();
+}
+function m2TimeLimit(){ return Math.max(3.2,6.5*DIFF[diff].timeMul); }
+function m2Next(){
+  if(m2queue.length===0){ modeComplete(); return; }
+  var c=m2queue[0];
+  var el=document.createElement('div');
+  el.className='falling';
+  el.innerHTML='<div class="emoji">'+c.emoji+'</div><div class="lab">'+c.label+'</div>';
+  $('fallzone').appendChild(el);
+  var fz=$('fallzone').getBoundingClientRect();
+  el.style.left=(fz.width/2-30)+'px';
+  el.style.top='0px';
+  m2active={creature:c,el:el};
+  m2dur=m2TimeLimit();
+  m2startT=performance.now();
+  startTimer(m2dur);
+  tickFall();
+}
+function tickFall(){
+  if(!m2active||currentMode!=='mode2')return;
+  var fz=$('fallzone').getBoundingClientRect();
+  var frac=Math.min(1,(performance.now()-m2startT)/1000/m2dur);
+  m2active.el.style.top=(frac*(fz.height-60))+'px';
+  if(frac>=1){ m2Timeout(); return; }
+  m2fallId=requestAnimationFrame(tickFall);
+}
+function m2Answer(zoneKey,basketEl){
+  if(!m2active||currentMode!=='mode2')return;
+  stopTimer();
+  if(m2fallId)cancelAnimationFrame(m2fallId);
+  var correct=m2active.creature.home===zoneKey;
+  if(correct){
+    basketEl.classList.add('hit','bounce');
+    setTimeout(function(){basketEl.classList.remove('hit','bounce');},420);
+    tone(660,0.1,'sine',0.05);tone(880,0.12,'sine',0.05,0.09);
+    awardPoints(12);
+    flyToBasket(m2active.el,basketEl);
+    bumpStreak();
+  }else{
+    basketEl.classList.add('miss');
+    setTimeout(function(){basketEl.classList.remove('miss');},350);
+    tone(150,0.18,'sawtooth',0.06);
+    resetStreak();
+    penalize();
+    if(!running)return;
+    if(m2active.el)m2active.el.remove();
+  }
+  m2active=null;
+  m2queue.shift();
+  setTimeout(m2Next,500);
+}
+var streak=0;
+var STREAK_WORDS=['','','Nice!','Great!','Wild!','Amazing!','Eco-hero!','Unstoppable!','LEGENDARY!'];
+function bumpStreak(){
+  streak++;
+  if(streak>=3){
+    var w=STREAK_WORDS[Math.min(streak,STREAK_WORDS.length-1)];
+    var b=$('streakbanner');
+    b.textContent=(streak>=3?streak+' in a row! ':'')+w;
+    b.classList.remove('show');void b.offsetWidth;b.classList.add('show');
+    tone(720,0.1,'triangle',0.05);tone(960,0.12,'triangle',0.05,0.08);
+  }
+}
+function resetStreak(){ streak=0; }
+function flyToBasket(el,basketEl){
+  if(!el)return;
+  try{
+    var er=el.getBoundingClientRect(), br=basketEl.getBoundingClientRect(), wr=$('wrap').getBoundingClientRect();
+    el.style.transition='transform .4s cubic-bezier(.4,.1,.3,1),opacity .4s';
+    var dx=(br.left+br.width/2)-(er.left+er.width/2);
+    var dy=(br.top+br.height/2)-(er.top+er.height/2);
+    el.style.transform='translate('+dx+'px,'+dy+'px) scale(.3)';
+    el.style.opacity='0';
+    setTimeout(function(){ if(el&&el.parentNode)el.remove(); },420);
+  }catch(e){ if(el&&el.parentNode)el.remove(); }
+}
+function m2Timeout(){
+  if(!m2active)return;
+  tone(140,0.25,'sawtooth',0.06);
+  if(m2active.el)m2active.el.remove();
+  m2active=null;
+  resetStreak();
+  penalize();
+  if(!running)return;
+  m2queue.shift();
+  setTimeout(m2Next,400);
+}
+
+/* ============ MODE 3: save the rainforest (catch/dodge) ============ */
+var M3_LANES=4, m3items=[], m3spawnId=null, m3tickId=null, m3startedAt=0, m3duration=0, m3caught=0, m3hazardHit=0;
+function m3Start(){
+  $('lanes').innerHTML='';
+  for(var i=1;i<M3_LANES;i++){
+    var ln=document.createElement('div');ln.className='laneline';
+    ln.style.left=(i*100/M3_LANES)+'%';
+    $('lanes').appendChild(ln);
+  }
+  m3items=[];m3caught=0;m3hazardHit=0;
+  for(var l=0;l<M3_LANES;l++){
+    var lc=document.createElement('div');
+    lc.className='lanecatch';lc.dataset.lane=l;
+    lc.style.left=(l*100/M3_LANES)+'%';lc.style.width=(100/M3_LANES)+'%';
+    lc.innerHTML='<div class="basketicon">\uD83E\uDDFA</div>';
+    lc.addEventListener('click',function(){ m3CatchInLane(parseInt(this.dataset.lane,10),this); });
+    $('lanes').appendChild(lc);
+  }
+  m3duration=Math.max(16,26*DIFF[diff].timeMul);
+  m3startedAt=performance.now();
+  m3caught=0;m3hazardHit=0;updateRescueMeter();
+  startTimer(m3duration);
+  scheduleM3Spawn();
+  m3tickId=requestAnimationFrame(m3Tick);
+}
+function updateRescueMeter(){
+  $('rescuecount').textContent=m3caught;
+  var trees=Math.min(10,Math.floor(m3caught/2));
+  var s='';for(var i=0;i<trees;i++)s+='\uD83C\uDF33';
+  $('rescuetrees').textContent=s;
+}
+var RESCUE_MILESTONES={5:'Forest growing! \uD83C\uDF31',10:'Halfway hero! \uD83C\uDF3F',15:'Rainforest champion! \uD83C\uDF34',20:'Planet saver! \uD83C\uDF0E'};
+function sparkleBurst(x,y){
+  var colors=['#F4C430','#4CC26A','#7CE0A0','#fff'];
+  for(var i=0;i<8;i++){
+    (function(){
+      var s=document.createElement('div');
+      var sz=4+Math.random()*4;
+      s.style.cssText='position:absolute;left:'+x+'px;top:'+y+'px;z-index:9;pointer-events:none;border-radius:50%;'+
+        'width:'+sz+'px;height:'+sz+'px;background:'+colors[i%colors.length]+';transition:all .5s ease-out;opacity:1;';
+      $('wrap').appendChild(s);
+      var ang=Math.random()*Math.PI*2,dist=20+Math.random()*40;
+      requestAnimationFrame(function(){
+        s.style.transform='translate('+Math.cos(ang)*dist+'px,'+Math.sin(ang)*dist+'px)';
+        s.style.opacity='0';
+      });
+      setTimeout(function(){s.remove();},520);
+    })();
+  }
+}
+function scheduleM3Spawn(){
+  if(currentMode!=='mode3'||!running)return;
+  var elapsed=(performance.now()-m3startedAt)/1000;
+  if(elapsed>=m3duration)return;
+  var isGood=Math.random()<0.68;
+  var item=isGood?GOOD_ITEMS[Math.floor(Math.random()*GOOD_ITEMS.length)]:BAD_HAZARDS[Math.floor(Math.random()*BAD_HAZARDS.length)];
+  var lane=Math.floor(Math.random()*M3_LANES);
+  var el=document.createElement('div');
+  el.className='faller';
+  el.textContent=item.emoji;
+  el.style.left=(lane*100/M3_LANES+ (100/M3_LANES)/2)+'%';
+  el.style.top='-40px';
+  el.style.transform='translateX(-50%)';
+  $('lanes').appendChild(el);
+  m3items.push({el:el,lane:lane,good:isGood,item:item,bornAt:performance.now(),caught:false});
+  var baseDelay=Math.max(420, 950/DIFF[diff].speedMul);
+  setTimeout(scheduleM3Spawn, baseDelay + Math.random()*260);
+}
+function m3FallSpeed(){ return 95*DIFF[diff].speedMul; } // px/sec
+function m3Tick(){
+  if(currentMode!=='mode3'){return;}
+  var laneEl=$('lanes');
+  var rect=laneEl.getBoundingClientRect();
+  var now=performance.now();
+  for(var i=m3items.length-1;i>=0;i--){
+    var it=m3items[i];
+    if(it.caught)continue;
+    var t=(now-it.bornAt)/1000;
+    var y=t*m3FallSpeed();
+    it.el.style.top=y+'px';
+    if(y>rect.height-58){
+      // reached bottom uncaught
+      if(it.good){
+        // missed a good item: minor penalty, no shield loss to keep it forgiving but visible
+        tone(160,0.12,'sine',0.04);
+      }else{
+        // hazard reached bottom without being dodged-tap... in this design hazards must be AVOIDED (don't tap),
+        // reaching bottom safely is fine. So nothing happens here for hazards.
+      }
+      it.el.remove();
+      m3items.splice(i,1);
+    }
+  }
+  var elapsed=(now-m3startedAt)/1000;
+  if(elapsed>=m3duration){ m3Finish(); return; }
+  m3tickId=requestAnimationFrame(m3Tick);
+}
+function m3CatchInLane(lane,btnEl){
+  btnEl.classList.add('tap');
+  setTimeout(function(){btnEl.classList.remove('tap');},120);
+  var rect=$('lanes').getBoundingClientRect();
+  // find the lowest uncaught item in this lane near the bottom (catch zone)
+  var best=null,bestY=-1;
+  m3items.forEach(function(it){
+    if(it.caught||it.lane!==lane)return;
+    var y=parseFloat(it.el.style.top)||0;
+    if(y>rect.height-110 && y>bestY){ best=it; bestY=y; }
+  });
+  if(!best)return;
+  best.caught=true;
+  if(best.good){
+    best.el.classList.add('popgood');
+    tone(660,0.1,'sine',0.05);tone(880,0.12,'sine',0.05,0.09);
+    awardPoints(10);
+    m3caught++;
+    updateRescueMeter();
+    try{var br=best.el.getBoundingClientRect(),wr=$('wrap').getBoundingClientRect();sparkleBurst(br.left-wr.left+br.width/2,br.top-wr.top+br.height/2);}catch(e){}
+    if(RESCUE_MILESTONES[m3caught]){
+      var b=$('streakbanner');b.textContent=RESCUE_MILESTONES[m3caught];
+      b.classList.remove('show');void b.offsetWidth;b.classList.add('show');
+      tone(720,0.1,'triangle',0.05);tone(960,0.14,'triangle',0.05,0.08);
+    }else{
+      showFact(best.item.fact);
+    }
+  }else{
+    best.el.classList.add('popbad');
+    tone(140,0.2,'sawtooth',0.07);
+    penalize();
+    m3hazardHit++;
+    showFact(best.item.fact);
+    if(!running)return;
+  }
+  setTimeout(function(){ if(best.el)best.el.remove(); m3items=m3items.filter(function(x){return x!==best;}); },320);
+}
+function m3Finish(){
+  stopTimer();
+  if(m3tickId)cancelAnimationFrame(m3tickId);
+  m3items.forEach(function(it){ if(it.el)it.el.remove(); });
+  m3items=[];
+  modeComplete();
+}
+
+/* ============ shared round timer (drives the top progress bar) ============ */
+var timerId=null,timerStart=0,timerDur=0;
+function startTimer(dur){
+  stopTimer();
+  timerDur=dur;
+  timerStart=performance.now();
+  $('timerwrap').classList.add('show');
+  $('timerbar').style.width='100%';$('timerbar').style.background='var(--leaf)';
+  timerId=requestAnimationFrame(tickTimer);
+}
+function tickTimer(){
+  if(currentMode==='mode3'){ // mode3 manages its own end condition via m3Finish; bar still reflects overall mode time
+  }
+  var frac=Math.max(0,1-(performance.now()-timerStart)/1000/timerDur);
+  $('timerbar').style.width=(frac*100)+'%';
+  if(frac<0.3)$('timerbar').style.background='var(--danger)';
+  if(frac<=0){
+    if(currentMode==='mode1'){ m1Timeout(); return; }
+    if(currentMode==='mode2'){ /* handled by m2Timeout via its own scheduling */ return; }
+    return;
+  }
+  timerId=requestAnimationFrame(tickTimer);
+}
+function stopTimer(){ if(timerId)cancelAnimationFrame(timerId); timerId=null; $('timerwrap').classList.remove('show'); }
+function m1Timeout(){
+  if(currentMode!=='mode1'||m1queue.length===0)return;
+  tone(140,0.25,'sawtooth',0.06);
+  penalize();
+  if(!running)return;
+  var f=m1queue.shift();
+  showFact('Time\u2019s up! '+f.emoji+' '+f.fact);
+  setTimeout(m1Next,500);
+}
+
+/* ============ MODE SEQUENCING ============ */
+function showMode(modeId){
+  ['mode1','mode2','mode3'].forEach(function(m){$(m).classList.toggle('show',m===modeId);});
+  currentMode=modeId;
+}
+function startMode1(){
+  showMode('mode1');setModeTag('MISSION 1 \u2014 MAP THE LAND');
+  $('wavebadge').textContent='Mission 1';
+  m1Start();
+}
+function startMode2(){
+  showMode('mode2');setModeTag('MISSION 2 \u2014 CLIMATE MATCH');
+  $('wavebadge').textContent='Mission 2';
+  m2Start();
+}
+function startMode3(){
+  showMode('mode3');setModeTag('MISSION 3 \u2014 SAVE THE RAINFOREST');
+  $('wavebadge').textContent='Mission 3';
+  m3Start();
+}
+function modeComplete(){
+  stopTimer();
+  confettiBurst();
+  if(currentMode==='mode1'){
+    showFlash('MISSION 1 COMPLETE!','You mapped all '+FEATURES.length+' features of South America!');
+    setTimeout(startMode2,1700);
+  }else if(currentMode==='mode2'){
+    showFlash('MISSION 2 COMPLETE!','You matched every creature to its climate!');
+    setTimeout(startMode3,1700);
+  }else if(currentMode==='mode3'){
+    showFlash('MISSION 3 COMPLETE!','You helped save the rainforest!');
+    setTimeout(function(){ endGame(true); },1700);
+  }
+}
+function confettiBurst(){
+  var colors=['#4CC26A','#F4C430','#3E9BD6','#E86A9B','#7CE0A0'];
+  for(var i=0;i<28;i++){
+    (function(){
+      var c=document.createElement('div');
+      var size=6+Math.random()*6;
+      c.style.cssText='position:absolute;left:50%;top:38%;z-index:9;pointer-events:none;border-radius:2px;'+
+        'width:'+size+'px;height:'+size+'px;background:'+colors[i%colors.length]+';'+
+        'transition:all 1.1s cubic-bezier(.2,.6,.3,1);opacity:1;';
+      $('wrap').appendChild(c);
+      var ang=Math.random()*Math.PI*2, dist=80+Math.random()*160;
+      var dx=Math.cos(ang)*dist, dy=Math.sin(ang)*dist-40;
+      requestAnimationFrame(function(){
+        c.style.transform='translate('+dx+'px,'+dy+'px) rotate('+(Math.random()*540)+'deg)';
+        c.style.opacity='0';
+      });
+      setTimeout(function(){c.remove();},1150);
+    })();
+  }
+  tone(523,0.1,'sine',0.05);tone(659,0.1,'sine',0.05,0.08);tone(784,0.18,'sine',0.05,0.16);
+}
+
+/* ============ START / END ============ */
+function startGame(){
+  shields=3;score=0;combo=1;maxCombo=1;running=true;
+  renderShields();
+  $('scoreval').textContent='0';updateCombo();
+  $('startpanel').style.display='none';
+  $('endpanel').style.display='none';
+  $('boardpanel').style.display='none';
+  $('speedctl').classList.add('show');
+  $('spdName').textContent=DIFF[diff].n;
+  showFlash('MISSION 1','Map the features of South America!');
+  setTimeout(startMode1,1300);
+}
+
+function endGame(won){
+  running=false;
+  stopTimer();
+  if(m3tickId)cancelAnimationFrame(m3tickId);
+  if(m2fallId)cancelAnimationFrame(m2fallId);
+  $('speedctl').classList.remove('show');
+  var rank,medal,medalCol;
+  if(won){rank='RAINFOREST GUARDIAN';medal='\u2605';medalCol='#F4C430';}
+  else if(score>=150){rank='SKILLED RANGER';medal='\u2605';medalCol='#4CC26A';}
+  else if(score>=60){rank='TRAINEE RANGER';medal='\u2726';medalCol='#3E9BD6';}
+  else{rank='FIRST STEPS';medal='\u2726';medalCol='#9FBCA8';}
+  $('endbadge').textContent=medal;$('endbadge').style.color=medalCol;$('endbadge').style.borderColor=medalCol;
+  $('endrank').textContent=rank;$('endrank').style.color=medalCol;
+  $('endtitle').textContent=won?'ALL MISSIONS COMPLETE!':'MISSION STOPPED';
+  $('endscore').textContent=score;
+  $('endstats').innerHTML='Best chain x'+maxCombo+
+    (won?'<br>You mapped South America, matched its climates, and helped save the rainforest!':'<br>Keep practising \u2014 try again to complete all 3 missions!');
+  if(won){tone(523,0.14,'sine',0.06);tone(659,0.14,'sine',0.06,0.15);tone(784,0.3,'sine',0.06,0.3);}
+  else{tone(220,0.3,'sawtooth',0.07);tone(110,0.5,'sawtooth',0.07,0.25);}
+  $('endpanel').style.display='flex';
+  pendingScore=score;pendingSaved=false;
+  $('hsbadge').style.display='none';$('nameform').style.display='none';
+  if(score>0){
+    var p=currentPlayer();
+    if(p){
+      sbInsert(p.name,score).then(function(){loadEndBoard(p.name,score);});
+      $('hsbadge').textContent='\u2713 Saved to '+p.name+"'s record";$('hsbadge').style.display='block';
+    }else{
+      sbQualifies(score).then(function(q){
+        if(q){
+          $('hsbadge').textContent='\uD83C\uDFC6 Top ranger! Log your name:';
+          $('hsbadge').style.display='block';$('nameform').style.display='flex';
+          $('nameinput').value='';setTimeout(function(){try{$('nameinput').focus();}catch(e){}},300);
+        }
+      });
+    }
+  }
+  loadEndBoard(null,null);
+}
+
+var pendingScore=0,pendingSaved=false;
+
+$('difficulty').addEventListener('click',function(e){
+  var b=e.target.closest('.diffbtn');if(!b)return;
+  setDiff(parseInt(b.dataset.d,10));
+});
+function setDiff(d){
+  diff=Math.max(0,Math.min(DIFF.length-1,d));
+  document.querySelectorAll('.diffbtn').forEach(function(x){x.classList.toggle('on',parseInt(x.dataset.d,10)===diff);});
+  $('spdName').textContent=DIFF[diff].n;
+}
+$('spdUp').addEventListener('click',function(){setDiff(diff+1);tone(660,0.08,'square',0.05);});
+$('spdDown').addEventListener('click',function(){setDiff(diff-1);tone(440,0.08,'square',0.05);});
+
+$('launchbtn').addEventListener('click',startGame);
+$('againbtn').addEventListener('click',startGame);
+
+$('savescore').addEventListener('click',async function(){
+  if(pendingSaved)return;
+  var name=$('nameinput').value.trim().slice(0,14)||'Mystery ranger';
+  $('savescore').textContent='Saving\u2026';$('savescore').disabled=true;
+  var ok=await sbInsert(name,pendingScore);
+  if(ok){
+    pendingSaved=true;$('hsbadge').style.display='none';$('nameform').style.display='none';
+    tone(660,0.1,'sine',0.06);tone(990,0.2,'sine',0.06,0.12);
+    loadEndBoard(name,pendingScore);
+  }else{
+    $('savescore').textContent='Save';$('savescore').disabled=false;
+    $('hsbadge').textContent='Connection error &mdash; try again';$('hsbadge').style.display='block';
+  }
+});
+$('nameinput').addEventListener('keydown',function(e){if(e.key==='Enter')$('savescore').click();e.stopPropagation();});
+function openBoard(){$('boardpanel').style.display='flex';loadMainBoard();}
+$('boardbtn').addEventListener('click',openBoard);
+$('boardbtn2').addEventListener('click',openBoard);
+$('closeboard').addEventListener('click',function(){$('boardpanel').style.display='none';});
+$('refreshboard').addEventListener('click',loadMainBoard);
+
+})();
+</script>
+</body>
+</html>
