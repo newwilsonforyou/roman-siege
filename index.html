@@ -29,6 +29,11 @@
     border:1.5px solid rgba(255,255,255,.12);border-radius:999px;padding:5px 6px 5px 14px;}
   .ub-avatar{width:36px;height:36px;border-radius:50%;background:#2a1b3e;display:flex;
     align-items:center;justify-content:center;font-size:20px;border:2px solid var(--gold);}
+  .ub-avatar-btn{cursor:pointer;padding:0;transition:transform .12s,box-shadow .12s;position:relative;}
+  .ub-avatar-btn:hover{transform:scale(1.08);box-shadow:0 0 0 3px rgba(242,193,78,.3);}
+  .ub-avatar-btn::after{content:'✎';position:absolute;bottom:-3px;right:-3px;font-size:11px;
+    background:var(--gold);color:#3a2400;width:16px;height:16px;border-radius:50%;display:flex;
+    align-items:center;justify-content:center;border:1.5px solid var(--bg2);}
   .ub-name{font-family:'Cinzel',serif;font-weight:700;font-size:16px;color:var(--ink);}
   .ub-btn{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:14px;cursor:pointer;
     border-radius:999px;padding:8px 16px;border:1.5px solid var(--plasma);
@@ -123,6 +128,11 @@
   .jungle .card-art{background:radial-gradient(circle at 30% 25%,rgba(244,196,48,.3),transparent 55%),
     radial-gradient(circle at 75% 75%,rgba(91,217,127,.25),transparent 55%),#0E3B23;}
   .jungle .card-tag{color:#5BD97F;} .jungle .play{background:#5BD97F;color:#0A2818;}
+  .circuit{background:linear-gradient(160deg,#102a3d,#08161f);}
+  .circuit:hover{box-shadow:0 18px 50px rgba(255,213,74,.32);border-color:var(--gold);}
+  .circuit .card-art{background:radial-gradient(circle at 30% 30%,rgba(255,213,74,.28),transparent 55%),
+    radial-gradient(circle at 78% 78%,rgba(35,179,160,.2),transparent 52%),#0c1f2c;}
+  .circuit .card-tag{color:var(--gold);} .circuit .play{background:var(--gold);color:#3a2400;}
   .card.locked{opacity:.5;pointer-events:none;filter:grayscale(.3);}
   .lockmsg{position:absolute;inset:0;z-index:4;display:none;align-items:center;justify-content:center;
     background:rgba(8,5,16,.55);font-family:'Cinzel',serif;font-weight:700;color:#fff;font-size:15px;}
@@ -147,7 +157,10 @@
     padding:12px 14px;border-radius:12px;border:1.5px solid rgba(255,255,255,.18);
     background:rgba(0,0,0,.3);color:var(--ink);}
   #nameField:focus,#newName:focus,#newPass:focus,#logName:focus,#logPass:focus{outline:2px solid var(--gold);}
-  .avatars{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-top:4px;}
+  .avatars{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-top:4px;
+    max-height:230px;overflow-y:auto;padding:4px;border-radius:12px;background:rgba(0,0,0,.18);}
+  .avatars::-webkit-scrollbar{width:8px;}
+  .avatars::-webkit-scrollbar-thumb{background:rgba(255,255,255,.18);border-radius:8px;}
   .av{aspect-ratio:1;border-radius:12px;border:2px solid transparent;background:rgba(255,255,255,.06);
     font-size:24px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .12s;}
   .av:hover{background:rgba(255,255,255,.12);}
@@ -194,6 +207,30 @@
   </header>
 
   <main class="cards">
+    <a class="card circuit" id="card-circuit" href="crack-the-circuit.html">
+      <span class="badge2d" style="background:rgba(255,213,74,.92);color:#3a2400;">DRAG</span>
+      <div class="lockmsg">🔒 Sign in first</div>
+      <div class="card-art">
+        <svg class="art-svg pulse" viewBox="0 0 200 150" aria-hidden="true">
+          <polyline points="42,88 100,44 158,88" fill="none" stroke="rgba(120,141,181,.5)" stroke-width="2"/>
+          <rect x="60" y="88" width="80" height="44" fill="none" stroke="rgba(120,141,181,.5)" stroke-width="2"/>
+          <circle cx="100" cy="40" r="13" fill="#ffd54a"/>
+          <circle cx="100" cy="40" r="21" fill="none" stroke="#ffd54a" stroke-width="2" opacity=".5"/>
+          <line x1="70" y1="110" x2="92" y2="110" stroke="#23b3a0" stroke-width="4" stroke-linecap="round"/>
+          <line x1="92" y1="110" x2="108" y2="99" stroke="#23b3a0" stroke-width="4" stroke-linecap="round"/>
+          <circle cx="70" cy="110" r="3.5" fill="#fff"/><circle cx="120" cy="110" r="3.5" fill="#fff"/>
+          <line x1="120" y1="110" x2="140" y2="110" stroke="#df8a37" stroke-width="4" stroke-linecap="round"/>
+          <circle cx="22" cy="22" r="1.5" fill="#fff"/><circle cx="172" cy="38" r="1.5" fill="#fff"/><circle cx="150" cy="122" r="1.3" fill="#fff"/>
+        </svg>
+      </div>
+      <div class="card-body">
+        <div class="card-tag">Circuit Detective</div>
+        <div class="card-title">Crack the Circuit</div>
+        <div class="card-desc">Flip the switches, watch which room lights up, then wire a house that behaves the same to crack each mystery.</div>
+        <span class="play">PLAY ▶</span>
+      </div>
+    </a>
+
     <a class="card lino" id="card-lino" href="lino-layers.html">
       <span class="badge2d" style="background:rgba(217,165,60,.92);color:#3a2400;">CARVE</span>
       <div class="lockmsg">🔒 Sign in first</div>
@@ -502,6 +539,16 @@
     </div>
   </div>
 
+  <div class="modal" id="avatarModal">
+    <div class="sheet">
+      <h2>Pick your hero</h2>
+      <p class="note">Choose a new avatar — it saves straight away.</p>
+      <div class="avatars" id="avatarPickGrid"></div>
+      <div class="modal-err" id="avErr"></div>
+      <button class="modal-btn ghost" id="closeAvatar">CLOSE</button>
+    </div>
+  </div>
+
 <script>
 (function(){
 "use strict";
@@ -511,7 +558,14 @@ var SB_URL='https://wpohvsjkrskhlrayaubp.supabase.co';
 var SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indwb2h2c2prcnNraGxyYXlhdWJwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzMDEzOTcsImV4cCI6MjA5Njg3NzM5N30.Xi07ayGB5CykR-_7QX-b8UsUmMmTbGIlYpctXYgW9JI';
 function sbH(){return {'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'};}
 
-var AVATARS=['🛡️','⚔️','👑','🏛️','🦅','🐺','🔥','⭐','🚀','🪐','☄️','🎯'];
+var AVATARS=[
+  '🛡️','⚔️','👑','🏛️','🦅','🐺','🔥','⭐','🚀','🪐','☄️','🎯',
+  '🦁','🐯','🐻','🐼','🦊','🐶','🐱','🐰','🐨','🐸','🦉','🦄',
+  '🐲','🐉','🦖','🦕','🐙','🦈','🐳','🦋','🐝','🦜','🦩','🦚',
+  '⚽','🏀','🏈','🎾','🏐','🥋','🏓','🛹','🎮','🎨','🎸','🎺',
+  '🍕','🍔','🍩','🍦','🍓','🍉','🥑','🌶️','🍪','🧁','🍭','🍫',
+  '🌈','🌟','⚡','❄️','🌸','🌵','🍄','🌍','🌙','🔮','💎','🏆'
+];
 var selectedAvatar='🛡️';
 
 function getPlayer(){try{return JSON.parse(localStorage.getItem('rna_player')||'null');}catch(e){return null;}}
@@ -521,11 +575,12 @@ function clearPlayer(){localStorage.removeItem('rna_player');}
 function renderUserBar(){
   var p=getPlayer(),bar=$('userbar');
   if(p){
-    bar.innerHTML='<div class="ub-chip"><div class="ub-avatar">'+p.avatar+'</div>'+
+    bar.innerHTML='<div class="ub-chip"><button class="ub-avatar ub-avatar-btn" id="avatarBtn" title="Change avatar">'+p.avatar+'</button>'+
       '<span class="ub-name">'+escapeHtml(p.name)+'</span></div>'+
       '<button class="ub-btn solid" id="recBtn">My Records</button>'+
       '<button class="ub-btn" id="switchBtn">Switch</button>';
     $('recBtn').addEventListener('click',openRecords);
+    $('avatarBtn').addEventListener('click',openAvatarPicker);
     $('switchBtn').addEventListener('click',function(){clearPlayer();renderUserBar();openSignin();});
     setCardsLocked(false);
   }else{
@@ -547,6 +602,7 @@ function setCardsLocked(locked){
   $('card-museum').classList.toggle('locked',locked);
   $('card-voyage').classList.toggle('locked',locked);
   $('card-jungle').classList.toggle('locked',locked);
+  $('card-circuit').classList.toggle('locked',locked);
 }
 function escapeHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
@@ -660,6 +716,44 @@ $('loginBtn').addEventListener('click',async function(){
 });
 $('logPass').addEventListener('keydown',function(e){if(e.key==='Enter')$('loginBtn').click();});
 
+/* CHANGE AVATAR */
+function openAvatarPicker(){
+  var p=getPlayer();if(!p)return;
+  $('avErr').textContent='';
+  var g=$('avatarPickGrid');g.innerHTML='';
+  AVATARS.forEach(function(a){
+    var d=document.createElement('div');
+    d.className='av'+(a===p.avatar?' sel':'');
+    d.textContent=a;
+    d.addEventListener('click',function(){ saveAvatar(a,d); });
+    g.appendChild(d);
+  });
+  $('avatarModal').classList.add('show');
+}
+async function saveAvatar(a,el){
+  var p=getPlayer();if(!p)return;
+  if(a===p.avatar){$('avatarModal').classList.remove('show');return;}
+  $('avatarPickGrid').querySelectorAll('.av').forEach(function(x){x.classList.remove('sel');});
+  if(el)el.classList.add('sel');
+  $('avErr').textContent='Saving…';$('avErr').style.color='var(--muted)';
+  try{
+    var h=sbH();h['Prefer']='return=minimal';
+    var r=await fetch(SB_URL+'/rest/v1/players?name=eq.'+encodeURIComponent(p.name),
+      {method:'PATCH',headers:h,body:JSON.stringify({avatar:a})});
+    if(!r.ok)throw new Error('patch failed');
+    setPlayer({name:p.name,avatar:a});
+    renderUserBar();
+    $('avatarModal').classList.remove('show');
+  }catch(e){
+    setPlayer({name:p.name,avatar:a});
+    renderUserBar();
+    $('avErr').textContent='Saved on this device (couldn\u2019t reach the server).';
+    $('avErr').style.color='var(--muted)';
+    setTimeout(function(){$('avatarModal').classList.remove('show');},1200);
+  }
+}
+$('closeAvatar').addEventListener('click',function(){$('avatarModal').classList.remove('show');});
+
 function openRecords(){
   var p=getPlayer();if(!p)return;
   $('recordsModal').classList.add('show');
@@ -681,6 +775,10 @@ async function loadRecords(p){
   var museum=rows.filter(function(x){return x.game==='vicmuseum';});
   var voyage=rows.filter(function(x){return x.game==='victorians';});
   var jungle=rows.filter(function(x){return x.game==='junglecatch';});
+  var circuit=rows.filter(function(x){return x.game==='circuit';});
+  var lino=rows.filter(function(x){return x.game==='linolayers';});
+  var cycle=rows.filter(function(x){return x.game==='lifecycles';});
+  var rainforest=rows.filter(function(x){return x.game==='rainforestrescue';});
   function best(a){return a.length?Math.max.apply(null,a.map(function(x){return x.score;})):0;}
   var totalGames=rows.length;
   var head='<div class="rec-head"><div class="rec-avatar">'+p.avatar+'</div>'+
@@ -693,6 +791,10 @@ async function loadRecords(p){
     '<div class="rec-stat"><div class="n">'+best(museum)+'</div><div class="l">MUSEUM BEST</div></div>'+
     '<div class="rec-stat"><div class="n">'+best(voyage)+'</div><div class="l">VOYAGE BEST</div></div>'+
     '<div class="rec-stat"><div class="n">'+best(jungle)+'</div><div class="l">JUNGLE BEST</div></div>'+
+    '<div class="rec-stat"><div class="n">'+best(circuit)+'</div><div class="l">CIRCUIT BEST</div></div>'+
+    '<div class="rec-stat"><div class="n">'+best(lino)+'</div><div class="l">LINO BEST</div></div>'+
+    '<div class="rec-stat"><div class="n">'+best(cycle)+'</div><div class="l">CYCLE BEST</div></div>'+
+    '<div class="rec-stat"><div class="n">'+best(rainforest)+'</div><div class="l">RAINFOREST BEST</div></div>'+
     '<div class="rec-stat"><div class="n">'+totalGames+'</div><div class="l">GAMES</div></div></div>';
   function historyTable(title,arr){
     if(!arr.length)return '<div class="rec-section">'+title+'</div><div class="rec-empty">No games yet — go play!</div>';
@@ -712,10 +814,14 @@ async function loadRecords(p){
     historyTable('🌍 EMPIRE HISTORY',empire)+
     historyTable('🏛️ MUSEUM HISTORY',museum)+
     historyTable('🎩 VOYAGE HISTORY',voyage)+
-    historyTable('🧺 JUNGLE HISTORY',jungle);
+    historyTable('🧺 JUNGLE HISTORY',jungle)+
+    historyTable('💡 CIRCUIT HISTORY',circuit)+
+    historyTable('🖨️ LINO LAYERS HISTORY',lino)+
+    historyTable('🔄 CYCLE SPOTTER HISTORY',cycle)+
+    historyTable('🌳 RAINFOREST RESCUE HISTORY',rainforest);
 }
 
-[$('signinModal'),$('recordsModal')].forEach(function(m){
+[$('signinModal'),$('recordsModal'),$('avatarModal')].forEach(function(m){
   m.addEventListener('click',function(e){if(e.target===m)m.classList.remove('show');});
 });
 

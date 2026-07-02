@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>Spark Lab — Crack the Circuit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f3ead6; --paper2:#e9dcc0; --ink:#21323f; --ink-soft:#52606b;
+    --board:#102a3d; --board2:#163b54; --copper:#df8a37; --copper-d:#b5641c;
+    --glow:#ffd54a; --glow2:#fff3c6; --teal:#23b3a0; --teal-d:#0f8576;
+    --rail:#cbbf9f; --warn:#ff5a47; --shadow:0 6px 0 rgba(0,0,0,.18);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;height:100%;}
+  body{font-family:'Nunito',system-ui,sans-serif;color:var(--ink);
+    background:radial-gradient(circle at 20% 0%, #fbf4e3, transparent 60%), var(--paper);
+    min-height:100%;display:flex;flex-direction:column;align-items:center;padding:14px;}
+  .wrap{width:100%;max-width:1060px;}
+  header{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:10px;}
+  .logo{font-family:'Baloo 2',cursive;font-weight:800;font-size:30px;line-height:1;display:flex;align-items:center;gap:10px;}
+  .logo .spark{width:34px;height:34px;border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, var(--glow2), var(--glow) 55%, var(--copper-d));
+    box-shadow:0 0 16px var(--glow);display:grid;place-items:center;font-size:18px;}
+  .tabs{margin-left:auto;display:flex;gap:6px;background:#fff;border:2px solid var(--paper2);border-radius:14px;padding:4px;box-shadow:var(--shadow);}
+  .tab{font-family:'Baloo 2';font-weight:700;font-size:14px;border:none;cursor:pointer;background:transparent;color:var(--ink-soft);padding:8px 14px;border-radius:10px;}
+  .tab.active{background:var(--copper);color:#fff;}
+
+  .hud{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#15212b;border:3px solid #0b141b;border-radius:16px;padding:8px 12px;margin-bottom:12px;box-shadow:var(--shadow);}
+  .hud-item{display:flex;align-items:center;gap:7px;font-family:'Baloo 2';font-weight:800;font-size:16px;color:#eaf2f8;background:#1d2e3b;border:2px solid #2c4456;border-radius:12px;padding:7px 12px;}
+  .hud-item.name{padding:4px 8px 4px 12px;}
+  .hud-item.name input{font-family:'Baloo 2';font-weight:700;font-size:15px;color:#fff;background:transparent;border:none;outline:none;width:120px;}
+  .hud-item .big{color:var(--glow);}
+  #timer.low{color:#ffd54a;animation:tpulse 1s infinite;}
+  #timer.out{color:#ff5a47;}
+  @keyframes tpulse{50%{opacity:.4;}}
+  #streakWrap.hot{animation:flame .5s ease;}
+  @keyframes flame{0%{transform:scale(1);}45%{transform:scale(1.25);}100%{transform:scale(1);}}
+  .hud-btn{font-family:'Baloo 2';font-weight:800;font-size:14px;cursor:pointer;border:2px solid #2c4456;background:#1d2e3b;color:#eaf2f8;border-radius:12px;padding:8px 12px;}
+  .hud-btn.lb{margin-left:auto;background:var(--copper);border-color:var(--copper-d);color:#fff;}
+
+  .goal{display:flex;align-items:center;gap:12px;background:#fff;border:2px solid var(--paper2);border-radius:16px;padding:10px 14px;margin-bottom:12px;box-shadow:var(--shadow);}
+  .goal .badge{font-family:'Baloo 2';font-weight:700;font-size:13px;color:#fff;background:var(--teal);padding:4px 10px;border-radius:999px;white-space:nowrap;}
+  .goal .text{font-weight:800;font-size:16px;}
+  .goal .hint{font-weight:600;color:var(--ink-soft);font-size:13.5px;}
+  .goal .status{margin-left:auto;font-family:'Baloo 2';font-weight:700;font-size:15px;display:flex;align-items:center;gap:6px;color:var(--ink-soft);white-space:nowrap;}
+  .goal.done .status{color:var(--teal-d);}
+  .goal .lvlbtns{display:flex;gap:6px;margin-left:6px;}
+  .lvlbtns button{font-family:'Baloo 2';font-weight:700;border:none;cursor:pointer;background:var(--paper2);color:var(--ink);border-radius:10px;padding:6px 11px;font-size:14px;}
+  .lvlbtns button:hover{background:var(--rail);}
+  .lvlbtns button.primary{background:var(--copper);color:#fff;}
+
+  .mbox{background:#15212b;border:3px solid #0b141b;border-radius:18px;margin-bottom:12px;overflow:hidden;box-shadow:var(--shadow);position:relative;}
+  .mbox-top{display:flex;align-items:baseline;gap:12px;padding:12px 16px 4px;flex-wrap:wrap;}
+  .mbox-title{font-family:'Baloo 2';font-weight:800;color:var(--glow);font-size:18px;}
+  .mbox-teach{color:#bcd0df;font-weight:600;font-size:13.5px;}
+  .mbox-dots{display:flex;gap:5px;margin-left:6px;}
+  .mbox-dots i{width:9px;height:9px;border-radius:50%;background:#2c4456;display:inline-block;}
+  .mbox-dots i.on{background:var(--teal);box-shadow:0 0 8px var(--teal);}
+  .mbox-dots i.skip{background:#df8a37;box-shadow:0 0 8px #df8a37;}
+  .mbox-body{display:flex;align-items:center;gap:22px;padding:8px 16px 16px;flex-wrap:wrap;}
+  .mbox-bulbs{display:flex;gap:18px;}
+  .mbox-house{flex:0 0 auto;}
+  .mbox-bulb{display:flex;flex-direction:column;align-items:center;gap:4px;}
+  .mbox-bulb .lbl{color:#bcd0df;font-weight:800;font-size:13px;font-family:'Baloo 2';}
+  .mbox-switches{display:flex;gap:10px;flex-wrap:wrap;}
+  .swbtn{font-family:'Baloo 2';font-weight:700;font-size:15px;cursor:pointer;border:3px solid #2c4456;background:#1d2e3b;color:#cfe0ec;border-radius:14px;padding:10px 16px;display:flex;align-items:center;gap:9px;min-width:138px;transition:transform .07s;}
+  .swbtn:active{transform:scale(.96);}
+  .swbtn .dot{width:14px;height:14px;border-radius:50%;background:#41576a;box-shadow:inset 0 0 0 2px #0b141b;}
+  .swbtn.on{border-color:var(--teal);color:#eafff9;background:#163a37;}
+  .swbtn.on .dot{background:var(--teal);box-shadow:0 0 10px var(--teal);}
+  .crackbtn{margin-left:auto;font-family:'Baloo 2';font-weight:800;font-size:16px;cursor:pointer;border:none;background:var(--copper);color:#fff;border-radius:14px;padding:12px 22px;box-shadow:0 4px 0 var(--copper-d);}
+  .crackbtn:active{transform:translateY(2px);box-shadow:0 2px 0 var(--copper-d);}
+  .givebtn{font-family:'Baloo 2';font-weight:700;font-size:14px;cursor:pointer;border:2px solid #2c4456;background:#1d2e3b;color:#9fb6c6;border-radius:14px;padding:11px 16px;margin-left:8px;}
+  .givebtn:hover{color:#cfe0ec;border-color:#3a5670;}
+  .mbox.solved{border-color:var(--teal);}
+  .mbox-reveal{padding:10px 16px 16px;display:none;}
+  .mbox.solved .mbox-reveal{display:block;}
+  .mbox.solved .mbox-body{opacity:.45;}
+  .reveal-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+  .stamp{font-family:'Baloo 2';font-weight:800;color:var(--teal);font-size:20px;border:3px solid var(--teal);border-radius:12px;padding:6px 14px;transform:rotate(-7deg);}
+  .reveal-cap{color:#bcd0df;font-weight:700;font-size:13.5px;max-width:240px;}
+  svg.mini{background:#0c1b27;border-radius:12px;}
+
+  #pop{position:fixed;z-index:70;pointer-events:none;font-family:'Baloo 2';font-weight:800;text-align:center;opacity:0;}
+  #pop.go{animation:floatup 1.25s ease forwards;}
+  #pop .pts{font-size:34px;color:var(--glow);text-shadow:0 2px 0 var(--copper-d);}
+  #pop .stars{font-size:22px;}
+  #pop .strk{font-size:16px;color:var(--teal);}
+  @keyframes floatup{0%{opacity:0;transform:translate(-50%,0) scale(.6);}15%{opacity:1;transform:translate(-50%,-8px) scale(1.1);}100%{opacity:0;transform:translate(-50%,-92px) scale(1);}}
+
+  .stage{display:flex;gap:14px;align-items:flex-start;}
+  @media (max-width:780px){ .stage{flex-direction:column;align-items:stretch;} }
+  .tray{background:#fff;border:2px solid var(--paper2);border-radius:18px;padding:12px;box-shadow:var(--shadow);width:150px;flex:0 0 auto;}
+  @media (max-width:780px){ .tray{width:100%;display:flex;gap:10px;overflow-x:auto;} }
+  .tray h3{font-family:'Baloo 2';margin:2px 4px 10px;font-size:15px;color:var(--ink-soft);}
+  @media (max-width:780px){ .tray h3{display:none;} }
+  .part{display:flex;align-items:center;gap:10px;background:var(--paper);border:2px solid var(--paper2);border-radius:14px;padding:9px;margin-bottom:10px;cursor:grab;user-select:none;touch-action:none;transition:transform .08s;}
+  @media (max-width:780px){ .part{margin-bottom:0;flex:0 0 auto;flex-direction:column;width:96px;} }
+  .part:active{cursor:grabbing;transform:scale(.97);}
+  .part .ico{width:46px;height:30px;flex:0 0 auto;}
+  .part .nm{font-weight:800;font-size:13px;}
+
+  .boardwrap{flex:1 1 auto;min-width:0;position:relative;}
+  svg.board{width:100%;height:auto;display:block;border-radius:18px;background:linear-gradient(var(--board2),var(--board));box-shadow:inset 0 0 0 3px #0b2030, var(--shadow);touch-action:none;}
+  .toolbar{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;align-items:center;}
+  .tool{font-family:'Baloo 2';font-weight:700;font-size:14px;cursor:pointer;border:2px solid var(--paper2);background:#fff;color:var(--ink);border-radius:12px;padding:8px 13px;display:flex;align-items:center;gap:7px;box-shadow:0 3px 0 rgba(0,0,0,.12);}
+  .tool:hover{background:var(--paper);}
+  .tool.active{background:var(--warn);color:#fff;border-color:var(--warn);}
+  .legend{margin-left:auto;font-weight:700;color:var(--ink-soft);font-size:13px;}
+
+  .modal-overlay{position:fixed;inset:0;background:rgba(16,42,61,.7);backdrop-filter:blur(3px);z-index:80;display:flex;align-items:center;justify-content:center;padding:18px;}
+  .modal{background:#fff;border-radius:20px;border:3px solid var(--paper2);box-shadow:0 12px 0 rgba(0,0,0,.2);max-width:420px;width:100%;padding:20px;}
+  .modal-title{font-family:'Baloo 2';font-weight:800;font-size:24px;text-align:center;margin-bottom:4px;}
+  .modal-sub{text-align:center;color:var(--ink-soft);font-weight:700;margin-bottom:14px;}
+  .modal-sub b{color:var(--copper);font-size:20px;}
+  .lb-row{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:12px;font-weight:800;}
+  .lb-row:nth-child(odd){background:var(--paper);}
+  .lb-row.me{background:#fff6d8;border:2px solid var(--glow);}
+  .lb-rank{width:30px;font-family:'Baloo 2';color:var(--ink-soft);}
+  .lb-name{flex:1;}
+  .lb-score{color:var(--copper);font-family:'Baloo 2';}
+  .lb-empty{text-align:center;color:var(--ink-soft);font-weight:700;padding:14px;}
+  .lb-loading{text-align:center;color:var(--ink-soft);font-weight:700;padding:16px;}
+  .modal-actions{display:flex;gap:10px;margin-top:16px;}
+  .btn-primary{flex:1;font-family:'Baloo 2';font-weight:800;font-size:15px;cursor:pointer;border:none;background:var(--copper);color:#fff;border-radius:14px;padding:12px;box-shadow:0 4px 0 var(--copper-d);}
+  .btn-primary:disabled{opacity:.6;box-shadow:none;cursor:default;}
+  .btn-primary:active:not(:disabled){transform:translateY(2px);box-shadow:0 2px 0 var(--copper-d);}
+  .btn-ghost{font-family:'Baloo 2';font-weight:800;font-size:15px;cursor:pointer;border:2px solid var(--paper2);background:#fff;color:var(--ink);border-radius:14px;padding:12px 16px;}
+
+  #confetti{position:fixed;inset:0;pointer-events:none;z-index:75;}
+  #ghost{position:fixed;pointer-events:none;z-index:50;width:64px;height:42px;transform:translate(-50%,-50%);display:none;opacity:.92;filter:drop-shadow(0 4px 6px rgba(0,0,0,.3));}
+  #toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;font-weight:800;font-size:14px;padding:10px 16px;border-radius:999px;opacity:0;transition:.25s;z-index:60;pointer-events:none;font-family:'Baloo 2';}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  .hidden{display:none !important;}
+  .win-flash{animation:pop .5s ease;}
+  @keyframes pop{0%{transform:scale(1);}40%{transform:scale(1.03);}100%{transform:scale(1);}}
+  .lb-av{display:inline-block;font-size:15px;line-height:1;margin-right:3px;vertical-align:-1px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo"><span class="spark">⚡</span> Spark Lab</div>
+    <div class="tabs">
+      <button class="tab active" data-mode="crack">🔍 Crack It</button>
+      <button class="tab" data-mode="free">🔧 Free Build</button>
+    </div>
+  </header>
+
+  <div class="hud" id="hud">
+    <div class="hud-item name">🧑‍🔬 <input id="nameInput" value="Player 1" maxlength="16" /></div>
+    <div class="hud-item">⏱ <span id="timer">0:00</span></div>
+    <div class="hud-item" id="streakWrap">🔥 <span id="streak">0</span></div>
+    <div class="hud-item">⭐ <span class="big" id="totalScore">0</span></div>
+    <button class="hud-btn lb" id="lbBtn">🏆 Leaderboard</button>
+    <button class="hud-btn" id="soundBtn">🔊</button>
+  </div>
+
+  <div class="goal hidden" id="freeGoal">
+    <span class="badge" id="lvlBadge">Level 1</span>
+    <div>
+      <div class="text" id="goalText">Light the bulb</div>
+      <div class="hint" id="goalHint">Drag a bulb and some wires to make a loop from + to – of the battery.</div>
+    </div>
+    <div class="status" id="goalStatus"><span id="statusIcon">○</span> <span id="statusWord">keep going</span></div>
+    <div class="lvlbtns">
+      <button id="prevLvl">‹</button>
+      <button id="nextLvl" class="primary">Next ›</button>
+    </div>
+  </div>
+
+  <div class="mbox" id="mbox">
+    <div class="mbox-top">
+      <div class="mbox-title" id="mboxTitle">🔒 Mystery Box #1</div>
+      <div class="mbox-teach" id="mboxTeach">Flip the switch and watch bulb A.</div>
+      <div class="mbox-dots" id="mboxDots"></div>
+      <div class="lvlbtns" style="margin-left:auto">
+        <button id="prevCrack">‹</button>
+        <button id="nextCrack" class="primary">Next ›</button>
+      </div>
+    </div>
+    <div class="mbox-body">
+      <svg id="mboxHouseSvg" class="mbox-house" width="250" height="170" viewBox="0 0 250 170"></svg>
+      <div class="mbox-switches" id="mboxSwitches"></div>
+      <button class="crackbtn" id="crackBtn">Crack it!</button>
+      <button class="givebtn" id="giveBtn">🏳️ Give up</button>
+    </div>
+    <div class="mbox-reveal" id="mboxReveal">
+      <div class="reveal-row">
+        <span class="stamp" id="revealStamp">CRACKED!</span>
+        <svg class="mini" id="revealSvg" width="300" height="170" viewBox="0 0 300 170"></svg>
+        <span class="reveal-cap" id="revealCap">Here's how the hidden circuit was really wired.</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="stage">
+    <div class="tray"><h3 id="trayTitle">Your parts</h3><div id="trayParts"></div></div>
+    <div class="boardwrap">
+      <svg class="board" id="board" viewBox="0 0 644 460" preserveAspectRatio="xMidYMid meet">
+        <defs>
+          <filter id="glow" x="-80%" y="-80%" width="260%" height="260%">
+            <feGaussianBlur stdDeviation="7" result="b"/>
+            <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+          <radialGradient id="halo">
+            <stop offset="0%" stop-color="#fff3c6" stop-opacity="1"/>
+            <stop offset="45%" stop-color="#ffd54a" stop-opacity=".7"/>
+            <stop offset="100%" stop-color="#ffd54a" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+        <g id="house" opacity="0.32">
+          <circle cx="585" cy="64" r="22" fill="#24405a"/>
+          <circle cx="585" cy="64" r="22" fill="none" stroke="#6f9ec2" stroke-width="2"/>
+          <circle cx="70" cy="58" r="2" fill="#9fc1da"/><circle cx="150" cy="38" r="1.6" fill="#9fc1da"/><circle cx="505" cy="46" r="1.8" fill="#9fc1da"/><circle cx="300" cy="34" r="1.6" fill="#9fc1da"/><circle cx="240" cy="64" r="1.4" fill="#9fc1da"/>
+          <line x1="22" y1="428" x2="622" y2="428" stroke="#6f9ec2" stroke-width="2"/>
+          <polyline points="92,198 322,98 552,198" fill="none" stroke="#6f9ec2" stroke-width="2.5" stroke-linejoin="round"/>
+          <rect x="436" y="124" width="20" height="46" fill="none" stroke="#6f9ec2" stroke-width="2"/>
+          <circle cx="446" cy="112" r="6" fill="none" stroke="#6f9ec2" stroke-width="1.5"/>
+          <circle cx="458" cy="96" r="8" fill="none" stroke="#6f9ec2" stroke-width="1.5"/>
+          <rect x="110" y="198" width="424" height="230" fill="none" stroke="#6f9ec2" stroke-width="2.5"/>
+          <line x1="322" y1="198" x2="322" y2="428" stroke="#6f9ec2" stroke-width="2" stroke-dasharray="6 8"/>
+          <line x1="110" y1="313" x2="534" y2="313" stroke="#6f9ec2" stroke-width="2" stroke-dasharray="6 8"/>
+          <rect x="290" y="360" width="62" height="68" fill="none" stroke="#6f9ec2" stroke-width="2.5"/>
+          <circle cx="343" cy="396" r="2.5" fill="#6f9ec2"/>
+        </g>
+        <g id="dots"></g>
+        <rect id="hl" x="0" y="0" width="0" height="0" rx="12" fill="#ffd54a" opacity="0"/>
+        <g id="edges"></g>
+        <g id="fx"></g>
+      </svg>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <button class="tool" id="eraser">🧽 Eraser</button>
+    <button class="tool" id="clear">🧹 Clear board</button>
+    <button class="tool" id="reset">↺ Reset</button>
+    <span class="legend" id="legend">Tip: tap a switch to flip it on/off</span>
+  </div>
+</div>
+
+<canvas id="confetti"></canvas>
+<svg id="ghost" viewBox="0 0 64 42"></svg>
+<div id="pop"></div>
+<div id="toast"></div>
+
+<div class="modal-overlay hidden" id="lbModal">
+  <div class="modal">
+    <div class="modal-title" id="lbTitle">🏆 Circuit Leaderboard</div>
+    <div class="modal-sub" id="lbSub"></div>
+    <div id="lbBody"></div>
+    <div class="modal-actions">
+      <button class="btn-primary" id="lbSave">Submit my score</button>
+      <button class="btn-ghost" id="lbClose">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  /* ============================================================
+     LEADERBOARD — shared Roman Numeral Arcade Supabase backend.
+     GAME_ID keeps this game's board separate from the others.
+     (SB_URL / SB_KEY are the arcade's existing project keys.)
+     ============================================================ */
+  var SB_URL = 'https://wpohvsjkrskhlrayaubp.supabase.co';
+  var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indwb2h2c2prcnNraGxyYXlhdWJwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzMDEzOTcsImV4cCI6MjA5Njg3NzM5N30.Xi07ayGB5CykR-_7QX-b8UsUmMmTbGIlYpctXYgW9JI';
+  var GAME_ID = 'circuit';
+  function sbH(){return {'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'};}
+  function currentPlayer(){try{return JSON.parse(localStorage.getItem('rna_player')||'null');}catch(e){return null;}}
+  function playerName(){var p=currentPlayer();return p?p.name:null;}
+  async function sbFetchTop(limit){
+    limit=limit||15;
+    try{
+      var r=await fetch(SB_URL+'/rest/v1/scores?select=name%2Cscore%2Cplayer&game=eq.'+GAME_ID+'&order=score.desc&limit='+limit,{headers:sbH()});
+      if(!r.ok){console.error('fetch',r.status,await r.text());return null;}
+      var _r=await r.json();await attachAvatars(_r);return _r;
+    }catch(e){console.error(e);return null;}
+  }
+  async function attachAvatars(rows){
+    if(!rows||!rows.length)return rows;
+    try{
+      var names=[];
+      rows.forEach(function(row){var n=row.player||row.name;if(n&&names.indexOf(n)<0)names.push(n);});
+      if(!names.length)return rows;
+      var list=names.map(function(n){return '"'+String(n).replace(/"/g,'')+'"';}).join(',');
+      var rr=await fetch(SB_URL+'/rest/v1/players?select=name%2Cavatar&name=in.('+encodeURIComponent(list)+')',{headers:sbH()});
+      if(!rr.ok)return rows;
+      var players=await rr.json();
+      var map={};players.forEach(function(p){map[p.name]=p.avatar;});
+      rows.forEach(function(row){row.avatar=map[row.player||row.name]||null;});
+    }catch(e){}
+    return rows;
+  }
+  async function sbInsert(name,score){
+    try{
+      var h=sbH();h['Prefer']='return=minimal';
+      var body={name:name,score:score,game:GAME_ID};
+      var pn=playerName();if(pn)body.player=pn;
+      var r=await fetch(SB_URL+'/rest/v1/scores',{method:'POST',headers:h,body:JSON.stringify(body)});
+      if(!r.ok){console.error('insert',r.status,await r.text());return false;}
+      return true;
+    }catch(e){console.error(e);return false;}
+  }
+  async function sbQualifies(score){
+    try{
+      var r=await fetch(SB_URL+'/rest/v1/scores?select=score&game=eq.'+GAME_ID+'&order=score.desc&limit=15',{headers:sbH()});
+      if(!r.ok)return true;
+      var rows=await r.json();
+      if(!rows||rows.length<15)return true;
+      return score>rows[rows.length-1].score;
+    }catch(e){return true;}
+  }
+  function lbEsc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+  /* ============================ GRID ============================ */
+  const COLS=7, ROWS=5, GAP=92, PAD=46;
+  const X=c=>PAD+c*GAP, Y=r=>PAD+r*GAP;
+  const board=document.getElementById('board');
+  const dotsG=document.getElementById('dots'), edgesG=document.getElementById('edges'), fxG=document.getElementById('fx');
+  const hl=document.getElementById('hl');
+
+  let dh='';
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+    dh+=`<circle cx="${X(c)}" cy="${Y(r)}" r="4.5" fill="#4f7ea3"/><circle cx="${X(c)}" cy="${Y(r)}" r="9" fill="#39618033"/>`;
+  }
+  dotsG.innerHTML=dh;
+
+  const nodeId=(r,c)=>r*COLS+c;
+  const key=(a,b)=>{const ka=a.r*COLS+a.c,kb=b.r*COLS+b.c;return ka<kb?`${a.r},${a.c}|${b.r},${b.c}`:`${b.r},${b.c}|${a.r},${a.c}`;};
+  const parseKey=k=>{const[p,q]=k.split('|');const[r1,c1]=p.split(',').map(Number),[r2,c2]=q.split(',').map(Number);return[{r:r1,c:c1},{r:r2,c:c2}];};
+  const N=(r,c)=>({r,c});
+
+  const allEdges=[];
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+    if(c<COLS-1) allEdges.push({a:{r,c},b:{r,c:c+1}});
+    if(r<ROWS-1) allEdges.push({a:{r,c},b:{r:r+1,c}});
+  }
+  const midpoint=e=>({x:(X(e.a.c)+X(e.b.c))/2,y:(Y(e.a.r)+Y(e.b.r))/2});
+
+  let mode='crack';
+  let edges=new Map();
+  let switchStates={'1':'open','2':'open'};
+  let eraserOn=false;
+
+  // scoring
+  let totalScore=0, streak=0;
+  const solvedBoxes=new Set();
+  const skippedBoxes=new Set();
+  let wrongAttempts=0;
+  let boxStart=0, frozenLeft=null, timerInt=null, timedOut=false;
+
+  const FREE=[
+    {title:'Light the bulb', hint:'Drag a bulb and some wires to make one loop from + to – of the battery.',
+     setup:[{type:'battery',a:N(2,1),b:N(2,2)}], check:s=>s.litKeys.size>=1},
+    {title:'Add a switch', hint:'Wire a switch into the loop. The bulb should turn on only when the switch is closed.',
+     setup:[{type:'battery',a:N(2,1),b:N(2,2)}], check:s=>s.litKeys.size>=1 && s.switches>=1},
+    {title:'Light two bulbs', hint:'Get two bulbs glowing at once. Try a side-by-side (parallel) loop.',
+     setup:[{type:'battery',a:N(2,1),b:N(2,2)}], check:s=>s.litKeys.size>=2},
+  ];
+  let freeLvl=0;
+
+  // ---- 5 mystery boxes, easy -> hard (Year-5 ramp) ----
+  const CRACK=[
+    {name:'Mystery House #1', teach:'No switches here — just light up the room!', switches:[], bulbs:['A'],
+     hidden:[ ['battery',N(2,1),N(2,2)], ['wire',N(2,2),N(3,2)], ['wire',N(3,2),N(3,1)], ['bulb',N(3,1),N(2,1),'A'] ]},
+    {name:'Mystery House #2', teach:'One switch controls Light A. Find the wiring.', switches:['1'], bulbs:['A'],
+     hidden:[ ['battery',N(2,1),N(2,2)], ['wire',N(2,2),N(3,2)], ['switch',N(3,2),N(3,1),'1'], ['bulb',N(3,1),N(2,1),'A'] ]},
+    {name:'Mystery House #3', teach:'When does Light A come on? Try the switches in different combos.', switches:['1','2'], bulbs:['A'],
+     hidden:[ ['battery',N(2,1),N(2,2)], ['switch',N(2,2),N(2,3),'1'], ['switch',N(2,3),N(3,3),'2'], ['wire',N(3,3),N(3,1)], ['bulb',N(3,1),N(2,1),'A'] ]},
+    {name:'Mystery House #4', teach:'Two switches, two rooms. Which switch lights which room?', switches:['1','2'], bulbs:['A','B'],
+     hidden:[ ['battery',N(2,1),N(2,2)],
+              ['switch',N(2,2),N(1,2),'1'], ['bulb',N(1,2),N(1,1),'A'], ['wire',N(1,1),N(2,1)],
+              ['switch',N(2,2),N(3,2),'2'], ['bulb',N(3,2),N(3,1),'B'], ['wire',N(3,1),N(2,1)] ]},
+    {name:'Mystery House #5', teach:'Do you need BOTH switches on — or is just one enough?', switches:['1','2'], bulbs:['A'],
+     hidden:[ ['battery',N(3,1),N(3,2)], ['switch',N(3,2),N(2,2),'1'], ['wire',N(2,2),N(1,2)],
+              ['wire',N(3,2),N(3,3)], ['switch',N(3,3),N(2,3),'2'], ['wire',N(2,3),N(1,3)], ['wire',N(1,3),N(1,2)],
+              ['bulb',N(1,2),N(1,1),'A'], ['wire',N(1,1),N(2,1)], ['wire',N(2,1),N(3,1)] ]},
+    {name:'Mystery House #6', teach:'Flip the switches and watch closely… does Light A ever turn off?', switches:['1','2'], bulbs:['A'],
+     hidden:[ ['battery',N(2,1),N(2,2)], ['wire',N(2,2),N(3,2)], ['wire',N(3,2),N(3,1)], ['bulb',N(3,1),N(2,1),'A'],
+              ['switch',N(2,2),N(1,2),'1'], ['switch',N(3,1),N(4,1),'2'] ]},
+    {name:'Mystery House #7', teach:'Three switches now! What does it take to light the room?', switches:['1','2','3'], bulbs:['A'],
+     hidden:[ ['battery',N(2,1),N(2,2)], ['switch',N(2,2),N(2,3),'1'], ['switch',N(2,3),N(2,4),'2'], ['switch',N(2,4),N(3,4),'3'],
+              ['wire',N(3,4),N(3,3)], ['wire',N(3,3),N(3,2)], ['wire',N(3,2),N(3,1)], ['bulb',N(3,1),N(2,1),'A'] ]},
+    {name:'Mystery House #8', teach:'One switch matters most. Do the other two team up?', switches:['1','2','3'], bulbs:['A'],
+     hidden:[ ['battery',N(2,1),N(2,2)], ['switch',N(2,2),N(3,2),'1'],
+              ['switch',N(3,2),N(3,3),'2'], ['wire',N(3,3),N(3,4)],
+              ['wire',N(3,2),N(4,2)], ['switch',N(4,2),N(4,3),'3'], ['wire',N(4,3),N(4,4)], ['wire',N(4,4),N(3,4)],
+              ['wire',N(3,4),N(2,4)], ['wire',N(2,4),N(1,4)], ['bulb',N(1,4),N(1,3),'A'], ['wire',N(1,3),N(1,2)], ['wire',N(1,2),N(1,1)], ['wire',N(1,1),N(2,1)] ]},
+    {name:'Mystery House #9', teach:'Two lights, two switches. One acts like a master — find what each does.', switches:['1','2'], bulbs:['A','B'],
+     hidden:[ ['battery',N(2,1),N(2,2)], ['switch',N(2,2),N(2,3),'1'],
+              ['bulb',N(2,3),N(1,3),'A'], ['wire',N(1,3),N(1,2)], ['wire',N(1,2),N(1,1)], ['wire',N(1,1),N(2,1)],
+              ['switch',N(2,3),N(3,3),'2'], ['bulb',N(3,3),N(3,2),'B'], ['wire',N(3,2),N(3,1)], ['wire',N(3,1),N(2,1)] ]},
+  ];
+  const CAPS=[
+    'Just a loop! Power and one light in a complete circle — no switch needed.',
+    'A switch in series: the light comes on only when the switch is closed.',
+    'Two switches in series — BOTH must be ON to light the room (an AND!).',
+    'Two separate loops! Switch 1 lights Room A, Switch 2 lights Room B.',
+    'Two switches in parallel — EITHER one lights the room (an OR!).',
+    'Trick wiring! Both switches are dummies — the light is always on.',
+    'All three in a row — the light needs EVERY switch ON (AND-AND-AND!).',
+    'The main switch must be ON, plus EITHER of the other two — series meets parallel!',
+    'Light A runs off the master switch; Light B needs the master AND its own switch.',
+  ];
+  let crackLvl=0;
+  let solved=false;
+
+  function arrToMap(arr){
+    const m=new Map();
+    for(const e of arr){ const [type,a,b,label]=e; m.set(key(a,b),{type,state:'closed',label:label||null,locked:true}); }
+    return m;
+  }
+  function hiddenMap(i){ return arrToMap(CRACK[i].hidden); }
+
+  /* ============================ SIM ============================ */
+  function makeUF(){const p={};const find=x=>{if(p[x]===undefined)p[x]=x;while(p[x]!==x){p[x]=p[p[x]];x=p[x];}return x;};const uni=(a,b)=>{p[find(a)]=find(b);};return{find,uni};}
+  const conn=(uf,a,b)=>uf.find(a)===uf.find(b);
+  function swClosed(e,sw){ if(e.type!=='switch')return true; return e.label!=null ? sw[e.label]==='closed' : e.state==='closed'; }
+  function simulate(es, sw){
+    let battery=null;
+    for(const [k,e] of es) if(e.type==='battery'){ const [a,b]=parseKey(k); battery={a,b}; break; }
+    const res={litLabels:new Set(),litKeys:new Set(),short:false,switches:0,bulbs:0,hasBattery:!!battery};
+    for(const[,e]of es){ if(e.type==='switch')res.switches++; if(e.type==='bulb')res.bulbs++; }
+    if(!battery) return res;
+    const posN=nodeId(battery.a.r,battery.a.c), negN=nodeId(battery.b.r,battery.b.c);
+    const cond=makeUF();
+    const isC=e=>e.type==='wire'||(e.type==='switch'&&swClosed(e,sw));
+    const isF=e=>isC(e)||e.type==='bulb';
+    for(const[k,e]of es){const[a,b]=parseKey(k);if(isC(e))cond.uni(nodeId(a.r,a.c),nodeId(b.r,b.c));}
+    res.short=conn(cond,posN,negN);
+    for(const[k,e]of es){
+      if(e.type!=='bulb')continue;
+      const[a,b]=parseKey(k);const u=nodeId(a.r,a.c),v=nodeId(b.r,b.c);
+      if(conn(cond,u,v))continue;
+      const f2=makeUF();
+      for(const[k2,e2]of es){if(k2===k||!isF(e2))continue;const[a2,b2]=parseKey(k2);f2.uni(nodeId(a2.r,a2.c),nodeId(b2.r,b2.c));}
+      const lit=(conn(f2,u,posN)&&conn(f2,v,negN))||(conn(f2,u,negN)&&conn(f2,v,posN));
+      if(lit){res.litKeys.add(k);res.litLabels.add(e.label||k);}
+    }
+    return res;
+  }
+
+  /* ====================== COMPONENT SVG ====================== */
+  function compSVG(k,e,lit,ang,half,sw){
+    let inner='';
+    if(e.type==='wire'){
+      inner=`<line x1="${-half}" y1="0" x2="${half}" y2="0" stroke="#df8a37" stroke-width="9" stroke-linecap="round"/><circle cx="${-half}" cy="0" r="5" fill="#b5641c"/><circle cx="${half}" cy="0" r="5" fill="#b5641c"/>`;
+    } else if(e.type==='bulb'){
+      const glow=lit?`<circle cx="0" cy="0" r="42" fill="url(#halo)"/>`:'';
+      const fill=lit?'#ffe27a':'#fbf4e3', fl=lit?'#b5641c':'#9aa6ad';
+      const lab=e.label?`<text x="0" y="-26" text-anchor="middle" font-family="Baloo 2" font-weight="800" font-size="15" fill="#ffd54a" transform="rotate(${-ang})">${e.label}</text>`:'';
+      inner=`${glow}
+        <line x1="${-half}" y1="0" x2="-22" y2="0" stroke="#df8a37" stroke-width="9" stroke-linecap="round"/>
+        <line x1="22" y1="0" x2="${half}" y2="0" stroke="#df8a37" stroke-width="9" stroke-linecap="round"/>
+        <circle cx="0" cy="0" r="21" fill="${fill}" stroke="#b5641c" stroke-width="3" ${lit?'filter="url(#glow)"':''}/>
+        <path d="M-9 0 L-3 -8 L3 9 L9 -2" fill="none" stroke="${fl}" stroke-width="3" stroke-linecap="round" transform="rotate(${-ang})"/>${lab}`;
+    } else if(e.type==='switch'){
+      const closed=swClosed(e,sw);
+      const lever=closed?`<line x1="-20" y1="0" x2="20" y2="0" stroke="#23b3a0" stroke-width="8" stroke-linecap="round"/>`
+                        :`<line x1="-20" y1="0" x2="14" y2="-22" stroke="#23b3a0" stroke-width="8" stroke-linecap="round"/>`;
+      const lab=e.label?`<text x="0" y="22" text-anchor="middle" font-family="Baloo 2" font-weight="800" font-size="14" fill="#23b3a0" transform="rotate(${-ang})">${e.label}</text>`:'';
+      inner=`<line x1="${-half}" y1="0" x2="-20" y2="0" stroke="#df8a37" stroke-width="9" stroke-linecap="round"/>
+        <line x1="20" y1="0" x2="${half}" y2="0" stroke="#df8a37" stroke-width="9" stroke-linecap="round"/>${lever}
+        <circle cx="-20" cy="0" r="6" fill="#21323f"/><circle cx="20" cy="0" r="6" fill="#21323f"/>${lab}`;
+    } else if(e.type==='battery'){
+      inner=`<line x1="${-half}" y1="0" x2="-8" y2="0" stroke="#df8a37" stroke-width="9" stroke-linecap="round"/>
+        <line x1="8" y1="0" x2="${half}" y2="0" stroke="#df8a37" stroke-width="9" stroke-linecap="round"/>
+        <line x1="-8" y1="-18" x2="-8" y2="18" stroke="#f3ead6" stroke-width="5"/>
+        <line x1="8" y1="-11" x2="8" y2="11" stroke="#f3ead6" stroke-width="10"/>
+        <text x="-22" y="-15" font-size="16" font-weight="800" fill="#ffd54a" transform="rotate(${-ang})">+</text>`;
+    }
+    return inner;
+  }
+  function drawComponent(k,e,lit){
+    const [a,b]=parseKey(k);
+    const x1=X(a.c),y1=Y(a.r),x2=X(b.c),y2=Y(b.r);
+    const mx=(x1+x2)/2,my=(y1+y2)/2;
+    const ang=Math.atan2(y2-y1,x2-x1)*180/Math.PI;
+    const inner=compSVG(k,e,lit,ang,GAP/2,switchStates);
+    const hit=`<line x1="${-GAP/2}" y1="0" x2="${GAP/2}" y2="0" stroke="#000" stroke-opacity="0" stroke-width="34" stroke-linecap="round"/>`;
+    return `<g class="comp" data-key="${k}" transform="translate(${mx},${my}) rotate(${ang})" style="cursor:pointer">${inner}${hit}</g>`;
+  }
+
+  function render(){
+    const sim=simulate(edges,switchStates);
+    let h='';
+    for(const[k,e]of edges) h+=drawComponent(k,e,sim.litKeys.has(k));
+    edgesG.innerHTML=h;
+    fxG.innerHTML='';
+    if(sim.short){
+      let bm=null;
+      for(const[k,e]of edges) if(e.type==='battery'){const[a,b]=parseKey(k);bm={x:(X(a.c)+X(b.c))/2,y:(Y(a.r)+Y(b.r))/2};break;}
+      if(bm) fxG.innerHTML=`<g transform="translate(${bm.x},${bm.y-44})"><rect x="-78" y="-16" width="156" height="30" rx="15" fill="#ff5a47"/><text x="0" y="5" text-anchor="middle" font-family="Baloo 2" font-weight="800" font-size="15" fill="#fff">⚡ Short circuit!</text></g>`;
+    }
+    if(mode==='free') updateFreeGoal(sim);
+    if(mode==='crack') renderMystery();
+    return sim;
+  }
+
+  let wasDone=false;
+  function updateFreeGoal(sim){
+    const g=document.getElementById('freeGoal');
+    const done=FREE[freeLvl].check(sim);
+    g.classList.toggle('done',done);
+    document.getElementById('statusIcon').textContent=done?'✓':'○';
+    document.getElementById('statusWord').textContent=done?'solved!':'keep going';
+    if(done&&!wasDone){g.classList.add('win-flash');setTimeout(()=>g.classList.remove('win-flash'),500);toast('Nice! Circuit solved 🎉');sfx('win');}
+    wasDone=done;
+  }
+
+  function bulbInner(lit){
+    return `${lit?'<circle cx="29" cy="29" r="26" fill="url(#halo)"/>':''}
+      <circle cx="29" cy="29" r="15" fill="${lit?'#ffe27a':'#2a3b47'}" stroke="${lit?'#ffd54a':'#44596a'}" stroke-width="3" ${lit?'filter="url(#glow)"':''}/>
+      <path d="M22 29 L26 22 L32 36 L36 27" fill="none" stroke="${lit?'#b5641c':'#44596a'}" stroke-width="2.5" stroke-linecap="round"/>`;
+  }
+  function renderMystery(){
+    const lvl=CRACK[crackLvl];
+    document.getElementById('mboxTitle').textContent=(solved?'🔓 ':'🔒 ')+lvl.name;
+    document.getElementById('mboxTeach').textContent=lvl.teach;
+    let dots=''; for(let i=0;i<CRACK.length;i++){ const cls=solvedBoxes.has(i)?'on':(skippedBoxes.has(i)?'skip':''); dots+=`<i class="${cls}"></i>`; }
+    document.getElementById('mboxDots').innerHTML=dots;
+    const hsim=simulate(hiddenMap(crackLvl),switchStates);
+    document.getElementById('mboxHouseSvg').innerHTML=houseSVG(hsim.litLabels, lvl.bulbs);
+    const wrap=document.getElementById('mboxSwitches');
+    wrap.innerHTML='';
+    for(const s of lvl.switches){
+      const on=switchStates[s]==='closed';
+      const btn=document.createElement('button');
+      btn.className='swbtn'+(on?' on':'');
+      btn.innerHTML=`<span class="dot"></span> Switch ${s}: ${on?'ON':'OFF'}`;
+      btn.onclick=()=>{ switchStates[s]= on?'open':'closed'; sfx('tick'); render(); };
+      wrap.appendChild(btn);
+    }
+    document.getElementById('mbox').classList.toggle('solved',solved);
+  }
+
+  function houseSVG(litset, bulbs){
+    const positions = bulbs.length<=1 ? [125] : [85,165];
+    let wins='';
+    bulbs.forEach((bl,i)=>{
+      const cx=positions[i], cy=100, s=30, on=litset.has(bl);
+      wins += `${on?`<rect x="${cx-s/2-7}" y="${cy-s/2-7}" width="${s+14}" height="${s+14}" rx="9" fill="url(#halo)"/>`:''}
+        <rect x="${cx-s/2}" y="${cy-s/2}" width="${s}" height="${s}" rx="4" fill="${on?'#ffe27a':'#22323e'}" stroke="${on?'#ffd54a':'#3a4d5b'}" stroke-width="2.5" ${on?'filter="url(#glow)"':''}/>
+        <line x1="${cx}" y1="${cy-s/2}" x2="${cx}" y2="${cy+s/2}" stroke="${on?'#c47a26':'#3a4d5b'}" stroke-width="2"/>
+        <line x1="${cx-s/2}" y1="${cy}" x2="${cx+s/2}" y2="${cy}" stroke="${on?'#c47a26':'#3a4d5b'}" stroke-width="2"/>
+        <text x="${cx}" y="${cy+s/2+18}" text-anchor="middle" font-family="Baloo 2" font-weight="800" font-size="14" fill="${on?'#ffd54a':'#8aa0b0'}">${bl}</text>`;
+    });
+    return `
+      <circle cx="212" cy="26" r="11" fill="#24405a" stroke="#4f7ea3" stroke-width="2"/>
+      <polygon points="26,74 125,22 224,74" fill="#16303f" stroke="#4f7ea3" stroke-width="3" stroke-linejoin="round"/>
+      <rect x="166" y="40" width="14" height="22" fill="#16303f" stroke="#4f7ea3" stroke-width="2"/>
+      <rect x="44" y="74" width="162" height="78" fill="#0f2433" stroke="#4f7ea3" stroke-width="3"/>
+      <rect x="113" y="124" width="24" height="28" fill="#16303f" stroke="#4f7ea3" stroke-width="2.5"/>
+      <circle cx="131" cy="139" r="2" fill="#4f7ea3"/>
+      ${wins}`;
+  }
+  function renderMini(svg, arr){
+    let minc=99,maxc=-1,minr=99,maxr=-1;
+    for(const e of arr){ for(const n of [e[1],e[2]]){ minc=Math.min(minc,n.c);maxc=Math.max(maxc,n.c);minr=Math.min(minr,n.r);maxr=Math.max(maxr,n.r);} }
+    const pad=40, sp=70;
+    const w=(maxc-minc)*sp+pad*2, h=(maxr-minr)*sp+pad*2;
+    const px=c=>pad+(c-minc)*sp, py=r=>pad+(r-minr)*sp;
+    svg.setAttribute('viewBox',`0 0 ${w} ${h}`); svg.setAttribute('width',Math.min(w,330)); svg.setAttribute('height',Math.min(h,200));
+    let g='';
+    for(let r=minr;r<=maxr;r++)for(let c=minc;c<=maxc;c++) g+=`<circle cx="${px(c)}" cy="${py(r)}" r="3" fill="#2f5876"/>`;
+    for(const e of arr){
+      const [type,a,b,label]=e;
+      const x1=px(a.c),y1=py(a.r),x2=px(b.c),y2=py(b.r);
+      const mx=(x1+x2)/2,my=(y1+y2)/2;
+      const ang=Math.atan2(y2-y1,x2-x1)*180/Math.PI;
+      const half=Math.hypot(x2-x1,y2-y1)/2;
+      const ed={type,label:label||null,state:'closed'};
+      g+=`<g transform="translate(${mx},${my}) rotate(${ang})">${compSVG('',ed,false,ang,half,switchStates)}</g>`;
+    }
+    svg.innerHTML=g;
+  }
+
+  /* ===================== TIMER (1-minute countdown) ===================== */
+  const LIMIT=90;
+  function leftSec(){ return frozenLeft!=null?frozenLeft:Math.max(0, LIMIT-(Date.now()-boxStart)/1000); }
+  function fmtT(s){ s=Math.max(0,Math.ceil(s)); return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); }
+  function updTimer(){
+    const L=leftSec(), el=document.getElementById('timer');
+    el.textContent=fmtT(L);
+    el.classList.toggle('low', L>0 && L<=10);
+    if(L<=0 && !timedOut) onTimeUp();
+  }
+  function startTimer(){ boxStart=Date.now(); frozenLeft=null; timedOut=false; const el=document.getElementById('timer'); el.classList.remove('low','out'); if(timerInt)clearInterval(timerInt); timerInt=setInterval(updTimer,250); updTimer(); }
+  function stopTimer(){ frozenLeft=leftSec(); if(timerInt){clearInterval(timerInt);timerInt=null;} updTimer(); }
+  function onTimeUp(){
+    timedOut=true; frozenLeft=0;
+    if(timerInt){clearInterval(timerInt);timerInt=null;}
+    const el=document.getElementById('timer'); el.classList.remove('low'); el.classList.add('out'); el.textContent='0:00';
+    if(streak>0){ streak=0; document.getElementById('streak').textContent='0'; }
+    sfx('buzz'); toast("⏰ Time's up! Crack it for a small score, or tap Next ›");
+  }
+
+  /* ====================== CRACK + SCORING ====================== */
+  function tryCrack(){
+    const lvl=CRACK[crackLvl];
+    const hMap=hiddenMap(crackLvl);
+    for(const bl of lvl.bulbs){ let has=false; for(const[,e]of edges) if(e.type==='bulb'&&e.label===bl) has=true; if(!has){ toast('Add Light '+bl+' to your circuit'); sfx('buzz'); return; } }
+    const sws=lvl.switches; const n=sws.length;
+    let match=true;
+    outer:
+    for(let m=0;m<(1<<n);m++){
+      const test=Object.assign({},switchStates);
+      for(let i=0;i<n;i++) test[sws[i]]= (m>>i&1)?'closed':'open';
+      const H=simulate(hMap,test).litLabels, P=simulate(edges,test).litLabels;
+      for(const bl of lvl.bulbs){ if(H.has(bl)!==P.has(bl)){ match=false; break outer; } }
+    }
+    if(!match){ wrongAttempts++; sfx('buzz'); toast('Not yet — your bulb A behaves differently. Flip the switches and compare.'); return; }
+
+    const firstTime=!solvedBoxes.has(crackLvl);
+    const wasTimedOut=timedOut;
+    stopTimer();
+    const left=leftSec();
+    let pts = wasTimedOut ? 60 : Math.max(120, Math.round((left/LIMIT)*1000) - wrongAttempts*40);
+    const stars = pts>=700?3:pts>=350?2:1;
+    let gained=0, bonus=0;
+    if(firstTime){
+      if(!wasTimedOut){ streak++; bonus = streak>=2 ? Math.round(pts*0.2*(streak-1)) : 0; }
+      gained = pts+bonus;
+      totalScore += gained;
+      solvedBoxes.add(crackLvl); skippedBoxes.delete(crackLvl);
+      const sw=document.getElementById('streakWrap'); sw.classList.remove('hot'); void sw.offsetWidth; sw.classList.add('hot');
+    }
+    solved=true;
+    document.getElementById('totalScore').textContent=totalScore;
+    document.getElementById('streak').textContent=streak;
+    document.getElementById('revealStamp').textContent='CRACKED!';
+    renderMini(document.getElementById('revealSvg'), lvl.hidden);
+    document.getElementById('revealCap').textContent=CAPS[crackLvl];
+    renderMystery();
+    const mb=document.getElementById('mbox'); mb.classList.add('win-flash'); setTimeout(()=>mb.classList.remove('win-flash'),500);
+    sfx('win'); confettiBurst();
+    if(firstTime) showPop(gained, stars, streak);
+    else toast('Already cracked — explore the wiring!');
+    if((solvedBoxes.size+skippedBoxes.size)>=CRACK.length){ setTimeout(()=>openLB(true), 1400); }
+    else if(firstTime){ toast('Cracked! Next box coming up →'); setTimeout(()=>loadCrack(crackLvl+1), 2200); }
+  }
+
+  function giveUp(){
+    if(solved) return;
+    stopTimer();
+    if(!solvedBoxes.has(crackLvl)) skippedBoxes.add(crackLvl);
+    if(streak>0){ streak=0; document.getElementById('streak').textContent='0'; }
+    solved=true;
+    document.getElementById('revealStamp').textContent='ANSWER';
+    renderMini(document.getElementById('revealSvg'), CRACK[crackLvl].hidden);
+    document.getElementById('revealCap').textContent=CAPS[crackLvl];
+    renderMystery();
+    sfx('buzz'); toast("No worries — here's how it was wired. Next →");
+    if((solvedBoxes.size+skippedBoxes.size)>=CRACK.length) setTimeout(()=>openLB(true),1500);
+    else setTimeout(()=>loadCrack(crackLvl+1),2300);
+  }
+
+  function showPop(pts, stars, strk){
+    const pop=document.getElementById('pop');
+    const rect=document.getElementById('crackBtn').getBoundingClientRect();
+    pop.style.left=(rect.left+rect.width/2)+'px';
+    pop.style.top=(rect.top-10)+'px';
+    pop.innerHTML=`<div class="pts">+${pts}</div><div class="stars">${'⭐'.repeat(stars)}${'·'.repeat(3-stars)}</div>${strk>=2?`<div class="strk">🔥 streak x${strk}!</div>`:''}`;
+    pop.classList.remove('go'); void pop.offsetWidth; pop.classList.add('go');
+  }
+
+  /* ============================ CONFETTI ============================ */
+  const cv=document.getElementById('confetti'); const ctx=cv.getContext('2d');
+  let parts=[], rafOn=false;
+  function sizeCv(){ cv.width=innerWidth; cv.height=innerHeight; }
+  addEventListener('resize',sizeCv); sizeCv();
+  function confettiBurst(){
+    const cols=['#ffd54a','#df8a37','#23b3a0','#fff3c6','#ff5a47'];
+    const ox=innerWidth/2, oy=innerHeight*0.32;
+    for(let i=0;i<90;i++){
+      const a=Math.random()*Math.PI*2, sp=4+Math.random()*7;
+      parts.push({x:ox,y:oy,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-3,g:0.18,life:60+Math.random()*30,col:cols[i%cols.length],s:4+Math.random()*5,rot:Math.random()*6.28,vr:(Math.random()-.5)*.4});
+    }
+    if(!rafOn){ rafOn=true; requestAnimationFrame(tick); }
+  }
+  function tick(){
+    ctx.clearRect(0,0,cv.width,cv.height);
+    parts=parts.filter(p=>p.life>0);
+    for(const p of parts){
+      p.vy+=p.g; p.x+=p.vx; p.y+=p.vy; p.rot+=p.vr; p.life--;
+      ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.rot); ctx.globalAlpha=Math.max(0,p.life/40);
+      ctx.fillStyle=p.col; ctx.fillRect(-p.s/2,-p.s/2,p.s,p.s*1.6); ctx.restore();
+    }
+    if(parts.length){ requestAnimationFrame(tick); } else { rafOn=false; ctx.clearRect(0,0,cv.width,cv.height); }
+  }
+
+  /* ============================ SOUND ============================ */
+  let audioCtx=null, soundOn=true;
+  function ensureAudio(){ if(!audioCtx){ try{audioCtx=new (window.AudioContext||window.webkitAudioContext)();}catch(e){} } if(audioCtx&&audioCtx.state==='suspended')audioCtx.resume(); }
+  function tone(freq,dur,type,vol){ if(!soundOn||!audioCtx)return; const o=audioCtx.createOscillator(),g=audioCtx.createGain(); o.type=type||'sine'; o.frequency.value=freq; o.connect(g);g.connect(audioCtx.destination); const t=audioCtx.currentTime; g.gain.setValueAtTime(vol||0.06,t); g.gain.exponentialRampToValueAtTime(0.0001,t+dur); o.start(t); o.stop(t+dur); }
+  function sfx(kind){ ensureAudio(); if(!soundOn)return;
+    if(kind==='tick')tone(440,0.06,'square',0.05);
+    else if(kind==='place')tone(560,0.06,'sine',0.05);
+    else if(kind==='buzz')tone(150,0.2,'sawtooth',0.06);
+    else if(kind==='win'){tone(660,0.12,'triangle',0.07);setTimeout(()=>tone(880,0.14,'triangle',0.07),110);setTimeout(()=>tone(1175,0.22,'triangle',0.07),240);}
+  }
+  addEventListener('pointerdown',ensureAudio,{once:true});
+
+  /* ====================== LEADERBOARD UI ====================== */
+  function lbLoadingHtml(){ return `<div class="lb-loading">Loading leaderboard…</div>`; }
+  async function openLB(finished){
+    const modal=document.getElementById('lbModal');
+    document.getElementById('lbTitle').textContent=finished?(skippedBoxes.size?'🎉 All houses done!':'🎉 Every house cracked!'):'🏆 Circuit Leaderboard';
+    document.getElementById('lbSub').innerHTML=`Your score: <b>${totalScore}</b>`;
+    document.getElementById('lbBody').innerHTML=lbLoadingHtml();
+    modal.classList.remove('hidden');
+    const btn=document.getElementById('lbSave'); btn.disabled=false; btn.textContent='Submit my score';
+    if(finished){ await submitScore(); }
+    await refreshBoard();
+  }
+  async function refreshBoard(){
+    const body=document.getElementById('lbBody');
+    body.innerHTML=lbLoadingHtml();
+    const rows=await sbFetchTop(12);
+    if(rows===null){ body.innerHTML=`<div class="lb-empty">Couldn't reach the leaderboard right now. Check your connection and try again.</div>`; return; }
+    if(!rows.length){ body.innerHTML=`<div class="lb-empty">No scores yet — be the first!</div>`; return; }
+    const me=(document.getElementById('nameInput').value||'').trim();
+    const medals=['🥇','🥈','🥉'];
+    body.innerHTML=rows.map((e,i)=>`<div class="lb-row ${e.name===me?'me':''}"><span class="lb-rank">${medals[i]||(i+1)}</span><span class="lb-name">${e.avatar?`<span class="lb-av">${e.avatar}</span> `:``}${lbEsc(e.name)}</span><span class="lb-score">${e.score}</span></div>`).join('');
+  }
+  async function submitScore(){
+    if(totalScore<=0){ toast('Crack a box to earn points first!'); return; }
+    const name=(document.getElementById('nameInput').value||'Player').trim().slice(0,16)||'Player';
+    const btn=document.getElementById('lbSave'); btn.disabled=true; btn.textContent='Submitting…';
+    const ok=await sbInsert(name, totalScore);
+    btn.textContent= ok?'Submitted ✓':'Try again';
+    if(ok){ sfx('win'); } else { btn.disabled=false; }
+    await refreshBoard();
+  }
+
+  /* ============================ PARTS ============================ */
+  const ICONS={
+    wire:`<svg class="ico" viewBox="0 0 60 36"><line x1="6" y1="18" x2="54" y2="18" stroke="#df8a37" stroke-width="7" stroke-linecap="round"/><circle cx="6" cy="18" r="4" fill="#b5641c"/><circle cx="54" cy="18" r="4" fill="#b5641c"/></svg>`,
+    bulb:`<svg class="ico" viewBox="0 0 60 36"><line x1="6" y1="18" x2="20" y2="18" stroke="#df8a37" stroke-width="7" stroke-linecap="round"/><line x1="40" y1="18" x2="54" y2="18" stroke="#df8a37" stroke-width="7" stroke-linecap="round"/><circle cx="30" cy="18" r="12" fill="#fff3c6" stroke="#b5641c" stroke-width="3"/><path d="M25 18 L29 13 L31 23 L35 18" fill="none" stroke="#b5641c" stroke-width="2"/></svg>`,
+    switch:`<svg class="ico" viewBox="0 0 60 36"><line x1="6" y1="18" x2="20" y2="18" stroke="#df8a37" stroke-width="7" stroke-linecap="round"/><line x1="40" y1="18" x2="54" y2="18" stroke="#df8a37" stroke-width="7" stroke-linecap="round"/><circle cx="20" cy="18" r="4" fill="#21323f"/><circle cx="40" cy="18" r="4" fill="#21323f"/><line x1="20" y1="18" x2="40" y2="8" stroke="#23b3a0" stroke-width="6" stroke-linecap="round"/></svg>`,
+    battery:`<svg class="ico" viewBox="0 0 60 36"><line x1="6" y1="18" x2="24" y2="18" stroke="#df8a37" stroke-width="7" stroke-linecap="round"/><line x1="36" y1="18" x2="54" y2="18" stroke="#df8a37" stroke-width="7" stroke-linecap="round"/><line x1="26" y1="7" x2="26" y2="29" stroke="#21323f" stroke-width="4"/><line x1="34" y1="12" x2="34" y2="24" stroke="#21323f" stroke-width="7"/><text x="18" y="12" font-size="10" font-weight="800" fill="#21323f">+</text></svg>`
+  };
+  function buildTray(){
+    const cont=document.getElementById('trayParts'); cont.innerHTML='';
+    let items;
+    if(mode==='free'){
+      items=[['wire','Wire',null],['bulb','Bulb',null],['switch','Switch',null],['battery','Battery',null]];
+    } else {
+      const lvl=CRACK[crackLvl];
+      items=[['wire','Wire',null]];
+      for(const bl of lvl.bulbs) items.push(['bulb','Light '+bl,bl]);
+      for(const s of lvl.switches) items.push(['switch','Switch '+s,s]);
+    }
+    for(const [type,nm,label] of items){
+      const d=document.createElement('div');
+      d.className='part'; d.dataset.type=type; if(label)d.dataset.label=label;
+      d.innerHTML=`${ICONS[type]}<span class="nm">${nm}</span>`;
+      d.addEventListener('pointerdown',ev=>startDrag(ev,type,label));
+      cont.appendChild(d);
+    }
+  }
+
+  const ghost=document.getElementById('ghost');
+  let dragType=null, dragLabel=null, targetEdge=null;
+  const trayGhost={
+    wire:`<line x1="6" y1="21" x2="58" y2="21" stroke="#df8a37" stroke-width="8" stroke-linecap="round"/>`,
+    bulb:`<circle cx="32" cy="21" r="12" fill="#fff3c6" stroke="#b5641c" stroke-width="3"/>`,
+    switch:`<line x1="14" y1="21" x2="46" y2="9" stroke="#23b3a0" stroke-width="7" stroke-linecap="round"/><circle cx="14" cy="21" r="5" fill="#21323f"/><circle cx="46" cy="21" r="5" fill="#21323f"/>`,
+    battery:`<line x1="26" y1="8" x2="26" y2="34" stroke="#21323f" stroke-width="5"/><line x1="38" y1="13" x2="38" y2="29" stroke="#21323f" stroke-width="10"/>`
+  };
+  function clientToBoard(x,y){const pt=board.createSVGPoint();pt.x=x;pt.y=y;return pt.matrixTransform(board.getScreenCTM().inverse());}
+  function nearestEdge(bx,by){let best=null,bd=1e9;for(const e of allEdges){const m=midpoint(e);const d=Math.hypot(m.x-bx,m.y-by);if(d<bd){bd=d;best=e;}}return bd<GAP*0.62?best:null;}
+  function showHL(e){if(!e){hl.setAttribute('opacity','0');return;}const horiz=e.a.r===e.b.r;const m=midpoint(e);const w=horiz?GAP-12:26,ht=horiz?26:GAP-12;hl.setAttribute('x',m.x-w/2);hl.setAttribute('y',m.y-ht/2);hl.setAttribute('width',w);hl.setAttribute('height',ht);hl.setAttribute('opacity',0.32);}
+  function startDrag(ev,type,label){
+    ev.preventDefault();
+    dragType=type; dragLabel=label||null;
+    ghost.innerHTML=trayGhost[type]||''; ghost.style.display='block';
+    moveGhost(ev.clientX,ev.clientY);
+    window.addEventListener('pointermove',onDragMove);
+    window.addEventListener('pointerup',onDragEnd,{once:true});
+  }
+  function moveGhost(x,y){ghost.style.left=x+'px';ghost.style.top=y+'px';}
+  function onDragMove(ev){moveGhost(ev.clientX,ev.clientY);const b=clientToBoard(ev.clientX,ev.clientY);targetEdge=(b.x>=0&&b.x<=644&&b.y>=0&&b.y<=460)?nearestEdge(b.x,b.y):null;showHL(targetEdge);}
+  function onDragEnd(){window.removeEventListener('pointermove',onDragMove);ghost.style.display='none';showHL(null);if(targetEdge&&dragType)place(targetEdge,dragType,dragLabel);targetEdge=null;dragType=null;dragLabel=null;}
+  function place(e,type,label){
+    const k=key(e.a,e.b);
+    if(edges.has(k)){toast('That spot is taken');return;}
+    if(type==='battery'){for(const[,x]of edges)if(x.type==='battery'){toast('One battery is enough 🔋');return;}}
+    if(type==='bulb'&&label){for(const[,x]of edges)if(x.type==='bulb'&&x.label===label){toast('You already placed Light '+label);return;}}
+    edges.set(k,{type,state:'closed',label:label||null,locked:false});
+    if(mode==='crack') solved=false;
+    sfx('place'); render();
+  }
+
+  edgesG.addEventListener('pointerup',ev=>{
+    const g=ev.target.closest('.comp'); if(!g)return;
+    const k=g.dataset.key; const e=edges.get(k); if(!e)return;
+    if(eraserOn){ if(e.locked){toast(mode==='crack'?'The power box stays put':'That part is locked');return;} edges.delete(k); if(mode==='crack')solved=false; sfx('tick'); render(); return; }
+    if(e.type==='switch'){
+      if(e.label!=null){ switchStates[e.label]= switchStates[e.label]==='closed'?'open':'closed'; }
+      else { e.state= e.state==='closed'?'open':'closed'; }
+      sfx('tick'); render();
+    }
+  });
+
+  const eraserBtn=document.getElementById('eraser');
+  eraserBtn.addEventListener('click',()=>{eraserOn=!eraserOn;eraserBtn.classList.toggle('active',eraserOn);
+    document.getElementById('legend').textContent=eraserOn?'Eraser on: tap a part to remove it':'Tip: tap a switch to flip it on/off';});
+  document.getElementById('clear').addEventListener('click',()=>{for(const[k,e]of [...edges])if(!e.locked)edges.delete(k);if(mode==='crack')solved=false;render();});
+  document.getElementById('reset').addEventListener('click',()=>{ mode==='free'?loadFree(freeLvl):loadCrack(crackLvl); });
+  document.getElementById('nextLvl').addEventListener('click',()=>loadFree(freeLvl+1));
+  document.getElementById('prevLvl').addEventListener('click',()=>loadFree(freeLvl-1));
+  document.getElementById('nextCrack').addEventListener('click',()=>loadCrack(crackLvl+1));
+  document.getElementById('prevCrack').addEventListener('click',()=>loadCrack(crackLvl-1));
+  document.getElementById('crackBtn').addEventListener('click',tryCrack);
+  document.getElementById('giveBtn').addEventListener('click',giveUp);
+  document.getElementById('lbBtn').addEventListener('click',()=>openLB(false));
+  document.getElementById('lbSave').addEventListener('click',submitScore);
+  document.getElementById('lbClose').addEventListener('click',()=>document.getElementById('lbModal').classList.add('hidden'));
+  document.getElementById('soundBtn').addEventListener('click',()=>{soundOn=!soundOn;document.getElementById('soundBtn').textContent=soundOn?'🔊':'🔇';if(soundOn){ensureAudio();sfx('tick');}});
+
+  function loadFree(i){
+    freeLvl=(i+FREE.length)%FREE.length; wasDone=false;
+    edges=new Map();
+    for(const p of FREE[freeLvl].setup) edges.set(key(p.a,p.b),{type:p.type,state:'closed',label:null,locked:true});
+    document.getElementById('lvlBadge').textContent='Level '+(freeLvl+1);
+    document.getElementById('goalText').textContent=FREE[freeLvl].title;
+    document.getElementById('goalHint').textContent=FREE[freeLvl].hint;
+    buildTray();
+    render();
+  }
+  function loadCrack(i){
+    crackLvl=(i+CRACK.length)%CRACK.length;
+    solved=solvedBoxes.has(crackLvl);
+    switchStates={}; for(const s of CRACK[crackLvl].switches) switchStates[s]='open';
+    wrongAttempts=0;
+    if(solved){ document.getElementById('revealStamp').textContent='CRACKED!'; renderMini(document.getElementById('revealSvg'),CRACK[crackLvl].hidden); document.getElementById('revealCap').textContent=CAPS[crackLvl]; }
+    edges=new Map();
+    edges.set(key(N(2,1),N(2,2)),{type:'battery',state:'closed',label:null,locked:true});
+    buildTray();
+    startTimer();
+    render();
+  }
+
+  function setMode(m){
+    mode=m; eraserOn=false; eraserBtn.classList.remove('active');
+    document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.mode===m));
+    document.getElementById('hud').classList.toggle('hidden',m!=='crack');
+    document.getElementById('freeGoal').classList.toggle('hidden',m!=='free');
+    document.getElementById('mbox').classList.toggle('hidden',m!=='crack');
+    document.getElementById('trayTitle').textContent = m==='free'?'Parts bin':'Your parts';
+    document.getElementById('legend').textContent='Tip: tap a switch to flip it on/off';
+    if(m!=='crack'){ if(timerInt){clearInterval(timerInt);timerInt=null;} }
+    m==='free'?loadFree(freeLvl):loadCrack(crackLvl);
+  }
+  document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>setMode(t.dataset.mode)));
+
+  let toastT;
+  function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),1800);}
+
+  // prefill player name from the arcade launcher sign-in, if present
+  (function initPlayer(){
+    const p=currentPlayer();
+    if(p&&p.name){ const ni=document.getElementById('nameInput'); ni.value=p.name; ni.readOnly=true; ni.style.opacity='.85'; }
+  })();
+
+  buildTray();
+  setMode('crack');
+})();</script>
+</body>
+</html>

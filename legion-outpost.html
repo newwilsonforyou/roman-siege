@@ -154,6 +154,7 @@
   table.lb th{text-align:left;font-family:'Cinzel';font-size:10px;color:var(--brass-dk);padding:4px 6px;border-bottom:2px solid var(--brass-dk);}
   table.lb th:last-child{text-align:right;}
   table.lb td{padding:5px 6px;border-bottom:1px solid var(--parchment-dk);font-weight:700;}
+  .lb-av{display:inline-block;font-size:15px;line-height:1;margin-right:3px;vertical-align:-2px;}
   table.lb td:first-child{font-family:'Cinzel';font-weight:900;color:var(--brass-dk);width:34px;}
   table.lb td:last-child{text-align:right;font-family:'Cinzel';font-weight:900;}
   table.lb tr.me td{background:#F7E9B8;}
@@ -262,11 +263,26 @@ function sbH(){return {'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content
 var GAME_ID='outpost';
 function currentPlayer(){try{return JSON.parse(localStorage.getItem('rna_player')||'null');}catch(e){return null;}}
 function playerName(){var p=currentPlayer();return p?p.name:null;}
-async function sbFetchTop(n){n=n||15;try{var r=await fetch(SB_URL+'/rest/v1/scores?select=name%2Cscore&game=eq.'+GAME_ID+'&order=score.desc&limit='+n,{headers:sbH()});if(!r.ok)return null;return await r.json();}catch(e){return null;}}
+async function sbFetchTop(n){n=n||15;try{var r=await fetch(SB_URL+'/rest/v1/scores?select=name%2Cscore%2Cplayer&game=eq.'+GAME_ID+'&order=score.desc&limit='+n,{headers:sbH()});if(!r.ok)return null;var _r=await r.json();await attachAvatars(_r);return _r;}catch(e){return null;}}
+async function attachAvatars(rows){
+  if(!rows||!rows.length)return rows;
+  try{
+    var names=[];
+    rows.forEach(function(row){var n=row.player||row.name;if(n&&names.indexOf(n)<0)names.push(n);});
+    if(!names.length)return rows;
+    var list=names.map(function(n){return '"'+String(n).replace(/"/g,'')+'"';}).join(',');
+    var rr=await fetch(SB_URL+'/rest/v1/players?select=name%2Cavatar&name=in.('+encodeURIComponent(list)+')',{headers:sbH()});
+    if(!rr.ok)return rows;
+    var players=await rr.json();
+    var map={};players.forEach(function(p){map[p.name]=p.avatar;});
+    rows.forEach(function(row){row.avatar=map[row.player||row.name]||null;});
+  }catch(e){}
+  return rows;
+}
 async function sbInsert(name,score){try{var h=sbH();h['Prefer']='return=minimal';var b={name:name,score:score,game:GAME_ID};var pn=playerName();if(pn)b.player=pn;var r=await fetch(SB_URL+'/rest/v1/scores',{method:'POST',headers:h,body:JSON.stringify(b)});return r.ok;}catch(e){return false;}}
 async function sbQualifies(s){try{var r=await fetch(SB_URL+'/rest/v1/scores?select=score&game=eq.'+GAME_ID+'&order=score.desc&limit=15',{headers:sbH()});if(!r.ok)return true;var rows=await r.json();if(!rows||rows.length<15)return true;return s>rows[rows.length-1].score;}catch(e){return true;}}
 function lbEsc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-function lbTable(rows,hiN,hiS){if(!rows||!rows.length)return '<div style="font-size:13px;color:#8a7f68;font-weight:700;text-align:center;padding:10px;">No outposts yet — be first!</div>';var med=['I','II','III'],h='<table class="lb"><thead><tr><th>#</th><th>CHIEF</th><th>SCORE</th></tr></thead><tbody>',mk=false;rows.forEach(function(r,i){var me=(!mk&&hiN&&r.name===hiN&&r.score===hiS);if(me)mk=true;h+='<tr class="'+(me?'me':'')+'"><td>'+(i<3?med[i]:(i+1))+'</td><td>'+lbEsc(r.name)+'</td><td>'+r.score+'</td></tr>';});return h+'</tbody></table>';}
+function lbTable(rows,hiN,hiS){if(!rows||!rows.length)return '<div style="font-size:13px;color:#8a7f68;font-weight:700;text-align:center;padding:10px;">No outposts yet — be first!</div>';var med=['I','II','III'],h='<table class="lb"><thead><tr><th>#</th><th>CHIEF</th><th>SCORE</th></tr></thead><tbody>',mk=false;rows.forEach(function(r,i){var me=(!mk&&hiN&&r.name===hiN&&r.score===hiS);if(me)mk=true;h+='<tr class="'+(me?'me':'')+'"><td>'+(i<3?med[i]:(i+1))+'</td><td>'+(r.avatar?'<span class="lb-av">'+r.avatar+'</span> ':'')+lbEsc(r.name)+'</td><td>'+r.score+'</td></tr>';});return h+'</tbody></table>';}
 async function loadMainBoard(){$('mainboard').innerHTML='Loading…';$('mainboard').innerHTML=lbTable(await sbFetchTop(15),null,null);}
 async function loadEndBoard(n,s){$('endboard').innerHTML='Loading…';$('endboard').innerHTML=lbTable(await sbFetchTop(10),n,s);}
 

@@ -194,6 +194,7 @@
     text-align:left;padding:5px 8px;border-bottom:2px solid var(--brass-dk);}
   table.lb th:last-child{text-align:right;}
   table.lb td{padding:6px 8px;border-bottom:1px solid var(--parchment-dk);font-weight:700;}
+  .lb-av{display:inline-block;font-size:15px;line-height:1;margin-right:3px;vertical-align:-2px;}
   table.lb td:first-child{width:36px;font-family:'Cinzel',serif;font-weight:900;color:var(--brass-dk);}
   table.lb td:last-child{text-align:right;font-family:'Cinzel',serif;font-weight:900;}
   table.lb tr.me td{background:#F7E9B8;color:var(--legion-dk);}
@@ -335,10 +336,25 @@ function playerName(){var p=currentPlayer();return p?p.name:null;}
 async function sbFetchTop(limit){
   limit=limit||15;
   try{
-    var r=await fetch(SB_URL+'/rest/v1/scores?select=name%2Cscore&game=eq.'+GAME_ID+'&order=score.desc&limit='+limit,{headers:sbH()});
+    var r=await fetch(SB_URL+'/rest/v1/scores?select=name%2Cscore%2Cplayer&game=eq.'+GAME_ID+'&order=score.desc&limit='+limit,{headers:sbH()});
     if(!r.ok){console.error('fetch scores',r.status,await r.text());return null;}
-    return await r.json();
+    var _r=await r.json();await attachAvatars(_r);return _r;
   }catch(e){console.error(e);return null;}
+}
+async function attachAvatars(rows){
+  if(!rows||!rows.length)return rows;
+  try{
+    var names=[];
+    rows.forEach(function(row){var n=row.player||row.name;if(n&&names.indexOf(n)<0)names.push(n);});
+    if(!names.length)return rows;
+    var list=names.map(function(n){return '"'+String(n).replace(/"/g,'')+'"';}).join(',');
+    var rr=await fetch(SB_URL+'/rest/v1/players?select=name%2Cavatar&name=in.('+encodeURIComponent(list)+')',{headers:sbH()});
+    if(!rr.ok)return rows;
+    var players=await rr.json();
+    var map={};players.forEach(function(p){map[p.name]=p.avatar;});
+    rows.forEach(function(row){row.avatar=map[row.player||row.name]||null;});
+  }catch(e){}
+  return rows;
 }
 async function sbInsert(name,score){
   try{
@@ -742,7 +758,7 @@ function boardHTML(rows,highlightName,highlightScore){
     if(me)marked=true;
     html+='<tr class="'+(i===0?'top1':'')+(me?' me':'')+'">';
     html+='<td>'+(i<3?medals[i]:(i+1))+'</td>';
-    html+='<td>'+esc(row.name)+'</td>';
+    html+='<td>'+(row.avatar?'<span class="lb-av">'+row.avatar+'</span> ':'')+esc(row.name)+'</td>';
     html+='<td>'+row.score+'</td></tr>';
   });
   return html+'</tbody></table>';

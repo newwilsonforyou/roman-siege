@@ -101,6 +101,7 @@
   table.lb th{font-family:'Orbitron',sans-serif;font-size:10px;letter-spacing:.12em;color:var(--text-dim);
     text-align:left;padding:6px 10px;border-bottom:1.5px solid rgba(232,195,107,.3);}
   table.lb td{padding:7px 10px;border-bottom:1px solid rgba(232,195,107,.12);}
+  .lb-av{display:inline-block;font-size:15px;line-height:1;margin-right:3px;vertical-align:-2px;}
   table.lb td:first-child{font-family:'Cinzel',serif;font-weight:900;color:var(--gold);width:48px;}
   table.lb td:last-child{text-align:right;font-family:'Orbitron',sans-serif;font-weight:700;}
   table.lb tr.me td{background:rgba(232,195,107,.16);}
@@ -386,8 +387,23 @@ var GAME_ID='victorians';
 function currentPlayer(){try{return JSON.parse(localStorage.getItem('rna_player')||'null');}catch(e){return null;}}
 function playerName(){var p=currentPlayer();return p?p.name:null;}
 async function sbFetchTop(limit){limit=limit||15;
-  try{var r=await fetch(SB_URL+'/rest/v1/scores?select=name%2Cscore&game=eq.'+GAME_ID+'&order=score.desc&limit='+limit,{headers:sbH()});
-    if(!r.ok)return null;return await r.json();}catch(e){return null;}}
+  try{var r=await fetch(SB_URL+'/rest/v1/scores?select=name%2Cscore%2Cplayer&game=eq.'+GAME_ID+'&order=score.desc&limit='+limit,{headers:sbH()});
+    if(!r.ok)return null;var _r=await r.json();await attachAvatars(_r);return _r;}catch(e){return null;}}
+async function attachAvatars(rows){
+  if(!rows||!rows.length)return rows;
+  try{
+    var names=[];
+    rows.forEach(function(row){var n=row.player||row.name;if(n&&names.indexOf(n)<0)names.push(n);});
+    if(!names.length)return rows;
+    var list=names.map(function(n){return '"'+String(n).replace(/"/g,'')+'"';}).join(',');
+    var rr=await fetch(SB_URL+'/rest/v1/players?select=name%2Cavatar&name=in.('+encodeURIComponent(list)+')',{headers:sbH()});
+    if(!rr.ok)return rows;
+    var players=await rr.json();
+    var map={};players.forEach(function(p){map[p.name]=p.avatar;});
+    rows.forEach(function(row){row.avatar=map[row.player||row.name]||null;});
+  }catch(e){}
+  return rows;
+}
 async function sbInsert(name,score){
   try{var h=sbH();h['Prefer']='return=minimal';var body={name:name,score:score,game:GAME_ID};var pn=playerName();if(pn)body.player=pn;
     var r=await fetch(SB_URL+'/rest/v1/scores',{method:'POST',headers:h,body:JSON.stringify(body)});return r.ok;}catch(e){return false;}}
@@ -400,7 +416,7 @@ function lbTable(rows,hiName,hiScore){
   if(!rows||!rows.length)return '<div class="lb-msg">No scores yet — be the first!</div>';
   var medals=['I','II','III'],html='<table class="lb"><thead><tr><th>RANK</th><th>PLAYER</th><th>SCORE</th></tr></thead><tbody>',marked=false;
   rows.forEach(function(row,i){var me=(!marked&&hiName&&row.name===hiName&&row.score===hiScore);if(me)marked=true;
-    html+='<tr class="'+(me?'me':'')+'"><td>'+(i<3?medals[i]:(i+1))+'</td><td>'+lbEsc(row.name)+'</td><td>'+row.score+'</td></tr>';});
+    html+='<tr class="'+(me?'me':'')+'"><td>'+(i<3?medals[i]:(i+1))+'</td><td>'+(row.avatar?'<span class="lb-av">'+row.avatar+'</span> ':'')+lbEsc(row.name)+'</td><td>'+row.score+'</td></tr>';});
   return html+'</tbody></table>';}
 async function loadMainBoard(){$('mainboard').innerHTML=lbLoading();$('mainboard').innerHTML=lbTable(await sbFetchTop(15),null,null);}
 async function loadEndBoard(n,s){$('endboard').innerHTML=lbLoading();$('endboard').innerHTML=lbTable(await sbFetchTop(8),n,s);}
