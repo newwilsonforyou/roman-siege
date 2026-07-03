@@ -15,6 +15,21 @@
     --rail:#cbbf9f; --warn:#ff5a47; --shadow:0 6px 0 rgba(0,0,0,.18);
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  .start-screen{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;padding:24px;
+    background:radial-gradient(circle at 30% 20%,#163b54,#102a3d 70%);}
+  .start-screen.hidden{display:none;}
+  .start-card{background:linear-gradient(160deg,var(--paper),var(--paper2));border-radius:22px;padding:32px 26px;
+    max-width:420px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.5);border:3px solid var(--copper);}
+  .start-logo{font-family:'Nunito',sans-serif;font-weight:800;font-size:16px;letter-spacing:.06em;color:var(--copper-d);margin-bottom:6px;}
+  .start-logo .spark{filter:drop-shadow(0 0 6px var(--glow));}
+  .start-title{font-family:'Nunito',sans-serif;font-weight:900;font-size:34px;line-height:1.05;color:var(--ink);margin:2px 0 12px;}
+  .start-desc{font-size:15px;line-height:1.45;color:var(--ink-soft);font-weight:600;margin-bottom:16px;}
+  .start-who{font-size:14px;font-weight:800;color:var(--teal-d);min-height:20px;margin-bottom:16px;}
+  .start-btns{display:flex;flex-direction:column;gap:10px;}
+  .start-btn{font-family:'Nunito',sans-serif;font-weight:800;font-size:18px;padding:14px 20px;border-radius:14px;border:0;cursor:pointer;transition:transform .08s;}
+  .start-btn:active{transform:scale(.97);}
+  .start-btn.primary{background:var(--copper);color:#fff;box-shadow:0 5px 0 var(--copper-d);}
+  .start-btn.ghost{background:rgba(16,42,61,.08);color:var(--ink);border:2px solid rgba(16,42,61,.25);}
   html,body{margin:0;height:100%;}
   body{font-family:'Nunito',system-ui,sans-serif;color:var(--ink);
     background:radial-gradient(circle at 20% 0%, #fbf4e3, transparent 60%), var(--paper);
@@ -112,7 +127,7 @@
   .tool.active{background:var(--warn);color:#fff;border-color:var(--warn);}
   .legend{margin-left:auto;font-weight:700;color:var(--ink-soft);font-size:13px;}
 
-  .modal-overlay{position:fixed;inset:0;background:rgba(16,42,61,.7);backdrop-filter:blur(3px);z-index:80;display:flex;align-items:center;justify-content:center;padding:18px;}
+  .modal-overlay{position:fixed;inset:0;background:rgba(16,42,61,.7);backdrop-filter:blur(3px);z-index:250;display:flex;align-items:center;justify-content:center;padding:18px;}
   .modal{background:#fff;border-radius:20px;border:3px solid var(--paper2);box-shadow:0 12px 0 rgba(0,0,0,.2);max-width:420px;width:100%;padding:20px;}
   .modal-title{font-family:'Baloo 2';font-weight:800;font-size:24px;text-align:center;margin-bottom:4px;}
   .modal-sub{text-align:center;color:var(--ink-soft);font-weight:700;margin-bottom:14px;}
@@ -142,6 +157,18 @@
 </style>
 </head>
 <body>
+<div class="start-screen" id="startScreen">
+  <div class="start-card">
+    <div class="start-logo"><span class="spark">⚡</span> Spark Lab</div>
+    <h1 class="start-title">Crack the Circuit</h1>
+    <p class="start-desc">Study each circuit, then build the matching one to light it up! Crack every house to win — or switch to Free Build and invent your own.</p>
+    <div class="start-who" id="startWho"></div>
+    <div class="start-btns">
+      <button class="start-btn primary" id="startPlayBtn">▶ Start Game</button>
+      <button class="start-btn ghost" id="startLbBtn">🏆 Leaderboard</button>
+    </div>
+  </div>
+</div>
 <div class="wrap">
   <header>
     <div class="logo"><span class="spark">⚡</span> Spark Lab</div>
@@ -868,6 +895,21 @@
   (function initPlayer(){
     const p=currentPlayer();
     if(p&&p.name){ const ni=document.getElementById('nameInput'); ni.value=p.name; ni.readOnly=true; ni.style.opacity='.85'; }
+    // start-screen player greeting
+    var who=document.getElementById('startWho');
+    if(who){ who.textContent = (p&&p.name) ? ('Playing as '+p.name) : ''; }
+  })();
+
+  /* Landing screen buttons */
+  (function initStartScreen(){
+    var ss=document.getElementById('startScreen');
+    document.getElementById('startPlayBtn').addEventListener('click',function(){
+      ensureAudio(); if(typeof sfx==='function')sfx('tick');
+      ss.classList.add('hidden');
+    });
+    document.getElementById('startLbBtn').addEventListener('click',function(){
+      openLB(false);
+    });
   })();
 
   buildTray();

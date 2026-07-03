@@ -21,6 +21,36 @@
     padding:20px 18px 48px;overflow-x:hidden;}
   .floatnum{position:fixed;font-family:'Cinzel',serif;font-weight:900;
     color:rgba(243,230,201,.05);pointer-events:none;z-index:0;user-select:none;}
+  .floatmoji{position:fixed;bottom:-12vh;pointer-events:none;z-index:0;user-select:none;
+    opacity:.16;filter:saturate(.8);animation:drift linear infinite;}
+  @keyframes drift{to{transform:translateY(-125vh) rotate(340deg);}}
+  h1{cursor:pointer;animation:hueshift 14s ease-in-out infinite;transition:transform .15s;}
+  h1:hover{transform:rotate(-1.5deg) scale(1.02);}
+  h1:active{transform:rotate(1.5deg) scale(.98);}
+  @keyframes hueshift{0%,100%{filter:drop-shadow(0 4px 20px rgba(242,193,78,.25)) hue-rotate(0deg);}
+    50%{filter:drop-shadow(0 4px 26px rgba(54,226,255,.3)) hue-rotate(-18deg);}}
+  .hello{margin-top:10px;font-family:'Orbitron',sans-serif;font-weight:700;font-size:14px;
+    color:var(--plasma);letter-spacing:.06em;animation:hellobob 2.6s ease-in-out infinite;}
+  @keyframes hellobob{50%{transform:translateY(-4px);}}
+  .card:hover .art-svg{animation:wobble .55s ease;}
+  @keyframes wobble{25%{transform:rotate(-3deg) scale(1.05);}60%{transform:rotate(2.5deg) scale(1.04);}}
+  .card:hover .play{letter-spacing:.2em;}
+  .play{transition:letter-spacing .18s;}
+  .gotd{position:absolute;top:12px;left:12px;z-index:5;font-family:'Orbitron',sans-serif;font-weight:700;
+    font-size:10px;letter-spacing:.12em;background:linear-gradient(180deg,#fff3c9,var(--gold));color:#3a2400;
+    padding:5px 11px;border-radius:999px;box-shadow:0 4px 14px rgba(242,193,78,.5);
+    animation:gotdpulse 1.6s ease-in-out infinite;pointer-events:none;}
+  @keyframes gotdpulse{50%{transform:scale(1.09) rotate(-2deg);}}
+  .newbadge{position:absolute;top:12px;right:12px;z-index:5;font-family:'Orbitron',sans-serif;font-weight:900;
+    font-size:10px;letter-spacing:.12em;background:var(--plasma);color:#04262e;padding:5px 10px;
+    border-radius:999px;transform:rotate(6deg);box-shadow:0 4px 14px rgba(54,226,255,.5);pointer-events:none;}
+  .cfbit{position:fixed;width:10px;height:10px;border-radius:2px;top:-20px;z-index:50;pointer-events:none;
+    animation:cfall linear forwards;}
+  @keyframes cfall{to{transform:translateY(110vh) rotate(720deg);opacity:0;}}
+  @media(prefers-reduced-motion:reduce){
+    .floatmoji,.cfbit{display:none!important;}
+    h1,.hello,.gotd,.card:hover .art-svg,.pulse{animation:none!important;}
+  }
 
   #userbar{width:100%;max-width:760px;display:flex;justify-content:flex-end;align-items:center;
     gap:10px;z-index:3;margin-bottom:8px;min-height:48px;}
@@ -133,6 +163,11 @@
   .circuit .card-art{background:radial-gradient(circle at 30% 30%,rgba(255,213,74,.28),transparent 55%),
     radial-gradient(circle at 78% 78%,rgba(35,179,160,.2),transparent 52%),#0c1f2c;}
   .circuit .card-tag{color:var(--gold);} .circuit .play{background:var(--gold);color:#3a2400;}
+  .angle{background:linear-gradient(160deg,#122b45,#0a1626);}
+  .angle:hover{box-shadow:0 18px 50px rgba(242,193,78,.35);border-color:var(--gold);}
+  .angle .card-art{background:radial-gradient(circle at 50% 110%,rgba(242,193,78,.22),transparent 60%),
+    radial-gradient(circle at 25% 25%,rgba(54,226,255,.14),transparent 55%),#0a1626;}
+  .angle .card-tag{color:var(--gold);} .angle .play{background:var(--gold);color:#3a2400;}
   .card.locked{opacity:.5;pointer-events:none;filter:grayscale(.3);}
   .lockmsg{position:absolute;inset:0;z-index:4;display:none;align-items:center;justify-content:center;
     background:rgba(8,5,16,.55);font-family:'Cinzel',serif;font-weight:700;color:#fff;font-size:15px;}
@@ -202,11 +237,39 @@
 
   <header>
     <div class="kicker">Choose your game</div>
-    <h1>Year 5 Arcade</h1>
-    <p class="sub">Eleven games in one place — carve and print in the lino studio, spot the odd stage in life cycles, explore South America and save the rainforest, defend your Legion outpost, master Roman numerals from I to C, explore Victorian Britain and the British Empire, and review Year 5 Geography and angles. Sign in, and every game you play is saved to your record.</p>
+    <h1 id="bigtitle" title="Psst… try clicking me!">Year 5 Arcade</h1>
+    <p class="hello" id="hello">🎮 Ready to play?</p>
+    <p class="sub">Twelve games in one place — carve and print in the lino studio, spot the odd stage in life cycles, explore South America and save the rainforest, defend your Legion outpost, master Roman numerals from I to C, explore Victorian Britain and the British Empire, and classify and measure angles with a real protractor in Angle Academy. Sign in, and every game you play is saved to your record.</p>
   </header>
 
   <main class="cards">
+    <a class="card angle" id="card-angle" href="angle-academy.html">
+      <span class="newbadge">✦ NEW!</span>
+      <div class="lockmsg">🔒 Sign in first</div>
+      <div class="card-art">
+        <svg class="art-svg pulse" viewBox="0 0 200 150" aria-hidden="true">
+          <circle cx="100" cy="82" r="52" fill="rgba(242,193,78,.12)" stroke="#F2C14E" stroke-width="3"/>
+          <circle cx="100" cy="82" r="38" fill="none" stroke="rgba(242,193,78,.4)" stroke-width="1.5"/>
+          <g stroke="#F2C14E" stroke-width="2">
+            <line x1="152" y1="82" x2="144" y2="82"/><line x1="48" y1="82" x2="56" y2="82"/>
+            <line x1="100" y1="30" x2="100" y2="38"/><line x1="100" y1="134" x2="100" y2="126"/>
+            <line x1="137" y1="45" x2="131" y2="51"/><line x1="63" y1="119" x2="69" y2="113"/>
+            <line x1="137" y1="119" x2="131" y2="113"/><line x1="63" y1="45" x2="69" y2="51"/>
+          </g>
+          <path d="M100 82 L100 42 A40 40 0 0 1 135 62 Z" fill="rgba(54,226,255,.25)" stroke="#36E2FF" stroke-width="2"/>
+          <line x1="100" y1="82" x2="100" y2="24" stroke="#F3E6C9" stroke-width="4" stroke-linecap="round"/>
+          <line x1="100" y1="82" x2="150" y2="53" stroke="#F3E6C9" stroke-width="4" stroke-linecap="round"/>
+          <circle cx="100" cy="82" r="4" fill="#F3E6C9"/>
+          <circle cx="152" cy="82" r="9" fill="#F2C14E" stroke="#3a2400" stroke-width="2"/>
+        </svg>
+      </div>
+      <div class="card-body">
+        <div class="card-tag">Classify &amp; Measure</div>
+        <div class="card-title">Angle Academy</div>
+        <div class="card-desc">Spot acute, right, obtuse and reflex angles, then rotate the protractor and measure them before the drafting clock runs out.</div>
+        <span class="play">PLAY ▶</span>
+      </div>
+    </a>
     <a class="card circuit" id="card-circuit" href="crack-the-circuit.html">
       <span class="badge2d" style="background:rgba(255,213,74,.92);color:#3a2400;">DRAG</span>
       <div class="lockmsg">🔒 Sign in first</div>
@@ -491,9 +554,10 @@
         <span class="play">PLAY ▶</span>
       </div>
     </a>
+
   </main>
 
-  <footer>Built for the Year 5 curriculum &middot; sign in to save your record</footer>
+  <footer>Built for the Fairfield Academy Year 5 &middot; sign in to save your record</footer>
 
   <div class="modal" id="signinModal">
     <div class="sheet">
@@ -603,6 +667,7 @@ function setCardsLocked(locked){
   $('card-voyage').classList.toggle('locked',locked);
   $('card-jungle').classList.toggle('locked',locked);
   $('card-circuit').classList.toggle('locked',locked);
+  $('card-angle').classList.toggle('locked',locked);
 }
 function escapeHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
@@ -779,6 +844,7 @@ async function loadRecords(p){
   var lino=rows.filter(function(x){return x.game==='linolayers';});
   var cycle=rows.filter(function(x){return x.game==='lifecycles';});
   var rainforest=rows.filter(function(x){return x.game==='rainforestrescue';});
+  var angles=rows.filter(function(x){return x.game==='angles';});
   function best(a){return a.length?Math.max.apply(null,a.map(function(x){return x.score;})):0;}
   var totalGames=rows.length;
   var head='<div class="rec-head"><div class="rec-avatar">'+p.avatar+'</div>'+
@@ -795,6 +861,7 @@ async function loadRecords(p){
     '<div class="rec-stat"><div class="n">'+best(lino)+'</div><div class="l">LINO BEST</div></div>'+
     '<div class="rec-stat"><div class="n">'+best(cycle)+'</div><div class="l">CYCLE BEST</div></div>'+
     '<div class="rec-stat"><div class="n">'+best(rainforest)+'</div><div class="l">RAINFOREST BEST</div></div>'+
+    '<div class="rec-stat"><div class="n">'+best(angles)+'</div><div class="l">ANGLES BEST</div></div>'+
     '<div class="rec-stat"><div class="n">'+totalGames+'</div><div class="l">GAMES</div></div></div>';
   function historyTable(title,arr){
     if(!arr.length)return '<div class="rec-section">'+title+'</div><div class="rec-empty">No games yet — go play!</div>';
@@ -818,11 +885,91 @@ async function loadRecords(p){
     historyTable('💡 CIRCUIT HISTORY',circuit)+
     historyTable('🖨️ LINO LAYERS HISTORY',lino)+
     historyTable('🔄 CYCLE SPOTTER HISTORY',cycle)+
-    historyTable('🌳 RAINFOREST RESCUE HISTORY',rainforest);
+    historyTable('🌳 RAINFOREST RESCUE HISTORY',rainforest)+
+    historyTable('📐 ANGLE ACADEMY HISTORY',angles);
 }
 
 [$('signinModal'),$('recordsModal'),$('avatarModal')].forEach(function(m){
   m.addEventListener('click',function(e){if(e.target===m)m.classList.remove('show');});
+});
+
+/* ═══════ FUN LAYER ═══════ */
+// drifting emoji background
+(function(){
+  var EMO=['📐','🚀','⚔️','🌳','🏛️','💡','🖨️','🐦','⭐','🏆','🔢','🦋'];
+  for(var i=0;i<12;i++){
+    var e=document.createElement('div');
+    e.className='floatmoji';
+    e.textContent=EMO[i%EMO.length];
+    e.style.left=(Math.random()*96)+'%';
+    e.style.fontSize=(22+Math.random()*30)+'px';
+    e.style.animationDuration=(26+Math.random()*30)+'s';
+    e.style.animationDelay=(-Math.random()*40)+'s';
+    document.body.appendChild(e);
+  }
+})();
+
+// cheerful greeting (personalised when signed in)
+function renderHello(){
+  var p=getPlayer();
+  var name=p?p.name:null;
+  var msgs=name?[
+    '🎮 Ready to play, '+name+'?',
+    '⚡ '+name+' has entered the arcade!',
+    '🏆 Beat your best today, '+name+'!',
+    '🔥 The leaderboards await, '+name+'…'
+  ]:[
+    '🎮 Ready to play?',
+    '⚡ Twelve games. One champion. You?',
+    '🏆 Sign in and chase the high scores!',
+    '📐 New! Measure angles like a pro…'
+  ];
+  $('hello').textContent=msgs[Math.floor(Math.random()*msgs.length)];
+}
+renderHello();
+
+// ⭐ Game of the Day — a random card gets the crown each visit
+(function(){
+  var cards=document.querySelectorAll('.card');
+  if(!cards.length)return;
+  var pick=cards[Math.floor(Math.random()*cards.length)];
+  var b=document.createElement('span');
+  b.className='gotd';
+  b.textContent='🌟 GAME OF THE DAY';
+  pick.appendChild(b);
+})();
+
+// tiny sounds + secret title confetti
+var _actx=null;
+function pop(f,d,type,vol,delay){
+  try{
+    if(!_actx)_actx=new(window.AudioContext||window.webkitAudioContext)();
+    var t0=_actx.currentTime+(delay||0);
+    var o=_actx.createOscillator(),g=_actx.createGain();
+    o.type=type||'triangle';o.frequency.setValueAtTime(f,t0);
+    g.gain.setValueAtTime(vol||0.06,t0);g.gain.exponentialRampToValueAtTime(0.001,t0+d);
+    o.connect(g);g.connect(_actx.destination);o.start(t0);o.stop(t0+d);
+  }catch(e){}
+}
+function confettiBurst(){
+  var cols=['#F2C14E','#36E2FF','#5BD97F','#FF6F61','#C0392B','#ffffff'];
+  for(var i=0;i<70;i++){
+    var b=document.createElement('div');
+    b.className='cfbit';
+    b.style.left=(Math.random()*100)+'%';
+    b.style.background=cols[i%cols.length];
+    b.style.animationDuration=(1.4+Math.random()*1.6)+'s';
+    b.style.animationDelay=(Math.random()*0.3)+'s';
+    document.body.appendChild(b);
+    (function(el){setTimeout(function(){el.remove();},3400);})(b);
+  }
+}
+$('bigtitle').addEventListener('click',function(){
+  confettiBurst();
+  pop(523,0.12);pop(659,0.12,'triangle',0.06,0.12);pop(784,0.22,'triangle',0.07,0.24);
+});
+document.querySelectorAll('.card').forEach(function(c){
+  c.addEventListener('pointerdown',function(){pop(660,0.06,'square',0.045);});
 });
 
 renderUserBar();
