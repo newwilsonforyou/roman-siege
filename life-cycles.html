@@ -165,15 +165,16 @@
 
   <div class="panel" id="startpanel">
     <div class="title">CYCLE<br>SPOTTER</div>
-    <div class="tagline">Each ring shows a life cycle — but one stage has snuck in from a <b>different</b> animal or plant! Read the cycle, find the stage that doesn't belong, and tap it before the timer runs out.</div>
+    <div class="tagline">Each ring shows a life cycle — but a stage has snuck in from a <b>different</b> animal or plant! Find the odd stage before the timer runs out. The rings grow bigger and faster as you go, and the final rounds hide <b>two</b> impostors at once.</div>
     <div class="chip-row">
-      <div class="chip">&#128039; <b>6</b> life cycles</div>
+      <div class="chip">&#128039; <b>14</b> life cycles</div>
       <div class="chip">&#128064; Spot the impostor</div>
       <div class="chip">&#9889; Chain bonus for streaks</div>
       <div class="chip">&#129351; Earn a naturalist rank</div>
     </div>
     <div class="chip-row">
       <div class="chip">&#127891; First round is <b>practice</b> &mdash; no lives lost</div>
+      <div class="chip">&#128293; Rings grow to <b>6 stages</b> &amp; hide <b>2</b> impostors near the end!</div>
     </div>
     <div style="margin-top:6px;">
       <div class="lbl" style="font-family:Orbitron;font-size:11px;letter-spacing:.2em;color:var(--muted);font-weight:700;margin-bottom:8px;">HOW FAST IS THE TIMER?</div>
@@ -228,19 +229,46 @@ var CYCLES=[
     {icon:'\uD83E\uDD5A', label:'Egg'},{icon:'\uD83D\uDC23', label:'Chick'},{icon:'\uD83D\uDC24', label:'Fledgling'},{icon:'\uD83D\uDC26', label:'Adult bird'}
   ]},
   {name:'Amphibian (frog) life cycle', key:'frog', stages:[
-    {icon:'\uD83E\uDEE7', label:'Frogspawn'},{icon:'\uD83D\uDC1F', label:'Tadpole'},{icon:'\uD83D\uDC38', label:'Froglet'},{icon:'\uD83D\uDC38', label:'Adult frog'}
+    {icon:'\uD83E\uDEE7', label:'Frogspawn'},{icon:'\uD83D\uDC1F', label:'Tadpole'},{icon:'\uD83D\uDC1F', label:'Tadpole + legs'},{icon:'\uD83D\uDC38', label:'Froglet'},{icon:'\uD83D\uDC38', label:'Adult frog'}
   ]},
   {name:'Insect (butterfly) life cycle', key:'butterfly', stages:[
     {icon:'\uD83E\uDD5A', label:'Egg'},{icon:'\uD83D\uDC1B', label:'Caterpillar'},{icon:'\uD83D\uDFE2', label:'Chrysalis'},{icon:'\uD83E\uDD8B', label:'Butterfly'}
   ]},
   {name:'Mammal (human) life cycle', key:'human', stages:[
-    {icon:'\uD83D\uDC76', label:'Baby'},{icon:'\uD83E\uDDD2', label:'Child'},{icon:'\uD83E\uDDD1', label:'Teenager'},{icon:'\uD83E\uDDD3', label:'Adult'}
+    {icon:'\uD83D\uDC76', label:'Baby'},{icon:'\uD83E\uDDD2', label:'Toddler'},{icon:'\uD83E\uDDD2', label:'Child'},{icon:'\uD83E\uDDD1', label:'Teenager'},{icon:'\uD83E\uDDD3', label:'Adult'}
   ]},
   {name:'Chicken life cycle', key:'chicken', stages:[
     {icon:'\uD83E\uDD5A', label:'Egg'},{icon:'\uD83D\uDC25', label:'Chick'},{icon:'\uD83D\uDC14', label:'Pullet'},{icon:'\uD83D\uDC13', label:'Hen'}
   ]},
   {name:'Plant (flower) life cycle', key:'plant', stages:[
-    {icon:'\uD83C\uDF30', label:'Seed'},{icon:'\uD83C\uDF31', label:'Seedling'},{icon:'\uD83C\uDF38', label:'Flower'},{icon:'\uD83C\uDF4E', label:'Fruit & seeds'}
+    {icon:'\uD83C\uDF30', label:'Seed'},{icon:'\uD83C\uDF31', label:'Seedling'},{icon:'\uD83C\uDF3F', label:'Young plant'},{icon:'\uD83C\uDF38', label:'Flower'},{icon:'\uD83C\uDF4E', label:'Fruit & seeds'}
+  ]},
+  {name:'Ladybird life cycle', key:'ladybird', stages:[
+    {icon:'\uD83E\uDD5A', label:'Egg'},{icon:'\uD83D\uDC1B', label:'Larva'},{icon:'\uD83D\uDFE4', label:'Pupa'},{icon:'\uD83D\uDC1E', label:'Ladybird'}
+  ]},
+  {name:'Bee life cycle', key:'bee', stages:[
+    {icon:'\uD83E\uDD5A', label:'Egg'},{icon:'\uD83E\uDD9F', label:'Larva'},{icon:'\uD83D\uDFE1', label:'Pupa'},{icon:'\uD83D\uDC1D', label:'Adult bee'}
+  ]},
+  {name:'Sea turtle life cycle', key:'turtle', stages:[
+    {icon:'\uD83E\uDD5A', label:'Egg'},{icon:'\uD83D\uDC22', label:'Hatchling'},{icon:'\uD83D\uDC22', label:'Juvenile'},{icon:'\uD83D\uDC22', label:'Adult turtle'}
+  ]},
+  {name:'Salmon life cycle', key:'salmon', stages:[
+    {icon:'\uD83E\uDD5A', label:'Egg'},{icon:'\uD83D\uDC1F', label:'Fry'},{icon:'\uD83D\uDC1F', label:'Smolt'},{icon:'\uD83D\uDC1F', label:'Adult salmon'}
+  ]},
+  {name:'Dragonfly life cycle', key:'dragonfly', stages:[
+    {icon:'\uD83E\uDD5A', label:'Egg'},{icon:'\uD83E\uDD9F', label:'Nymph'},{icon:'\uD83D\uDC1B', label:'Emerging'},{icon:'\uD83D\uDD4A\uFE0F', label:'Dragonfly'}
+  ]},
+  {name:'Kangaroo life cycle', key:'kangaroo', stages:[
+    {icon:'\uD83E\uDD5A', label:'Newborn'},{icon:'\uD83D\uDC1B', label:'Joey in pouch'},{icon:'\uD83E\uDD98', label:'Young joey'},{icon:'\uD83E\uDD98', label:'Adult'}
+  ]},
+  {name:'Pine tree life cycle', key:'pine', stages:[
+    {icon:'\uD83C\uDF30', label:'Seed'},{icon:'\uD83C\uDF31', label:'Seedling'},{icon:'\uD83E\uDEB4', label:'Sapling'},{icon:'\uD83C\uDF32', label:'Pine tree'},{icon:'\uD83C\uDF30', label:'Cone'}
+  ]},
+  {name:'Fern life cycle', key:'fern', stages:[
+    {icon:'\uD83D\uDFE4', label:'Spore'},{icon:'\uD83C\uDF31', label:'Prothallus'},{icon:'\uD83C\uDF3F', label:'Young fern'},{icon:'\uD83C\uDF3F', label:'Adult fern'}
+  ]},
+  {name:'Mosquito life cycle', key:'mosquito', stages:[
+    {icon:'\uD83E\uDD5A', label:'Egg raft'},{icon:'\uD83E\uDD9F', label:'Larva'},{icon:'\uD83D\uDFE3', label:'Pupa'},{icon:'\uD83E\uDD9F', label:'Adult mosquito'}
   ]}
 ];
 
@@ -257,11 +285,38 @@ function validImpostors(cycleIdx){
   });
   return pool;
 }
+/* trickier impostors: prefer ones whose emoji matches an emoji already in the
+   target ring, so kids must read the LABEL, not just spot an odd picture. */
+function trickyImpostors(cycleIdx){
+  var target=CYCLES[cycleIdx];
+  var iconsInTarget={};
+  target.stages.forEach(function(s){iconsInTarget[s.icon]=true;});
+  var all=validImpostors(cycleIdx);
+  var tricky=all.filter(function(p){return iconsInTarget[p.icon];});
+  return tricky.length?tricky:all;
+}
 
 // rounds-per-game and timer per difficulty
-var ROUNDS_PER_GAME=12;
-var DIFF=[{t:11,n:'Gentle'},{t:9,n:'Sprout'},{t:7,n:'Spotter'},{t:5.5,n:'Expert'},{t:4.2,n:'Naturalist'}];
+var ROUNDS_PER_GAME=15;
+var DIFF=[{t:10,n:'Gentle'},{t:8,n:'Sprout'},{t:6.5,n:'Spotter'},{t:5,n:'Expert'},{t:3.8,n:'Naturalist'}];
 var diff=2;
+
+/* Difficulty ramps WITHIN a game as rounds climb, independent of the speed dial:
+   - rounds get a shrinking time bonus removed (handled in startTimer)
+   - later rounds add a 5th ring stage, then a second hidden impostor
+   These thresholds are what stop strong players maxing out at a fixed ceiling. */
+function ringSizeForRound(rn){
+  if(rn>=11)return 6;      // rounds 11-15: six stages to scan
+  if(rn>=6)return 5;       // rounds 6-10: five stages
+  return 4;                // rounds 1-5: classic four
+}
+function impostorsForRound(rn){
+  return rn>=13?2:1;       // final 3 rounds hide TWO odd stages
+}
+function timeFactorForRound(rn){
+  // squeeze the clock a little tighter every few rounds (down to 70%)
+  return Math.max(0.7,1-(rn-1)*0.03);
+}
 
 /* ============ SUPABASE LEADERBOARD ============ */
 var SB_URL='https://wpohvsjkrskhlrayaubp.supabase.co';
@@ -352,12 +407,47 @@ var nodeEls=[];
 function pickRound(forceCycle){
   var cycleIdx = (forceCycle!=null) ? forceCycle : Math.floor(Math.random()*CYCLES.length);
   var cyc=CYCLES[cycleIdx];
-  var imp=validImpostors(cycleIdx);
-  var impostor=imp[Math.floor(Math.random()*imp.length)];
-  var oddIdx=Math.floor(Math.random()*4);
-  var nodes=cyc.stages.map(function(s){return {icon:s.icon,label:s.label,odd:false};});
-  nodes[oddIdx]={icon:impostor.icon,label:impostor.label,odd:true,from:impostor.from};
-  return {cycleIdx:cycleIdx, cyc:cyc, nodes:nodes, oddIdx:oddIdx, impostor:impostor};
+  var nImp=isPracticeRound?1:impostorsForRound(roundNum);
+  var wantRing=isPracticeRound?4:ringSizeForRound(roundNum);
+
+  var realStages=cyc.stages.map(function(s){return {icon:s.icon,label:s.label,odd:false};});
+  // real stages we can show = ring minus impostors, but never more than the cycle has,
+  // and never fewer than 2 so the cycle still "reads". This keeps nImp EXACT — short
+  // cycles simply produce a slightly smaller ring rather than gaining a stray impostor.
+  var keepReal=Math.min(realStages.length,Math.max(2,wantRing-nImp));
+  var ringSize=keepReal+nImp;
+
+  // contiguous window of real stages so the visible cycle stays in order
+  var startMax=realStages.length-keepReal;
+  var startAt=startMax>0?Math.floor(Math.random()*(startMax+1)):0;
+  var slots=[];
+  for(var r=0;r<keepReal;r++)slots.push(realStages[startAt+r]);
+
+  var tricky=(roundNum>=8&&Math.random()<0.6);
+  var basePool=validImpostors(cycleIdx);
+  var pool=tricky?trickyImpostors(cycleIdx):basePool;
+  var used={},usedFrom={},impostors=[];
+  function drawFrom(src,requireNewSource){
+    var sh=src.slice();
+    for(var s=sh.length-1;s>0;s--){var jj=Math.floor(Math.random()*(s+1));var tt=sh[s];sh[s]=sh[jj];sh[jj]=tt;}
+    for(var q=0;q<sh.length&&impostors.length<nImp;q++){
+      var c=sh[q];
+      if(used[c.label])continue;
+      if(requireNewSource&&usedFrom[c.from])continue;
+      used[c.label]=1;usedFrom[c.from]=1;
+      impostors.push({icon:c.icon,label:c.label,odd:true,from:c.from});
+    }
+  }
+  drawFrom(pool,true);              // tricky pool, distinct sources
+  if(impostors.length<nImp)drawFrom(pool,false);   // tricky pool, any source
+  if(impostors.length<nImp)drawFrom(basePool,true);// full pool, distinct sources
+  if(impostors.length<nImp)drawFrom(basePool,false);// full pool, any label
+
+  var nodes=slots.concat(impostors);
+  for(var i=nodes.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=nodes[i];nodes[i]=nodes[j];nodes[j]=t;}
+  var oddIdxs=[];
+  nodes.forEach(function(nd,idx){if(nd.odd)oddIdxs.push(idx);});
+  return {cycleIdx:cycleIdx, cyc:cyc, nodes:nodes, oddIdxs:oddIdxs, oddIdx:oddIdxs[0], nImp:nImp};
 }
 
 function layoutRing(){
@@ -366,12 +456,15 @@ function layoutRing(){
   nodeEls.forEach(function(n){if(n&&n.parentNode)n.parentNode.removeChild(n);});
   nodeEls=[];
   var n=current.nodes.length;
+  var nodeW=n>=6?20:n>=5?21.5:23;
+  var radius=n>=5?36:34;
   for(var i=0;i<n;i++){
     var ang=(-90 + i*(360/n))*Math.PI/180; // start at top, clockwise
-    var cx=50+34*Math.cos(ang), cy=50+34*Math.sin(ang);
+    var cx=50+radius*Math.cos(ang), cy=50+radius*Math.sin(ang);
     var el=document.createElement('div');
     el.className='node';
     el.style.left=cx+'%';el.style.top=cy+'%';
+    el.style.width=nodeW+'%';el.style.height=nodeW+'%';
     var nd=current.nodes[i];
     el.innerHTML='<div class="emoji">'+nd.icon+'</div><div class="lab">'+nd.label+'</div>';
     (function(idx,elem){
@@ -384,40 +477,58 @@ function layoutRing(){
 
 function beginRound(forceCycle){
   current=pickRound(forceCycle);
+  current.found=0;
   phase='spotting';
   $('cyclename').textContent=current.cyc.name;
-  $('prompt').innerHTML='One stage <b>doesn\u2019t belong</b> in this cycle &mdash; tap it!';
-  $('centerhint').textContent=isPracticeRound?'Find the odd one!':'';
+  var many=current.nImp>1;
+  $('prompt').innerHTML=many
+    ? '<b>Two stages</b> don\u2019t belong in this cycle &mdash; tap them both!'
+    : 'One stage <b>doesn\u2019t belong</b> in this cycle &mdash; tap it!';
+  $('centerhint').textContent=isPracticeRound?'Find the odd one!':(many?'Find 2!':'');
   layoutRing();
   startTimer();
 }
 
 function pickNode(idx,el){
   if(phase!=='spotting'||!current)return;
-  if(current.nodes[idx].odd){
-    phase='resolved';stopTimer();
+  if(current.nodes[idx].odd && !current.nodes[idx].found){
+    current.nodes[idx].found=true;
+    current.found++;
     el.classList.add('correct');
     tone(660,0.1,'sine',0.05);tone(880,0.12,'sine',0.05,0.09);
-    roundWin();
+    if(current.found>=current.nImp){
+      // all impostors found — round won
+      phase='resolved';stopTimer();
+      roundWin();
+    }else{
+      // found one of two — keep going, small ping and a hint
+      $('centerhint').textContent='1 more!';
+      tone(990,0.08,'sine',0.05,0.05);
+    }
+  }else if(current.nodes[idx].odd && current.nodes[idx].found){
+    return; // already tapped this one
   }else{
     el.classList.add('wrong');
     tone(150,0.18,'sawtooth',0.06);
-    // reveal the correct odd one
+    // reveal any remaining odd ones
     phase='resolved';stopTimer();
-    nodeEls[current.oddIdx].classList.add('reveal');
+    current.oddIdxs.forEach(function(oi){if(!current.nodes[oi].found)nodeEls[oi].classList.add('reveal');});
     combo=1;updateCombo();
     if(!isPracticeRound){ loseShield(); }
-    if(running) setTimeout(nextRound, 1100);
+    if(running) setTimeout(nextRound, 1200);
   }
 }
 
 function roundWin(){
   if(!isPracticeRound){
-    var base=20;
+    // harder rounds are worth more: base grows with stages to scan and impostors to find
+    var ringBonus=(current.nodes.length-4)*5;     // +5 per extra stage
+    var impBonus=(current.nImp-1)*15;             // +15 for the two-impostor rounds
+    var base=20+ringBonus+impBonus;
     var pts=Math.round(base*combo);
     score+=pts;$('scoreval').textContent=score;
     popScore(pts);
-    combo=Math.min(combo+1,6);maxCombo=Math.max(maxCombo,combo);updateCombo();
+    combo=Math.min(combo+1,8);maxCombo=Math.max(maxCombo,combo);updateCombo();
   }else{
     $('centerhint').textContent='Nice!';
   }
@@ -453,7 +564,8 @@ function nextRound(){
 
 /* ============ TIMER ============ */
 function startTimer(){
-  timerDur=isPracticeRound?14:DIFF[diff].t;
+  var baseT=isPracticeRound?14:DIFF[diff].t;
+  timerDur=isPracticeRound?baseT:baseT*timeFactorForRound(roundNum);
   timerStart=performance.now();
   $('timerwrap').classList.add('show');
   $('timerbar').style.width='100%';
@@ -474,7 +586,7 @@ function timeOut(){
   if(phase!=='spotting')return;
   phase='resolved';stopTimer();
   tone(140,0.3,'sawtooth',0.07);
-  nodeEls[current.oddIdx].classList.add('reveal');
+  current.oddIdxs.forEach(function(oi){if(!current.nodes[oi].found)nodeEls[oi].classList.add('reveal');});
   combo=1;updateCombo();
   if(isPracticeRound){
     $('centerhint').textContent='That was the odd one!';
@@ -532,10 +644,10 @@ function endGame(won){
   $('speedctl').classList.remove('show');
   var completed=roundNum-1; if(won) completed=ROUNDS_PER_GAME;
   var rank,medal,medalCol;
-  if(won && maxCombo>=8){rank='LEGENDARY NATURALIST';medal='\u2605';medalCol='#F4C430';}
+  if(won && maxCombo>=8 && score>=1600){rank='LEGENDARY NATURALIST';medal='\u2605';medalCol='#F4C430';}
   else if(won){rank='MASTER NATURALIST';medal='\u2605';medalCol='#5BD97F';}
-  else if(completed>=8){rank='FIELD BIOLOGIST';medal='\u2605';medalCol='#56C2E6';}
-  else if(completed>=4){rank='KEEN SPOTTER';medal='\u2726';medalCol='#E86A9B';}
+  else if(completed>=11){rank='FIELD BIOLOGIST';medal='\u2605';medalCol='#56C2E6';}
+  else if(completed>=6){rank='KEEN SPOTTER';medal='\u2726';medalCol='#E86A9B';}
   else{rank='YOUNG SPROUT';medal='\u2726';medalCol='#9FBCA8';}
   $('endbadge').textContent=medal;$('endbadge').style.color=medalCol;$('endbadge').style.borderColor=medalCol;
   $('endrank').textContent=rank;$('endrank').style.color=medalCol;
