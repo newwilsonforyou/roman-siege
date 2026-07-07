@@ -880,6 +880,18 @@ async function loadRecords(p){
   var rainforest=rows.filter(function(x){return x.game==='rainforestrescue';});
   var angles=rows.filter(function(x){return x.game==='angles';});
   var themepark=rows.filter(function(x){return x.game==='themeparkdatadash';});
+  /* any game not in the known list (e.g. Solar Builder, Legion Outpost, future games)
+     is picked up automatically so the record is never incomplete again */
+  var knownIds=['siege','nebula','empiremap','vicmuseum','victorians','junglecatch',
+    'circuit','linolayers','lifecycles','rainforestrescue','angles','themeparkdatadash'];
+  var extraNames={solar:'🪐 SOLAR SYSTEM BUILDER',solarbuilder:'🪐 SOLAR SYSTEM BUILDER',
+    solarsystem:'🪐 SOLAR SYSTEM BUILDER',builder:'🪐 SOLAR SYSTEM BUILDER',
+    outpost:'🏰 LEGION OUTPOST',legionoutpost:'🏰 LEGION OUTPOST',legion:'🏰 LEGION OUTPOST'};
+  var othersBy={};
+  rows.forEach(function(x){
+    if(knownIds.indexOf(x.game)<0){(othersBy[x.game]=othersBy[x.game]||[]).push(x);}
+  });
+  function extraTitle(g){return extraNames[g]||('🎮 '+String(g).toUpperCase());}
   function best(a){return a.length?Math.max.apply(null,a.map(function(x){return x.score;})):0;}
   var totalGames=rows.length;
   var head='<div class="rec-head"><div class="rec-avatar">'+p.avatar+'</div>'+
@@ -898,6 +910,10 @@ async function loadRecords(p){
     '<div class="rec-stat"><div class="n">'+best(cycle)+'</div><div class="l">CYCLE BEST</div></div>'+
     '<div class="rec-stat"><div class="n">'+best(rainforest)+'</div><div class="l">RAINFOREST BEST</div></div>'+
     '<div class="rec-stat"><div class="n">'+best(angles)+'</div><div class="l">ANGLES BEST</div></div>'+
+    Object.keys(othersBy).sort().map(function(g){
+      return '<div class="rec-stat"><div class="n">'+best(othersBy[g])+'</div><div class="l">'+
+        extraTitle(g).replace(/^\S+\s/,'')+' BEST</div></div>';
+    }).join('')+
     '<div class="rec-stat"><div class="n">'+totalGames+'</div><div class="l">GAMES</div></div></div>';
   function historyTable(title,arr){
     if(!arr.length)return '<div class="rec-section">'+title+'</div><div class="rec-empty">No games yet — go play!</div>';
@@ -923,7 +939,10 @@ async function loadRecords(p){
     historyTable('🖨️ LINO LAYERS HISTORY',lino)+
     historyTable('🔄 CYCLE SPOTTER HISTORY',cycle)+
     historyTable('🌳 RAINFOREST RESCUE HISTORY',rainforest)+
-    historyTable('📐 ANGLE ACADEMY HISTORY',angles);
+    historyTable('📐 ANGLE ACADEMY HISTORY',angles)+
+    Object.keys(othersBy).sort().map(function(g){
+      return historyTable(extraTitle(g)+' HISTORY',othersBy[g]);
+    }).join('');
 }
 
 [$('signinModal'),$('recordsModal'),$('avatarModal')].forEach(function(m){
