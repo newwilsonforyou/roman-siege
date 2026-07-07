@@ -91,9 +91,9 @@
     <select id="gameSel"></select>
     <div class="range" id="rangeBtns">
       <button data-d="1">Today</button>
-      <button data-d="7" class="on">7 days</button>
+      <button data-d="7">7 days</button>
       <button data-d="30">30 days</button>
-      <button data-d="0">All time</button>
+      <button data-d="0" class="on">All time</button>
     </div>
     <button class="cbtn primary" id="refreshBtn">↻ Refresh</button>
     <button class="cbtn" id="csvBtn">⬇ Export CSV</button>
@@ -102,7 +102,7 @@
   <div class="errbox" id="errBox"></div>
 
   <div class="cards">
-    <div class="kpi"><div class="n" id="kStudents">–</div><div class="l">ACTIVE STUDENTS</div></div>
+    <div class="kpi"><div class="n" id="kStudents">–</div><div class="l">STUDENTS SIGNED UP</div></div>
     <div class="kpi"><div class="n" id="kRounds">–</div><div class="l">ROUNDS PLAYED</div></div>
     <div class="kpi"><div class="n" id="kAvg">–</div><div class="l">CLASS AVG SCORE</div></div>
     <div class="kpi"><div class="n" id="kAcc">–</div><div class="l">CLASS AVG ACCURACY</div></div>
@@ -168,10 +168,10 @@ var GAMES={
   Object.keys(GAMES).forEach(function(g){
     var op=document.createElement('option');op.value=g;op.textContent=GAMES[g];sel.appendChild(op);
   });
-  sel.value='themeparkdatadash';
+  sel.value='__all';
 })();
 
-var allRows=[],avatars={},rangeDays=7;
+var allRows=[],avatars={},playersList=[],rangeDays=0;
 var sortKey='last',sortDir=-1;
 
 function daysCut(){
@@ -201,8 +201,11 @@ async function loadData(){
     if(!r.ok)throw new Error('scores '+r.status);
     allRows=await r.json();
     try{
-      var pr=await fetch(SB_URL+'/rest/v1/players?select=name,avatar&limit=500',{headers:sbH()});
-      if(pr.ok){(await pr.json()).forEach(function(p){avatars[p.name]=p.avatar||'🙂';});}
+      var pr=await fetch(SB_URL+'/rest/v1/players?select=name,avatar,created_at&order=name.asc&limit=1000',{headers:sbH()});
+      if(pr.ok){
+        playersList=await pr.json();
+        playersList.forEach(function(p){avatars[p.name]=p.avatar||'🙂';});
+      }
     }catch(e){}
     render();
   }catch(e){
@@ -231,7 +234,20 @@ function aggStudents(rows){
     s.acc=s.accN?Math.round(s.accSum/s.accN):null;
     s.rows.sort(function(a,b){return new Date(a.created_at)-new Date(b.created_at);});
     s.scores=s.rows.map(function(r){return r.score;});
+    s.games={};s.rows.forEach(function(r){
+      if(!s.games[r.game])s.games[r.game]={n:0,best:0};
+      s.games[r.game].n++;s.games[r.game].best=Math.max(s.games[r.game].best,r.score);
+    });
     return s;
+  });
+  /* every registered student appears, even before their first game */
+  var have={};out.forEach(function(s){have[s.name]=true;});
+  playersList.forEach(function(p){
+    if(!have[p.name])out.push({name:p.name,rounds:0,best:null,avg:null,acc:null,streak:0,
+      last:0,scores:[],rows:[],games:{},joined:p.created_at});
+  });
+  playersList.forEach(function(p){
+    out.forEach(function(s){if(s.name===p.name)s.joined=p.created_at;});
   });
   return out;
 }
@@ -300,7 +316,7 @@ function renderTable(students){
     if(typeof ka==='string')return sortDir*ka.localeCompare(kb);
     return sortDir*(ka-kb);
   });
-  var cols=[['name','Student'],['rounds','Rounds'],['best','Best'],['avg','Average'],
+  var cols=[['name','Student'],['gcount','Games'],['rounds','Rounds'],['best','Best'],['avg','Average'],
     ['acc','Avg accuracy'],['streak','Best streak'],['last','Last played'],['trend','Trend']];
   var h='<table class="students"><thead><tr>';
   cols.forEach(function(c){
@@ -309,11 +325,17 @@ function renderTable(students){
   });
   h+='</tr></thead><tbody>';
   students.forEach(function(s,i){
+    s.gcount=Object.keys(s.games||{}).length;
+    var played=s.rounds>0;
     h+='<tr data-i="'+i+'"><td><span class="avspan">'+esc(avatars[s.name]||'🙂')+'</span>'+esc(s.name)+'</td>'+
-      '<td>'+s.rounds+'</td><td><b>'+s.best+'</b></td><td>'+s.avg+'</td>'+
+      '<td>'+(played?s.gcount:'<span class="dim">–</span>')+'</td>'+
+      '<td>'+(played?s.rounds:'<span class="dim">0</span>')+'</td>'+
+      '<td>'+(played?'<b>'+s.best+'</b>':'<span class="dim">–</span>')+'</td>'+
+      '<td>'+(played?s.avg:'<span class="dim">–</span>')+'</td>'+
       '<td>'+(s.acc===null?'<span class="dim">–</span>':'<span class="'+accClass(s.acc)+'">'+s.acc+'%</span>')+'</td>'+
       '<td>'+(s.streak||'<span class="dim">–</span>')+'</td>'+
-      '<td>'+fmtWhen(s.last)+'</td><td>'+sparkline(s.scores)+'</td></tr>';
+      '<td>'+(played?fmtWhen(s.last):'<span class="dim">not yet played</span>')+'</td>'+
+      '<td>'+sparkline(s.scores)+'</td></tr>';
   });
   $('studentTable').innerHTML=h+'</tbody></table>';
   document.querySelectorAll('.students th').forEach(function(th){
@@ -331,12 +353,29 @@ function renderTable(students){
 function openStudent(s){
   $('mAv').textContent=avatars[s.name]||'🙂';
   $('mName').textContent=s.name;
-  $('mMeta').textContent=s.rounds+' rounds in this view · last played '+fmtWhen(s.last);
+  var joined=s.joined?(' · joined '+new Date(s.joined).toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'})):'';
+  if(!s.rounds){
+    $('mMeta').textContent='Signed up but no games recorded in this view'+joined;
+    $('mStats').innerHTML='';
+    $('mChart').innerHTML='<div class="empty">No rounds yet — once they play, their scores, games and times will appear here.</div>';
+    $('mHist').innerHTML='';
+    $('studentModal').classList.add('show');
+    return;
+  }
+  $('mMeta').textContent=s.rounds+' rounds in this view · last played '+fmtWhen(s.last)+joined;
+  /* which games, how often, and their record in each */
+  var gchips='';
+  Object.keys(s.games).forEach(function(g){
+    gchips+='<div class="m" style="text-align:left;padding:9px 12px;"><div style="font-size:12px;font-weight:800;color:#2b3a55;">'+
+      esc(GAMES[g]||g)+'</div><div style="font-size:11px;font-weight:700;color:#8b96ab;">'+
+      s.games[g].n+' round'+(s.games[g].n>1?'s':'')+' · best <b style="color:#2b3a55;">'+s.games[g].best+'</b></div></div>';
+  });
   $('mStats').innerHTML=
     '<div class="m"><div class="n">'+s.best+'</div><div class="l">BEST</div></div>'+
     '<div class="m"><div class="n">'+s.avg+'</div><div class="l">AVERAGE</div></div>'+
     '<div class="m"><div class="n">'+(s.acc===null?'–':s.acc+'%')+'</div><div class="l">AVG ACCURACY</div></div>'+
-    '<div class="m"><div class="n">'+(s.streak||'–')+'</div><div class="l">BEST STREAK</div></div>';
+    '<div class="m"><div class="n">'+(s.streak||'–')+'</div><div class="l">BEST STREAK</div></div>'+
+    gchips;
   /* score over time chart */
   var sc=s.rows.map(function(r){return r.score;});
   var W=580,H=170,pad=34;
