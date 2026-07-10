@@ -173,6 +173,17 @@
   .angle .card-art{background:radial-gradient(circle at 50% 110%,rgba(242,193,78,.22),transparent 60%),
     radial-gradient(circle at 25% 25%,rgba(54,226,255,.14),transparent 55%),#0a1626;}
   .angle .card-tag{color:var(--gold);} .angle .play{background:var(--gold);color:#3a2400;}
+
+  .daynight{background:linear-gradient(160deg,#102045,#1c0f30 55%,#070b1e);}
+  .daynight:hover{box-shadow:0 18px 50px rgba(255,203,69,.3);border-color:#ffcb45;}
+  .daynight .card-art{background:radial-gradient(circle at 20% 50%,rgba(255,203,69,.3),transparent 55%),
+    linear-gradient(100deg,#132a55 45%,#0a0f2e 55%);}
+  .daynight .card-tag{color:#ffcb45;} .daynight .play{background:#ffcb45;color:#3a2400;}
+  .worldcup{background:linear-gradient(160deg,#0f3d24,#071f12);}
+  .worldcup:hover{box-shadow:0 18px 50px rgba(255,210,63,.38);border-color:#FFD23F;}
+  .worldcup .card-art{background:radial-gradient(circle at 50% 118%,rgba(91,255,155,.24),transparent 60%),
+    radial-gradient(circle at 22% 18%,rgba(255,210,63,.22),transparent 55%),#08170e;}
+  .worldcup .card-tag{color:#FFD23F;} .worldcup .play{background:#FFD23F;color:#3a2400;}
   .card.locked{opacity:.5;pointer-events:none;filter:grayscale(.3);}
   .lockmsg{position:absolute;inset:0;z-index:4;display:none;align-items:center;justify-content:center;
     background:rgba(8,5,16,.55);font-family:'Cinzel',serif;font-weight:700;color:#fff;font-size:15px;}
@@ -197,8 +208,8 @@
     padding:12px 14px;border-radius:12px;border:1.5px solid rgba(255,255,255,.18);
     background:rgba(0,0,0,.3);color:var(--ink);}
   #nameField:focus,#newName:focus,#newPass:focus,#logName:focus,#logPass:focus{outline:2px solid var(--gold);}
-  .avatars{display:grid;grid-template-columns:repeat(auto-fill,minmax(46px,1fr));gap:8px;margin-top:4px;
-    max-height:280px;overflow-y:auto;padding:4px;border-radius:12px;background:rgba(0,0,0,.18);}
+  .avatars{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-top:4px;
+    max-height:230px;overflow-y:auto;padding:4px;border-radius:12px;background:rgba(0,0,0,.18);}
   .avatars::-webkit-scrollbar{width:8px;}
   .avatars::-webkit-scrollbar-thumb{background:rgba(255,255,255,.18);border-radius:8px;}
   .av{aspect-ratio:1;border-radius:12px;border:2px solid transparent;background:rgba(255,255,255,.06);
@@ -244,12 +255,82 @@
     <div class="kicker">Choose your game</div>
     <h1 id="bigtitle" title="Psst… try clicking me!">Year 5 Arcade</h1>
     <p class="hello" id="hello">🎮 Ready to play?</p>
-    <p class="sub">Thirteen games in one place — run a theme park stall by reading graphs, carve and print in the lino studio, spot the odd stage in life cycles, explore South America and save the rainforest, defend your Legion outpost, master Roman numerals from I to C, explore Victorian Britain and the British Empire, and classify and measure angles with a real protractor in Angle Academy. Sign in, and every game you play is saved to your record.</p>
+    <p class="sub">Fourteen games in one place — match all 48 real World Cup flags and win penalty shootouts, run a theme park stall by reading graphs, carve and print in the lino studio, spot the odd stage in life cycles, explore South America and save the rainforest, defend your Legion outpost, master Roman numerals from I to C, explore Victorian Britain and the British Empire, and classify and measure angles with a real protractor. Sign in, and every game you play is saved to your record.</p>
   </header>
 
   <main class="cards">
-    <a class="card themepark" id="card-themepark" href="theme-park-data-dash.html">
+    <a class="card worldcup" id="card-worldcup" href="worldcup-flag-match.html">
       <span class="newbadge">✦ NEW!</span>
+      <div class="lockmsg">🔒 Sign in first</div>
+      <div class="card-art">
+        <svg class="art-svg pulse" viewBox="0 0 200 150" aria-hidden="true">
+          <rect x="30" y="34" width="6" height="62" rx="3" fill="#fff"/>
+          <rect x="164" y="34" width="6" height="62" rx="3" fill="#fff"/>
+          <rect x="30" y="30" width="140" height="6" rx="3" fill="#fff"/>
+          <g stroke="rgba(255,255,255,.3)" stroke-width="1.2">
+            <line x1="36" y1="48" x2="164" y2="48"/><line x1="36" y1="62" x2="164" y2="62"/>
+            <line x1="36" y1="76" x2="164" y2="76"/><line x1="36" y1="90" x2="164" y2="90"/>
+            <line x1="52" y1="36" x2="52" y2="96"/><line x1="72" y1="36" x2="72" y2="96"/>
+            <line x1="92" y1="36" x2="92" y2="96"/><line x1="112" y1="36" x2="112" y2="96"/>
+            <line x1="132" y1="36" x2="132" y2="96"/><line x1="152" y1="36" x2="152" y2="96"/>
+          </g>
+          <rect x="22" y="96" width="156" height="5" fill="#EAF6EC" opacity=".7"/>
+          <g transform="translate(56,52)">
+            <rect width="26" height="19" rx="2" fill="#fff"/>
+            <rect x="10.5" width="5" height="19" fill="#C0392B"/>
+            <rect y="7" width="26" height="5" fill="#C0392B"/>
+          </g>
+          <g transform="translate(118,52)">
+            <rect width="26" height="19" rx="2" fill="#2E8B57"/>
+            <path d="M13 2 L24 9.5 L13 17 L2 9.5 Z" fill="#F2C53D"/>
+            <circle cx="13" cy="9.5" r="4" fill="#1d6fa5"/>
+          </g>
+          <circle cx="100" cy="112" r="15" fill="#fff"/>
+          <circle cx="100" cy="112" r="15" fill="none" stroke="#c9d4dd" stroke-width="1.5"/>
+          <path d="M100 105 L106 110 L104 117 H96 L94 110 Z" fill="#20303f"/>
+          <text x="100" y="24" text-anchor="middle" font-size="19">🏆</text>
+        </svg>
+      </div>
+      <div class="card-body">
+        <div class="card-tag">Flag Match &middot; Penalties</div>
+        <div class="card-title">World Cup Flag Match</div>
+        <div class="card-desc">Match all 48 real 2026 World Cup flags before the ball reaches your goal, then win penalty shootouts for bonus points. Reach THE FINAL and lift the trophy!</div>
+        <span class="play">PLAY ▶</span>
+      </div>
+    </a>
+
+    <a class="card daynight" id="card-daynight" href="day-night-spinner.html">
+      <span class="badge2d" style="background:rgba(255,203,69,.9);color:#3a2400;">SPIN</span>
+      <div class="lockmsg">🔒 Sign in first</div>
+      <div class="card-art">
+        <svg class="art-svg pulse" viewBox="0 0 200 150" aria-hidden="true">
+          <circle cx="26" cy="75" r="16" fill="#ffcb45"/>
+          <line x1="26" y1="52" x2="26" y2="44" stroke="#ffcb45" stroke-width="3" stroke-linecap="round"/>
+          <line x1="26" y1="98" x2="26" y2="106" stroke="#ffcb45" stroke-width="3" stroke-linecap="round"/>
+          <line x1="44" y1="58" x2="50" y2="52" stroke="#ffcb45" stroke-width="3" stroke-linecap="round"/>
+          <line x1="44" y1="92" x2="50" y2="98" stroke="#ffcb45" stroke-width="3" stroke-linecap="round"/>
+          <circle cx="118" cy="75" r="42" fill="#1d6fa5"/>
+          <path d="M96 52 l14 -6 12 4 4 8 -8 6 -6 12 -6 -8 -8 -8Z" fill="#2e7d4f"/>
+          <path d="M124 92 l12 -4 8 6 -6 10 -12 2 -4 -8Z" fill="#2e7d4f"/>
+          <path d="M118 33 A42 42 0 0 1 118 117 Z" fill="rgba(4,8,30,.6)"/>
+          <line x1="118" y1="26" x2="118" y2="124" stroke="rgba(220,230,255,.6)" stroke-width="2" stroke-dasharray="4 5"/>
+          <circle cx="100" cy="58" r="3" fill="#fff" stroke="rgba(0,0,0,.4)"/>
+          <circle cx="138" cy="88" r="3" fill="#ffcb45" stroke="#fff"/>
+          <text x="168" y="42" font-size="14">🌙</text>
+          <path d="M156 118 a26 26 0 0 0 18 -30" fill="none" stroke="#ffcb45" stroke-width="3" stroke-linecap="round"/>
+          <polygon points="174,84 181,92 170,94" fill="#ffcb45"/>
+          <circle cx="182" cy="120" r="1.5" fill="#fff"/><circle cx="60" cy="18" r="1.3" fill="#fff"/>
+        </svg>
+      </div>
+      <div class="card-body">
+        <div class="card-tag">Spin It</div>
+        <div class="card-title">Day &amp; Night Spinner</div>
+        <div class="card-desc">Spin a real world map so London, Berlin or Hong Kong get day, night, sunrise or sunset — even two cities at once — before the clock runs out.</div>
+        <span class="play">PLAY ▶</span>
+      </div>
+    </a>
+
+    <a class="card themepark" id="card-themepark" href="theme-park-data-dash.html">
       <div class="lockmsg">🔒 Sign in first</div>
       <div class="card-art">
         <svg class="art-svg pulse" viewBox="0 0 200 150" aria-hidden="true">
@@ -656,27 +737,12 @@ var SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI
 function sbH(){return {'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'};}
 
 var AVATARS=[
-  '🍎','🍏','🍐','🍊','🍋','🍌','🍉','🍇','🍓','🫐','🍈','🍒',
-  '🍑','🥭','🍍','🥥','🥝','🍅','🫒','🥑','🥕','🌽','🥦','🥒',
-  '🥬','🧅','🧄','🥔','🍠','🌶️','🫑','🍆','🥜','🌰','🍄','🍞',
-  '🥐','🥨','🧀','🍳','🥞','🧇','🍗','🍔','🍟','🍕','🌭','🥪',
-  '🌮','🌯','🍣','🍜','🍝','🥟','🍤','🍦','🍧','🍨','🍩','🍪',
-  '🎂','🍰','🧁','🥧','🍫','🍬','🍭','🍮','🍯','🍿','🧃','🥤',
-  '🧋','🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐨','🐯','🦁',
-  '🐮','🐷','🐸','🐵','🐔','🐧','🐤','🦆','🦅','🦉','🐺','🐴',
-  '🦄','🐢','🐍','🦎','🦖','🦕','🐙','🦑','🦀','🐠','🐬','🐳',
-  '🦈','🐊','🦓','🦍','🐘','🦒','🦘','🦙','🐐','🦌','🦚','🦜',
-  '🦢','🦩','🐇','🦝','🦥','🐿️','🦔','🐝','🦋','🐞','🐲','🐉',
-  '⚽','🏀','🏈','⚾','🥎','🎾','🏐','🏉','🥏','🎱','🏓','🏸',
-  '🏒','⛳','🏹','🎣','🥊','🥋','🛹','🛼','⛸️','🎿','🏂','🎮',
-  '🕹️','🎲','🧩','🎨','🎭','🎪','🎬','🎤','🎧','🎷','🎸','🎹',
-  '🎺','🎻','🥁','🪁','🎈','🎁','🧸','🎠','🎡','🎢','🚀','🛸',
-  '🪐','🌍','🌙','☀️','⭐','🌟','💫','☄️','👽','🤖','👾','✈️',
-  '🚁','🚂','🚗','🏎️','🚒','🚜','⛵','🚤','🚲','🏰','⛺','🌈',
-  '⚡','❄️','☃️','🔥','💧','🌊','🌪️','🌸','🌻','🌷','🍀','🍁',
-  '🌵','🌴','🌳','⚔️','🛡️','👑','💎','🔮','🏆','🥇','🎯','🗝️',
-  '💡','📚','✏️','🔬','🔭','🧪','🧭','😀','😎','🤓','🥳','🤩',
-  '😇','😜','🤠','😺','😸','😻','🙀'
+  '🛡️','⚔️','👑','🏛️','🦅','🐺','🔥','⭐','🚀','🪐','☄️','🎯',
+  '🦁','🐯','🐻','🐼','🦊','🐶','🐱','🐰','🐨','🐸','🦉','🦄',
+  '🐲','🐉','🦖','🦕','🐙','🦈','🐳','🦋','🐝','🦜','🦩','🦚',
+  '⚽','🏀','🏈','🎾','🏐','🥋','🏓','🛹','🎮','🎨','🎸','🎺',
+  '🍕','🍔','🍩','🍦','🍓','🍉','🥑','🌶️','🍪','🧁','🍭','🍫',
+  '🌈','🌟','⚡','❄️','🌸','🌵','🍄','🌍','🌙','🔮','💎','🏆'
 ];
 var selectedAvatar='🛡️';
 
@@ -703,6 +769,7 @@ function renderUserBar(){
   }
 }
 function setCardsLocked(locked){
+  $('card-worldcup').classList.toggle('locked',locked);
   $('card-themepark').classList.toggle('locked',locked);
   $('card-lino').classList.toggle('locked',locked);
   $('card-lifecycle').classList.toggle('locked',locked);
@@ -710,6 +777,7 @@ function setCardsLocked(locked){
   $('card-siege').classList.toggle('locked',locked);
   $('card-nebula').classList.toggle('locked',locked);
   $('card-builder').classList.toggle('locked',locked);
+  $('card-daynight').classList.toggle('locked',locked);
   $('card-outpost').classList.toggle('locked',locked);
   $('card-empire').classList.toggle('locked',locked);
   $('card-museum').classList.toggle('locked',locked);
@@ -895,13 +963,15 @@ async function loadRecords(p){
   var rainforest=rows.filter(function(x){return x.game==='rainforestrescue';});
   var angles=rows.filter(function(x){return x.game==='angles';});
   var themepark=rows.filter(function(x){return x.game==='themeparkdatadash';});
+  var worldcup=rows.filter(function(x){return x.game==='worldcup';});
   /* any game not in the known list (e.g. Solar Builder, Legion Outpost, future games)
      is picked up automatically so the record is never incomplete again */
   var knownIds=['siege','nebula','empiremap','vicmuseum','victorians','junglecatch',
-    'circuit','linolayers','lifecycles','rainforestrescue','angles','themeparkdatadash'];
+    'circuit','linolayers','lifecycles','rainforestrescue','angles','themeparkdatadash','worldcup'];
   var extraNames={solar:'🪐 SOLAR SYSTEM BUILDER',solarbuilder:'🪐 SOLAR SYSTEM BUILDER',
     solarsystem:'🪐 SOLAR SYSTEM BUILDER',builder:'🪐 SOLAR SYSTEM BUILDER',
-    outpost:'🏰 LEGION OUTPOST',legionoutpost:'🏰 LEGION OUTPOST',legion:'🏰 LEGION OUTPOST'};
+    outpost:'🏰 LEGION OUTPOST',legionoutpost:'🏰 LEGION OUTPOST',legion:'🏰 LEGION OUTPOST',
+    daynight:'🌍 DAY & NIGHT SPINNER',dayandnight:'🌍 DAY & NIGHT SPINNER',spinner:'🌍 DAY & NIGHT SPINNER'};
   var othersBy={};
   rows.forEach(function(x){
     if(knownIds.indexOf(x.game)<0){(othersBy[x.game]=othersBy[x.game]||[]).push(x);}
@@ -913,6 +983,7 @@ async function loadRecords(p){
     '<div><div class="rec-name">'+escapeHtml(p.name)+'</div>'+
     '<div class="rec-sub">'+totalGames+' games played in total</div></div></div>';
   var stats='<div class="rec-stats">'+
+    '<div class="rec-stat"><div class="n">'+best(worldcup)+'</div><div class="l">WORLD CUP BEST</div></div>'+
     '<div class="rec-stat"><div class="n">'+best(themepark)+'</div><div class="l">DATA DASH BEST</div></div>'+
     '<div class="rec-stat"><div class="n">'+best(siege)+'</div><div class="l">SIEGE BEST</div></div>'+
     '<div class="rec-stat"><div class="n">'+best(neb)+'</div><div class="l">NEBULA BEST</div></div>'+
@@ -943,6 +1014,7 @@ async function loadRecords(p){
     return h+'</tbody></table>';
   }
   $('recBody').innerHTML=head+stats+
+    historyTable('⚽ WORLD CUP FLAG MATCH HISTORY',worldcup)+
     historyTable('🎡 THEME PARK DATA DASH HISTORY',themepark)+
     historyTable('⚔️ SIEGE HISTORY',siege)+
     historyTable('🚀 NEBULA HISTORY',neb)+
@@ -991,9 +1063,9 @@ function renderHello(){
     '🔥 The leaderboards await, '+name+'…'
   ]:[
     '🎮 Ready to play?',
-    '⚡ Twelve games. One champion. You?',
+    '⚡ Fourteen games. One champion. You?',
     '🏆 Sign in and chase the high scores!',
-    '📐 New! Measure angles like a pro…'
+    '⚽ New! Match all 48 World Cup flags…'
   ];
   $('hello').textContent=msgs[Math.floor(Math.random()*msgs.length)];
 }
