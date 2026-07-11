@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Moon Phases Clicker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --void:#070B1E;--void2:#0E1535;--plasma:#36E2FF;--plasma-dim:#1B7A92;
+    --fusion:#FF7A3D;--gold:#FFD23F;--danger:#FF3D6E;--ok:#5BFF9B;
+    --moonlit:#EDE9DA;--moondark:#232842;
+    --text:#DCE6FF;--text-dim:#7E8DB5;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;overflow:hidden;}
+  body{font-family:'Rajdhani',sans-serif;background:var(--void);color:var(--text);
+    display:flex;align-items:center;justify-content:center;
+    user-select:none;-webkit-user-select:none;touch-action:none;}
+  #wrap{position:relative;width:min(100vw,1000px);height:min(100vh,100dvh);max-height:760px;
+    overflow:hidden;background:radial-gradient(circle at 15% 45%,#1b2a55,#070B1E 70%);}
+  @media(min-width:1020px){#wrap{border-radius:20px;box-shadow:0 30px 80px rgba(0,0,0,.7);}}
+  #wrap.frenzy::after{content:'';position:absolute;inset:0;pointer-events:none;z-index:4;
+    box-shadow:inset 0 0 60px rgba(255,122,61,.5);animation:frenzyPulse 1s ease-in-out infinite alternate;}
+  @keyframes frenzyPulse{from{opacity:.5;}to{opacity:1;}}
+  canvas#stars{position:absolute;inset:0;z-index:0;}
+  #board{position:absolute;inset:0;z-index:1;cursor:grab;}
+  #board.grabbing{cursor:grabbing;}
+
+  /* HUD */
+  .hud{position:absolute;left:0;right:0;z-index:5;pointer-events:none;}
+  #topbar{top:0;display:flex;justify-content:space-between;align-items:flex-start;padding:14px 16px;
+    background:linear-gradient(var(--void) 8%,rgba(7,11,30,0) 100%);}
+  .stat .lbl{font-family:'Orbitron',sans-serif;font-size:10px;letter-spacing:.22em;color:var(--text-dim);font-weight:700;}
+  .stat .val{font-family:'Orbitron',sans-serif;font-size:20px;font-weight:900;line-height:1;}
+  #scoreval{color:var(--plasma);text-shadow:0 0 12px rgba(54,226,255,.5);}
+  #timeval{color:#fff;}
+  #timeval.low{color:var(--danger);text-shadow:0 0 12px rgba(255,61,110,.6);}
+  #streakval{color:var(--fusion);text-shadow:0 0 10px rgba(255,122,61,.6);}
+  #livesrow{display:flex;gap:5px;margin-top:4px;}
+  .life{width:22px;height:22px;}
+  .life.gone{opacity:.2;}
+  #wavebadge{font-family:'Orbitron',sans-serif;font-weight:700;font-size:12px;letter-spacing:.16em;
+    color:var(--gold);margin-top:3px;}
+
+  /* mission banner */
+  #instruct{top:64px;text-align:center;padding:0 14px;}
+  #instruct .big{font-family:'Orbitron',sans-serif;font-weight:700;font-size:clamp(15px,3.2vw,22px);
+    color:#fff;text-shadow:0 0 14px rgba(54,226,255,.4);}
+  #instruct .small{font-size:14px;color:var(--text-dim);font-weight:700;margin-top:3px;}
+
+  /* phase collection tray */
+  #tray{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);z-index:5;display:none;
+    gap:6px;background:rgba(14,21,53,.7);border:1px solid var(--plasma-dim);border-radius:999px;
+    padding:6px 12px;pointer-events:none;}
+  #tray.show{display:flex;}
+  .slot{font-size:20px;opacity:.22;filter:grayscale(1);transition:all .3s;}
+  .slot.got{opacity:1;filter:none;transform:scale(1.05);}
+
+  /* werewolf corner character */
+  #wolf{position:absolute;right:14px;bottom:56px;z-index:6;font-size:40px;pointer-events:none;
+    transition:transform .2s;display:none;}
+  #wolf.show{display:block;}
+  #wolf.howl{animation:howl .5s ease 3;}
+  @keyframes howl{0%,100%{transform:scale(1) rotate(0);}50%{transform:scale(1.4) rotate(-12deg);}}
+
+  /* silly boost button */
+  #boostbtn{position:absolute;left:14px;bottom:16px;z-index:6;font-family:'Orbitron',sans-serif;
+    font-weight:900;font-size:14px;letter-spacing:.06em;color:#3a2400;background:var(--gold);
+    border:0;border-radius:999px;padding:12px 18px;cursor:pointer;display:none;
+    box-shadow:0 0 22px rgba(255,210,63,.5);transition:transform .08s;}
+  #boostbtn:active{transform:scale(.92) rotate(-6deg);}
+  #boostbtn.show{display:block;}
+
+  /* wave flash */
+  #flash{position:absolute;inset:0;z-index:8;pointer-events:none;display:flex;align-items:center;justify-content:center;opacity:0;}
+  #flash .ftext{font-family:'Orbitron',sans-serif;font-weight:900;font-size:clamp(26px,6vw,44px);
+    color:var(--gold);text-shadow:0 0 30px rgba(255,210,63,.7);letter-spacing:.08em;text-align:center;padding:0 20px;}
+  #flash.show{animation:flashin 1.8s ease;}
+  @keyframes flashin{0%{opacity:0;transform:scale(.6);}12%{opacity:1;transform:scale(1.05);}
+    24%{transform:scale(1);}82%{opacity:1;}100%{opacity:0;}}
+  @media(prefers-reduced-motion:reduce){#flash.show{animation:none;}}
+
+  /* overlays */
+  .panel{position:absolute;inset:0;z-index:10;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:15px;padding:26px;text-align:center;
+    background:radial-gradient(circle at 50% 30%,rgba(20,30,70,.72),rgba(7,11,30,.96));backdrop-filter:blur(3px);overflow:auto;}
+  .title{font-family:'Orbitron',sans-serif;font-weight:900;font-size:clamp(30px,7vw,52px);
+    line-height:1.02;background:linear-gradient(180deg,#fff,var(--gold));-webkit-background-clip:text;
+    background-clip:text;-webkit-text-fill-color:transparent;filter:drop-shadow(0 0 24px rgba(255,210,63,.35));}
+  .tagline{font-size:16px;color:var(--text-dim);max-width:480px;line-height:1.45;font-weight:600;}
+  .chip-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;max-width:500px;}
+  .chip{font-size:13px;font-weight:600;color:var(--text);background:rgba(27,42,86,.6);
+    border:1px solid var(--plasma-dim);border-radius:999px;padding:7px 15px;}
+  .chip b{color:var(--gold);}
+  .cta{font-family:'Orbitron',sans-serif;font-weight:700;font-size:18px;letter-spacing:.1em;
+    color:var(--void);background:linear-gradient(120deg,var(--plasma),#9affff);border:0;border-radius:14px;
+    padding:15px 44px;cursor:pointer;box-shadow:0 0 30px rgba(54,226,255,.5);transition:transform .08s;}
+  .cta:active{transform:scale(.96);}
+  .cta.ghost{background:none;color:var(--plasma);border:1.5px solid var(--plasma-dim);box-shadow:none;font-size:14px;padding:11px 26px;}
+  #difficulty{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
+  .diffbtn{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:14px;color:var(--text-dim);
+    background:rgba(27,42,86,.5);border:1.5px solid var(--plasma-dim);border-radius:10px;padding:9px 16px;cursor:pointer;}
+  .diffbtn.on{color:var(--void);background:var(--plasma);border-color:var(--plasma);}
+  .endbig{font-family:'Orbitron',sans-serif;font-size:42px;font-weight:900;color:var(--plasma);text-shadow:0 0 20px rgba(54,226,255,.5);}
+  .rank{font-family:'Orbitron',sans-serif;font-weight:900;font-size:22px;color:var(--gold);letter-spacing:.08em;text-shadow:0 0 16px rgba(255,210,63,.5);}
+  .endstat{font-size:14px;color:var(--text-dim);font-weight:700;}
+  #endbadge{font-size:50px;width:96px;height:96px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    border:3px solid var(--gold);color:var(--gold);background:rgba(14,21,53,.6);box-shadow:0 0 30px var(--gold);animation:badgepop .6s ease;}
+  @keyframes badgepop{0%{transform:scale(0) rotate(-40deg);}60%{transform:scale(1.15);}100%{transform:scale(1);}}
+
+  /* name entry + leaderboard */
+  #nameform{display:flex;gap:8px;width:100%;max-width:300px;}
+  #nameinput{flex:1;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:16px;padding:9px 12px;
+    border-radius:10px;border:1.5px solid var(--plasma-dim);background:rgba(7,11,30,.7);color:var(--text);min-width:0;}
+  .savebtn{font-family:'Orbitron',sans-serif;font-weight:700;font-size:14px;background:var(--plasma);
+    color:var(--void);border:0;border-radius:10px;padding:8px 16px;cursor:pointer;}
+  .hsbadge{font-family:'Orbitron',sans-serif;font-weight:700;font-size:13px;color:var(--void);
+    background:var(--gold);border-radius:999px;padding:5px 16px;box-shadow:0 0 18px rgba(255,210,63,.5);}
+  .lb-wrap{width:100%;max-width:360px;}
+  table.lb{width:100%;border-collapse:collapse;font-size:15px;}
+  table.lb th{font-family:'Orbitron',sans-serif;font-size:10px;letter-spacing:.16em;color:var(--text-dim);
+    text-align:left;padding:5px 8px;border-bottom:1.5px solid var(--plasma-dim);font-weight:700;}
+  table.lb th:last-child{text-align:right;}
+  table.lb td{padding:6px 8px;border-bottom:1px solid rgba(126,141,181,.18);font-weight:600;}
+  table.lb td:first-child{width:34px;font-family:'Orbitron',sans-serif;font-weight:900;color:var(--gold);}
+  table.lb td:last-child{text-align:right;font-family:'Orbitron',sans-serif;font-weight:900;color:var(--plasma);}
+  table.lb tr.me td{background:rgba(54,226,255,.15);}
+  .lb-msg{font-size:14px;color:var(--text-dim);font-weight:600;padding:10px 0;text-align:center;}
+  .lb-loading{display:flex;align-items:center;justify-content:center;gap:8px;font-size:13px;color:var(--text-dim);font-weight:600;padding:12px 0;}
+  .lb-spin{width:18px;height:18px;border:3px solid rgba(126,141,181,.3);border-top-color:var(--plasma);border-radius:50%;animation:lbspin .7s linear infinite;}
+  @keyframes lbspin{to{transform:rotate(360deg);}}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="stars"></canvas>
+  <svg id="board"></svg>
+
+  <div class="hud" id="topbar">
+    <div class="stat">
+      <div class="lbl">SCORE</div><div class="val" id="scoreval">0</div>
+      <div id="livesrow"></div>
+    </div>
+    <div class="stat" style="text-align:center;">
+      <div class="lbl">TIME</div><div class="val" id="timeval">–</div>
+      <div id="wavebadge">WAVE 1</div>
+    </div>
+    <div class="stat" style="text-align:right;">
+      <div class="lbl">STREAK</div><div class="val" id="streakval">–</div>
+    </div>
+  </div>
+
+  <div class="hud" id="instruct">
+    <div class="big" id="instructBig">Drag the Moon around its orbit!</div>
+    <div class="small" id="instructSmall"></div>
+  </div>
+
+  <div id="tray"></div>
+  <div id="wolf">🧑</div>
+  <button id="boostbtn">🌀 WHEEE!</button>
+
+  <div id="flash"><div class="ftext" id="flashtext"></div></div>
+
+  <!-- START -->
+  <div class="panel" id="startpanel">
+    <div class="title">MOON PHASES<br>CLICKER</div>
+    <div class="tagline">The Moon doesn't make its own light — we see the sunlit half as it orbits the Earth. Drag the Moon around its orbit and watch the phase change LIVE, then match the phase the mission asks for before time runs out!</div>
+    <div class="chip-row">
+      <div class="chip">🌗 Live phase view — see what Earth sees</div>
+      <div class="chip">📚 Collect all <b>8</b> phases for a <b>+500</b> bonus</div>
+      <div class="chip">🐺 Full moon = werewolf time!</div>
+      <div class="chip">⚡ Lightning finales <b>x3</b> &middot; 🔥 streak frenzy</div>
+    </div>
+    <div style="margin-top:4px;">
+      <div style="font-family:'Orbitron',sans-serif;font-size:11px;letter-spacing:.22em;color:var(--text-dim);font-weight:700;margin-bottom:8px;">HELP LEVEL</div>
+      <div id="difficulty">
+        <button class="diffbtn on" data-d="0">Guided</button>
+        <button class="diffbtn" data-d="1">Pilot</button>
+        <button class="diffbtn" data-d="2">Commander</button>
+      </div>
+      <div id="diffNote" style="font-size:12px;color:var(--text-dim);margin-top:8px;font-weight:600;">Guided: a short hint mark glows on the orbit + a little extra time</div>
+    </div>
+    <button class="cta" id="launchbtn">START ORBITING</button>
+    <button class="cta ghost" id="boardbtn">🏆 Leaderboard</button>
+  </div>
+
+  <!-- END -->
+  <div class="panel" id="endpanel" style="display:none;">
+    <div id="endbadge">★</div>
+    <div class="rank" id="endrank">MOON WATCHER</div>
+    <div class="title" id="endtitle" style="font-size:clamp(24px,5.5vw,38px);">ROUND OVER</div>
+    <div class="endbig" id="endscore">0</div>
+    <div class="endstat" id="endstats"></div>
+    <div class="hsbadge" id="hsbadge" style="display:none;">🏆 Top score! Log your name:</div>
+    <div id="nameform" style="display:none;">
+      <input id="nameinput" maxlength="14" placeholder="Your name" autocomplete="off">
+      <button class="savebtn" id="savescore">Save</button>
+    </div>
+    <div class="lb-wrap"><div id="endboard"></div></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;">
+      <button class="cta" id="againbtn">ORBIT AGAIN</button>
+      <button class="cta ghost" id="boardbtn2">🏆 Full board</button>
+    </div>
+  </div>
+
+  <!-- LEADERBOARD -->
+  <div class="panel" id="boardpanel" style="display:none;">
+    <div class="rank" style="color:var(--gold);">HALL OF MOONWATCHERS</div>
+    <div class="title" style="font-size:clamp(24px,5vw,38px);">🌕 Leaderboard</div>
+    <div class="lb-wrap"><div id="mainboard"></div></div>
+    <div class="endstat" style="font-size:12px;">Top 15 moonwatchers, worldwide</div>
+    <div style="display:flex;gap:10px;">
+      <button class="cta" id="closeboard">BACK</button>
+      <button class="cta ghost" id="refreshboard">↻ Refresh</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+var $=function(id){return document.getElementById(id);};
+var SVGNS='http://www.w3.org/2000/svg';
+var TAU=Math.PI*2;
+
+/* ============ THE 8 PHASES ============
+   s = signed angle from the NEW-MOON position (Moon between Earth and Sun).
+   Negative s = the WAXING half of the orbit, positive s = WANING.        */
+var PHASES=[
+  {id:'new', name:'NEW MOON',        e:'🌑', sc:0},
+  {id:'waxc',name:'WAXING CRESCENT', e:'🌒', sc:-45},
+  {id:'fq',  name:'FIRST QUARTER',   e:'🌓', sc:-90},
+  {id:'waxg',name:'WAXING GIBBOUS',  e:'🌔', sc:-135},
+  {id:'full',name:'FULL MOON',       e:'🌕', sc:180},
+  {id:'wang',name:'WANING GIBBOUS',  e:'🌖', sc:135},
+  {id:'lq',  name:'LAST QUARTER',    e:'🌗', sc:90},
+  {id:'wanc',name:'WANING CRESCENT', e:'🌘', sc:45}
+];
+function phaseById(id){for(var i=0;i<PHASES.length;i++)if(PHASES[i].id===id)return PHASES[i];}
+
+/* ============ WAVES ============ */
+var WAVES=[
+  {name:'1',label:'Full moon & new moon',      phases:['full','new'],                          time:7,  count:5,zone:20,tricky:false},
+  {name:'2',label:'Half-lit quarters',         phases:['full','new','fq','lq'],                time:6,  count:6,zone:19,tricky:false},
+  {name:'3',label:'Crescents & gibbous!',      phases:['new','waxc','fq','waxg','full','wang','lq','wanc'],time:5.5,count:6,zone:17,tricky:false},
+  {name:'4',label:'Riddle missions!',          phases:['new','waxc','fq','waxg','full','wang','lq','wanc'],time:5,  count:7,zone:15,tricky:true},
+  {name:'5',label:'Speedy lunar cycle',        phases:['new','waxc','fq','waxg','full','wang','lq','wanc'],time:4,  count:8,zone:13,tricky:true}
+];
+var BASE_WAVE_COUNT=WAVES.length;
+function addEndlessWave(n){
+  WAVES.push({name:'★'+(n+1),label:'Warp speed — even faster!',
+    phases:['new','waxc','fq','waxg','full','wang','lq','wanc'],
+    time:Math.max(2.6,4-0.3*(n+1)),count:8+n,zone:Math.max(10,13-1*(n+1)),tricky:true});
+}
+
+var DIFFS=[
+  {n:'Guided',   showZone:true, timeMult:1.1, mult:1, note:'Guided: a short hint mark glows on the orbit + a little extra time'},
+  {n:'Pilot',    showZone:true, timeMult:1.0, mult:1.5, note:'Pilot: only a tiny hint tick — ×1.5 points'},
+  {n:'Commander',showZone:false,timeMult:0.85,mult:2, note:'Commander: NO glowing zone — you must know where each phase lives! ×2 points'}
+];
+var diff=0;
+
+/* mission text per phase: [normal ask, riddle asks…] */
+var ASKS={
+  full:[['Make a FULL MOON! 🌕','Spin the Moon to the far side from the Sun'],
+        ['The werewolf is transforming!','Only one phase does this…'],
+        ['The WHOLE face is glowing tonight!','We see all of the sunlit half']],
+  new: [['Make a NEW MOON! 🌑','Put the Moon between the Earth and the Sun'],
+        ['The Moon has vanished from the sky!','The sunlit half faces AWAY from us'],
+        ['Darkest night — perfect for bats! 🦇','No moonlight at all tonight']],
+  fq:  [['Make a FIRST QUARTER! 🌓','Half lit — on the WAXING side'],
+        ['Exactly HALF lit… and GROWING each night','Waxing means getting bigger'],
+        ['One week after new moon!','A quarter of the way round the orbit']],
+  lq:  [['Make a LAST QUARTER! 🌗','Half lit — on the WANING side'],
+        ['Exactly HALF lit… and SHRINKING each night','Waning means getting smaller'],
+        ['One week AFTER full moon!','Three quarters of the way round']],
+  waxc:[['Make a WAXING CRESCENT! 🌒','A thin sliver — on the growing side'],
+        ['A tiny sliver, GROWING each night','Just past new moon'],
+        ['The first sliver after the Moon vanished!','Waxing = growing']],
+  wanc:[['Make a WANING CRESCENT! 🌘','A thin sliver — on the shrinking side'],
+        ['A tiny sliver, SHRINKING away…','Nearly back to new moon'],
+        ['The last sliver before the Moon vanishes!','Waning = shrinking']],
+  waxg:[['Make a WAXING GIBBOUS! 🌔','More than half — on the growing side'],
+        ['More than half lit, and STILL growing!','Nearly full…'],
+        ['Almost full — just one more push!','Gibbous means more than half']],
+  wang:[['Make a WANING GIBBOUS! 🌖','More than half — on the shrinking side'],
+        ['More than half lit, but SHRINKING now','Just past full…'],
+        ['The party is over — full moon was last night!','Gibbous but going down']]
+};
+var CHEERS={
+  full:['FULL MOON! 🌕','The whole face glows!','Werewolf o\'clock! 🐺'],
+  new:['NEW MOON! 🌑','Total darkness!','Bat time! 🦇'],
+  fq:['FIRST QUARTER! 🌓','Half lit, growing!','One week old!'],
+  lq:['LAST QUARTER! 🌗','Half lit, shrinking!','Three weeks in!'],
+  waxc:['WAXING CRESCENT! 🌒','A growing sliver!','Brand new sliver!'],
+  wanc:['WANING CRESCENT! 🌘','A fading sliver!','Almost gone…'],
+  waxg:['WAXING GIBBOUS! 🌔','Nearly full!','Still growing!'],
+  wang:['WANING GIBBOUS! 🌖','Past its peak!','Shrinking now!']
+};
+var FACTS=[
+  '🌙 The Moon takes about ONE MONTH to orbit the Earth — a whole phase cycle!',
+  '💡 The Moon makes NO light of its own — we only see reflected sunlight.',
+  '🌑 Phases are NOT the Earth\'s shadow — that\'s a lunar eclipse, which is rare!',
+  '🌗 Half the Moon is ALWAYS lit by the Sun — we just see it from different angles.',
+  '🔭 The same side of the Moon always faces the Earth.',
+  '📈 WAXING means the lit part is GROWING. WANING means it\'s SHRINKING.',
+  '🌕 A full moon rises at sunset and sets at sunrise.',
+  '⚽ The Sun, Earth and Moon are all SPHERES — round like a ball!',
+  '🚀 The Moon is about 384,000 km away — 30 Earths would fit in the gap!',
+  '🌊 The Moon\'s gravity pulls our oceans — that\'s what makes the tides!'
+];
+
+/* ============ SUPABASE (engine — do not edit) ============ */
+var SB_URL='https://wpohvsjkrskhlrayaubp.supabase.co';
+var SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indwb2h2c2prcnNraGxyYXlhdWJwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzMDEzOTcsImV4cCI6MjA5Njg3NzM5N30.Xi07ayGB5CykR-_7QX-b8UsUmMmTbGIlYpctXYgW9JI';
+function sbH(){return {'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'};}
+var GAME_ID='moonphases';
+function currentPlayer(){try{return JSON.parse(localStorage.getItem('rna_player')||'null');}catch(e){return null;}}
+function playerName(){var p=currentPlayer();return p?p.name:null;}
+async function sbFetchTop(limit){limit=limit||15;try{var r=await fetch(SB_URL+'/rest/v1/scores?select=name%2Cscore&game=eq.'+GAME_ID+'&order=score.desc&limit='+limit,{headers:sbH()});if(!r.ok)return null;return await r.json();}catch(e){return null;}}
+async function sbInsert(name,score){try{var h=sbH();h['Prefer']='return=minimal';var body={name:name,score:score,game:GAME_ID};var pn=playerName();if(pn)body.player=pn;var r=await fetch(SB_URL+'/rest/v1/scores',{method:'POST',headers:h,body:JSON.stringify(body)});return r.ok;}catch(e){return false;}}
+async function sbQualifies(score){try{var r=await fetch(SB_URL+'/rest/v1/scores?select=score&game=eq.'+GAME_ID+'&order=score.desc&limit=15',{headers:sbH()});if(!r.ok)return true;var rows=await r.json();if(!rows||rows.length<15)return true;return score>rows[rows.length-1].score;}catch(e){return true;}}
+function lbEsc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function lbLoading(){return '<div class="lb-loading"><div class="lb-spin"></div>Loading…</div>';}
+function lbTable(rows,hiN,hiS){if(!rows||!rows.length)return '<div class="lb-msg">No moonwatchers yet — be the first!</div>';var med=['I','II','III'],h='<table class="lb"><thead><tr><th>RANK</th><th>MOONWATCHER</th><th>SCORE</th></tr></thead><tbody>',mk=false;rows.forEach(function(r,i){var me=(!mk&&hiN&&r.name===hiN&&r.score===hiS);if(me)mk=true;h+='<tr class="'+(me?'me':'')+'"><td>'+(i<3?med[i]:(i+1))+'</td><td>'+lbEsc(r.name)+'</td><td>'+r.score+'</td></tr>';});return h+'</tbody></table>';}
+async function loadMainBoard(){$('mainboard').innerHTML=lbLoading();$('mainboard').innerHTML=lbTable(await sbFetchTop(15),null,null);}
+async function loadEndBoard(n,s){$('endboard').innerHTML=lbLoading();$('endboard').innerHTML=lbTable(await sbFetchTop(10),n,s);}
+
+/* ============ AUDIO (engine) ============ */
+var actx=null;
+function tone(f,d,type,vol,delay){try{if(!actx)actx=new(window.AudioContext||window.webkitAudioContext)();var t0=actx.currentTime+(delay||0);var o=actx.createOscillator(),g=actx.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f,t0);g.gain.setValueAtTime(vol||0.06,t0);g.gain.exponentialRampToValueAtTime(0.001,t0+d);o.connect(g);g.connect(actx.destination);o.start(t0);o.stop(t0+d);}catch(e){}}
+function howlSound(){try{if(!actx)actx=new(window.AudioContext||window.webkitAudioContext)();var t0=actx.currentTime;var o=actx.createOscillator(),g=actx.createGain();o.type='sine';o.frequency.setValueAtTime(300,t0);o.frequency.linearRampToValueAtTime(620,t0+0.35);o.frequency.linearRampToValueAtTime(380,t0+0.9);g.gain.setValueAtTime(0.07,t0);g.gain.exponentialRampToValueAtTime(0.001,t0+1);o.connect(g);g.connect(actx.destination);o.start(t0);o.stop(t0+1);}catch(e){}}
+function chime(){tone(523,0.12,'sine',0.06);tone(784,0.2,'sine',0.06,0.11);}
+function sadBuzz(){tone(180,0.25,'sawtooth',0.07);tone(120,0.4,'sawtooth',0.06,0.15);}
+function whoosh(){tone(200,0.5,'sawtooth',0.03);tone(600,0.4,'sine',0.04,0.05);tone(900,0.3,'sine',0.03,0.15);}
+function batSqueak(){tone(1400,0.06,'square',0.04);tone(1700,0.06,'square',0.04,0.08);tone(1500,0.08,'square',0.04,0.16);}
+
+/* ============ STARFIELD (engine) ============ */
+var starCv=$('stars'),sctx=starCv.getContext('2d'),stars=[];
+function initStars(){
+  starCv.width=$('wrap').clientWidth;starCv.height=$('wrap').clientHeight;
+  stars=[];for(var i=0;i<130;i++)stars.push({x:Math.random()*starCv.width,y:Math.random()*starCv.height,r:Math.random()*1.4+0.3,tw:Math.random()*Math.PI*2});
+}
+function drawStars(){
+  sctx.clearRect(0,0,starCv.width,starCv.height);
+  var t=Date.now()/700;
+  stars.forEach(function(s){var a=0.4+0.6*Math.abs(Math.sin(t+s.tw));sctx.globalAlpha=a;sctx.fillStyle='#aec6ff';sctx.beginPath();sctx.arc(s.x,s.y,s.r,0,Math.PI*2);sctx.fill();});
+  sctx.globalAlpha=1;
+  requestAnimationFrame(drawStars);
+}
+
+/* ============ GEOMETRY (engine) ============ */
+function angDiff(a,b){var d=(a-b)%TAU;if(d>Math.PI)d-=TAU;if(d<-Math.PI)d+=TAU;return d;}
+function deg(r){return r*180/Math.PI;}
+function arcPath(cx,cy,r,a1,a2){
+  var x1=cx+r*Math.cos(a1),y1=cy+r*Math.sin(a1);
+  var x2=cx+r*Math.cos(a2),y2=cy+r*Math.sin(a2);
+  var large=(Math.abs(angDiff(a2,a1))>Math.PI)?1:0;
+  return 'M '+x1+' '+y1+' A '+r+' '+r+' 0 '+large+' 1 '+x2+' '+y2;
+}
+
+/* ============ GAME STATE ============ */
+var board=$('board'),W,H,cx,cy,OR,MR,sunPX,sunPY;   /* OR = orbit radius, MR = moon radius */
+var moonA=Math.PI/2;                     /* Moon's angle on its orbit */
+var moonG,zoneArc,holdRing,phaseViewG,goalViewG,phaseName,stapleNote;
+var earthSpinG,stapleTag,stapleTime,ERg;
+var earthSpin=0;                 /* Earth's rotation — Stapleford rides on it */
+var DAY_SECONDS=24;              /* one full spin = one day = 24 real seconds */
+var score,lives,streak,maxStreak,waveIdx,doneInWave,missions,running=false;
+var collected={},collectionDone=false;
+var mission=null;
+var state='idle';
+var boostV=0,lastT=0;
+var HOLD_NEED=0.35;
+
+/* Moon angle → signed phase angle s (0 = new moon at the Sun side, ±180 = full) */
+var SUN_DIR=Math.PI; /* the Sun sits to the LEFT */
+function phaseS(){return angDiff(moonA,SUN_DIR);}          /* radians, -PI..PI */
+function phaseCentreAngle(p){return SUN_DIR+p.sc*Math.PI/180;} /* orbit angle of a phase */
+
+/* ============ BUILD THE SCENE ============ */
+function el(tag,attrs){var e=document.createElementNS(SVGNS,tag);for(var k in attrs)e.setAttribute(k,attrs[k]);return e;}
+function layout(){
+  W=$('wrap').clientWidth;H=$('wrap').clientHeight;
+  board.setAttribute('viewBox','0 0 '+W+' '+H);
+  cx=W*0.5; cy=H*0.55;
+  OR=Math.min(W*0.3,H*0.3);
+  MR=Math.max(16,OR*0.16);
+}
+function buildScene(){
+  layout();
+  board.innerHTML='';
+  var defs=document.createElementNS(SVGNS,'defs');
+  defs.innerHTML=
+    '<radialGradient id="sung"><stop offset="0%" stop-color="#fff8cf"/><stop offset="45%" stop-color="#ffcb45"/><stop offset="100%" stop-color="#ff8a1e"/></radialGradient>'+
+    '<radialGradient id="sunhalo"><stop offset="0%" stop-color="rgba(255,205,90,.5)"/><stop offset="100%" stop-color="rgba(255,205,90,0)"/></radialGradient>'+
+    '<radialGradient id="ocean" cx="35%" cy="35%"><stop offset="0%" stop-color="#4fa3e8"/><stop offset="60%" stop-color="#1d6fa5"/><stop offset="100%" stop-color="#123e5e"/></radialGradient>';
+  board.appendChild(defs);
+
+  /* ---- the Sun on the left edge ---- */
+  var sunX=W*0.06,sunY=cy,sunR=Math.min(W,H)*0.07;
+  sunPX=sunX;sunPY=sunY;
+  board.appendChild(el('circle',{cx:sunX,cy:sunY,r:sunR*2.8,fill:'url(#sunhalo)'}));
+  board.appendChild(el('circle',{cx:sunX,cy:sunY,r:sunR,fill:'url(#sung)'}));
+  /* sunlight arrows pointing at the Moon system */
+  for(var i=-1;i<=1;i++){
+    var ay=cy+i*OR*0.55;
+    board.appendChild(el('line',{x1:sunX+sunR*1.3,y1:ay,x2:sunX+sunR*2.6,y2:ay,
+      stroke:'rgba(255,205,90,.55)','stroke-width':3,'stroke-linecap':'round'}));
+    board.appendChild(el('polygon',{points:(sunX+sunR*2.6+8)+','+ay+' '+(sunX+sunR*2.6)+','+(ay-5)+' '+(sunX+sunR*2.6)+','+(ay+5),
+      fill:'rgba(255,205,90,.55)'}));
+  }
+  var sunLbl=el('text',{x:sunX,y:sunY+sunR+22,'text-anchor':'middle',fill:'rgba(255,210,63,.85)',
+    'font-family':'Orbitron','font-size':11,'font-weight':700,'letter-spacing':2});
+  sunLbl.textContent='☀ SUNLIGHT';board.appendChild(sunLbl);
+
+  /* ---- orbit ring ---- */
+  board.appendChild(el('circle',{cx:cx,cy:cy,r:OR,fill:'none',stroke:'rgba(126,141,181,.4)',
+    'stroke-width':2,'stroke-dasharray':'5 8'}));
+  /* waxing / waning labels: bottom half = waxing, top half = waning */
+  var waxLbl=el('text',{x:cx,y:cy+OR+30,'text-anchor':'middle',fill:'rgba(91,255,155,.75)','font-family':'Orbitron','font-size':11,'font-weight':700,'letter-spacing':2});
+  waxLbl.textContent='📈 WAXING SIDE (growing)';board.appendChild(waxLbl);
+  var wanLbl=el('text',{x:cx,y:cy-OR-20,'text-anchor':'middle',fill:'rgba(255,158,210,.8)','font-family':'Orbitron','font-size':11,'font-weight':700,'letter-spacing':2});
+  wanLbl.textContent='📉 WANING SIDE (shrinking)';board.appendChild(wanLbl);
+
+  /* ---- Earth in the middle — it SPINS, just like the real one ---- */
+  var ER=OR*0.3;ERg=ER;
+  board.appendChild(el('circle',{cx:cx,cy:cy,r:ER,fill:'url(#ocean)'}));
+  /* continents + Stapleford rotate together (one spin = one day) */
+  earthSpinG=el('g');
+  earthSpinG.appendChild(el('ellipse',{cx:cx-ER*0.25,cy:cy-ER*0.3,rx:ER*0.4,ry:ER*0.26,fill:'#2e7d4f'}));
+  earthSpinG.appendChild(el('ellipse',{cx:cx+ER*0.2,cy:cy+ER*0.35,rx:ER*0.32,ry:ER*0.2,fill:'#2e7d4f'}));
+  earthSpinG.appendChild(el('circle',{cx:cx-ER,cy:cy,r:4,fill:'#FFD23F',stroke:'#fff','stroke-width':1.5}));
+  board.appendChild(earthSpinG);
+  /* the night shadow does NOT rotate — it always faces away from the Sun */
+  board.appendChild(el('path',{d:'M '+cx+' '+(cy-ER)+' A '+ER+' '+ER+' 0 0 1 '+cx+' '+(cy+ER)+' Z',fill:'rgba(4,8,30,0.55)'}));
+  var eLbl=el('text',{x:cx,y:cy+ER+16,'text-anchor':'middle',fill:'rgba(220,230,255,.7)','font-family':'Rajdhani','font-size':12,'font-weight':700});
+  eLbl.textContent='EARTH — 1 spin = 1 day';board.appendChild(eLbl);
+  /* Stapleford tag + clock follow the dot around */
+  stapleTag=el('text',{x:0,y:0,'text-anchor':'middle',fill:'#FFD23F','font-family':'Rajdhani',
+    'font-size':13,'font-weight':700,'paint-order':'stroke',stroke:'rgba(0,0,0,.6)','stroke-width':3});
+  stapleTag.textContent='🏠 Stapleford';board.appendChild(stapleTag);
+  stapleTime=el('text',{x:cx,y:cy+ER+32,'text-anchor':'middle',fill:'rgba(220,230,255,.85)','font-family':'Rajdhani',
+    'font-size':12,'font-weight':700,'paint-order':'stroke',stroke:'rgba(0,0,0,.55)','stroke-width':3});
+  stapleTime.textContent='';board.appendChild(stapleTime);
+  /* live line: can Stapleford actually SEE the Moon right now? */
+  stapleNote=el('text',{x:cx,y:cy+ER+48,'text-anchor':'middle',fill:'rgba(255,210,63,.9)',
+    'font-family':'Rajdhani','font-size':12,'font-weight':700,'paint-order':'stroke',
+    stroke:'rgba(0,0,0,.55)','stroke-width':3});
+  stapleNote.textContent='';board.appendChild(stapleNote);
+
+  /* ---- target zone arc on the orbit ---- */
+  zoneArc=el('path',{d:'',fill:'none','stroke-width':10,'stroke-linecap':'round',opacity:0});
+  board.appendChild(zoneArc);
+
+  /* ---- the draggable Moon ---- */
+  moonG=el('g',{id:'moonG'});
+  board.appendChild(moonG);
+
+  /* ---- hold progress ring ---- */
+  holdRing=el('circle',{cx:0,cy:0,r:MR+12,fill:'none',stroke:'#5BFF9B','stroke-width':5,
+    'stroke-linecap':'round',opacity:0});
+  board.appendChild(holdRing);
+
+  /* ---- "SEEN FROM EARTH" live phase view (top-right) ---- */
+  var pvX=W-84,pvY=96,pvR=Math.min(44,W*0.06);
+  var pvBox=el('g');
+  pvBox.appendChild(el('rect',{x:pvX-pvR-16,y:pvY-pvR-30,width:(pvR+16)*2,height:pvR*2+66,rx:14,
+    fill:'rgba(14,21,53,.75)',stroke:'rgba(54,226,255,.4)','stroke-width':1.5}));
+  var pvT=el('text',{x:pvX,y:pvY-pvR-12,'text-anchor':'middle',fill:'var(--plasma)','font-family':'Orbitron','font-size':9,'font-weight':700,'letter-spacing':1.5});
+  pvT.textContent='SEEN FROM EARTH';pvBox.appendChild(pvT);
+  phaseViewG=el('g',{transform:'translate('+pvX+' '+pvY+')'});
+  pvBox.appendChild(phaseViewG);
+  phaseName=el('text',{x:pvX,y:pvY+pvR+22,'text-anchor':'middle',fill:'#fff','font-family':'Rajdhani','font-size':12,'font-weight':700});
+  phaseName.textContent='';pvBox.appendChild(phaseName);
+  board.appendChild(pvBox);
+  phaseViewG.setAttribute('data-r',pvR);
+
+  /* ---- "MATCH THIS" goal view (top-left) ---- */
+  var gvX=84,gvY=96;
+  var gvBox=el('g');
+  gvBox.appendChild(el('rect',{x:gvX-pvR-16,y:gvY-pvR-30,width:(pvR+16)*2,height:pvR*2+46,rx:14,
+    fill:'rgba(14,21,53,.75)',stroke:'rgba(255,210,63,.5)','stroke-width':1.5}));
+  var gvT=el('text',{x:gvX,y:gvY-pvR-12,'text-anchor':'middle',fill:'var(--gold)','font-family':'Orbitron','font-size':9,'font-weight':700,'letter-spacing':1.5});
+  gvT.textContent='🎯 MATCH THIS';gvBox.appendChild(gvT);
+  goalViewG=el('g',{transform:'translate('+gvX+' '+gvY+')'});
+  gvBox.appendChild(goalViewG);
+  board.appendChild(gvBox);
+  goalViewG.setAttribute('data-r',pvR);
+}
+
+/* Render a moon disc showing phase angle sRad into group g with radius r.
+   Waxing (s<0) = lit on the RIGHT, waning = lit on the LEFT — like the real sky. */
+function renderPhase(g,r,sRad){
+  g.innerHTML='';
+  var phi=Math.abs(sRad);                 /* 0 = new, PI = full */
+  var waxing=sRad<0;
+  var litSide=waxing?1:-1;                /* +1 = right */
+  g.appendChild(el('circle',{cx:0,cy:0,r:r,fill:'var(--moondark)',stroke:'rgba(126,141,181,.5)','stroke-width':1.5}));
+  /* lit semicircle on the lit side */
+  var semi='M 0 '+(-r)+' A '+r+' '+r+' 0 0 '+(litSide>0?1:0)+' 0 '+r+' Z';
+  g.appendChild(el('path',{d:semi,fill:'var(--moonlit)'}));
+  /* terminator ellipse: covers or extends depending on crescent vs gibbous */
+  var rx=r*Math.abs(Math.cos(phi));
+  g.appendChild(el('ellipse',{cx:0,cy:0,rx:Math.max(0.01,rx),ry:r,
+    fill:phi>Math.PI/2?'var(--moonlit)':'var(--moondark)'}));
+  /* craters, subtle */
+  g.appendChild(el('circle',{cx:-r*0.3,cy:-r*0.2,r:r*0.14,fill:'rgba(0,0,0,.12)'}));
+  g.appendChild(el('circle',{cx:r*0.25,cy:r*0.3,r:r*0.1,fill:'rgba(0,0,0,.12)'}));
+  g.appendChild(el('circle',{cx:r*0.1,cy:-r*0.35,r:r*0.08,fill:'rgba(0,0,0,.12)'}));
+}
+
+/* Which of the 8 phases are we currently showing? (for the live label) */
+function currentPhase(){
+  var s=deg(phaseS());
+  var bestP=PHASES[0],bestD=999;
+  PHASES.forEach(function(p){
+    var d=Math.abs(angDiff(s*Math.PI/180,p.sc*Math.PI/180))*180/Math.PI;
+    if(d<bestD){bestD=d;bestP=p;}
+  });
+  return bestP;
+}
+
+/* ============ LIVES (engine) ============ */
+function lives_render(){
+  var row=$('livesrow');row.innerHTML='';
+  for(var i=0;i<3;i++){
+    var s=document.createElementNS(SVGNS,'svg');
+    s.setAttribute('viewBox','0 0 24 24');s.setAttribute('class','life'+(i<lives?'':' gone'));
+    s.innerHTML='<path d="M12 21 C5 15 2 11.6 2 8.2 2 5.4 4.2 3.4 6.8 3.4 8.6 3.4 10.5 4.4 12 6.4 13.5 4.4 15.4 3.4 17.2 3.4 19.8 3.4 22 5.4 22 8.2 22 11.6 19 15 12 21Z" fill="#FF6B8A"/>';
+    row.appendChild(s);
+  }
+}
+
+/* ============ COLLECTION TRAY ============ */
+function trayRender(){
+  var t=$('tray');t.innerHTML='';
+  PHASES.forEach(function(p){
+    var d=document.createElement('div');
+    d.className='slot'+(collected[p.id]?' got':'');
+    d.textContent=p.e;d.title=p.name;
+    t.appendChild(d);
+  });
+}
+function collect(id){
+  if(collected[id])return;
+  collected[id]=true;trayRender();
+  var got=PHASES.filter(function(p){return collected[p.id];}).length;
+  flashPop('📖 '+phaseById(id).name+' collected! ('+got+'/8)',cx,cy-OR-40,'#36E2FF');
+  if(got===8&&!collectionDone){
+    collectionDone=true;
+    score+=500;$('scoreval').textContent=score;
+    showFlash('🌙 FULL COLLECTION!','All 8 phases — +500 BONUS!');
+    tone(523,0.12,'sine',0.07);tone(659,0.12,'sine',0.07,0.13);tone(784,0.12,'sine',0.07,0.26);tone(1047,0.3,'sine',0.07,0.39);
+  }
+}
+
+/* ============ MISSIONS ============ */
+function pick(a){return a[Math.floor(Math.random()*a.length)];}
+function newMission(){
+  var w=WAVES[waveIdx];
+  var lightning=(doneInWave===w.count-1);
+  /* pick a phase we're not already sitting on */
+  var options=w.phases.filter(function(id){
+    var p=phaseById(id);
+    return Math.abs(angDiff(moonA,phaseCentreAngle(p)))>(w.zone+35)*Math.PI/180;
+  });
+  var phase=phaseById(pick(options.length?options:w.phases));
+  var bonus=!lightning&&Math.random()<0.18;
+  var tl=w.time*DIFFS[diff].timeMult*(lightning?0.6:1);
+  mission={phase:phase,holdT:0,bonus:bonus,lightning:lightning,timeLeft:tl,total:tl};
+  /* goal thumbnail */
+  renderPhase(goalViewG,+goalViewG.getAttribute('data-r'),phase.sc*Math.PI/180);
+  /* hint arc on the orbit — deliberately SHORTER than the real answer zone,
+     so it points the way without giving the exact answer away */
+  var col=lightning?'#b28aff':(bonus?'#FFD23F':'#36E2FF');
+  var centre=phaseCentreAngle(phase);
+  var hintHalf=w.zone*(diff===0?0.4:0.18)*Math.PI/180; /* Guided: small hint, Pilot: tiny tick */
+  zoneArc.setAttribute('d',arcPath(cx,cy,OR,centre-hintHalf,centre+hintHalf));
+  zoneArc.setAttribute('stroke',col);
+  zoneArc.setAttribute('opacity',DIFFS[diff].showZone?0.85:0);
+  holdRing.setAttribute('stroke',col);
+  /* mission text */
+  var ask=w.tricky?pick(ASKS[phase.id].slice(1)):ASKS[phase.id][0];
+  $('instructBig').textContent=ask[0];
+  $('instructSmall').textContent=(lightning?'⚡ LIGHTNING FINALE — TRIPLE POINTS! ⚡  ':(bonus?'⭐ DOUBLE POINTS! ⭐  ':''))+ask[1]+(w.tricky?'  (hint: '+phase.e+')':'');
+  if(lightning){tone(988,0.07,'square',0.05);tone(1319,0.1,'square',0.05,0.08);}
+  state='play';
+  updateTimeHUD();
+}
+function inTargetZone(){
+  if(!mission)return false;
+  var w=WAVES[waveIdx];
+  return Math.abs(angDiff(moonA,phaseCentreAngle(mission.phase)))<w.zone*Math.PI/180;
+}
+
+/* ============ SUCCESS / FAIL ============ */
+function missionSuccess(){
+  state='success';
+  var timeBonus=Math.round(mission.timeLeft*12);
+  var pts=Math.round((100+timeBonus)*Math.min(streak,5)*DIFFS[diff].mult);
+  var speedy=(mission.timeLeft/mission.total)>0.6;
+  if(speedy)pts+=Math.round(50*DIFFS[diff].mult);
+  if(mission.lightning)pts*=3;
+  else if(mission.bonus)pts*=2;
+  score+=pts;$('scoreval').textContent=score;
+  streak++;maxStreak=Math.max(maxStreak,streak);
+  $('streakval').textContent=streak>1?'x'+Math.min(streak,5)+(streak>=4?' 🔥':''):'–';
+  if(streak===4){flashPop('🔥 ON FIRE! 🔥',cx,cy-OR-64,'#FF7A3D');tone(660,0.08,'square',0.05);tone(880,0.08,'square',0.05,0.09);tone(1100,0.14,'square',0.05,0.18);}
+  $('wrap').classList.toggle('frenzy',streak>=4);
+  missions++;
+  var mx=cx+Math.cos(moonA)*OR,my=cy+Math.sin(moonA)*OR;
+  /* phase-specific fun */
+  if(mission.phase.id==='full'){
+    howlSound();
+    var wolf=$('wolf');wolf.textContent='🐺';wolf.classList.add('howl');
+    flashPop('AWOOOOO! 🐺',W-90,H-120,'#FFD23F');
+    setTimeout(function(){wolf.textContent='🧑';wolf.classList.remove('howl');},1600);
+  }else if(mission.phase.id==='new'){
+    batSqueak();
+    flashPop('🦇 Perfect darkness!',W-90,H-120,'#b28aff');
+  }else{
+    chime();
+  }
+  if(mission.lightning){tone(1047,0.09,'sine',0.06,0.25);tone(1319,0.09,'sine',0.06,0.34);tone(1568,0.2,'sine',0.06,0.43);}
+  else if(mission.bonus){tone(880,0.1,'sine',0.06,0.3);tone(1320,0.2,'sine',0.06,0.4);}
+  flashPop(pick(CHEERS[mission.phase.id]),mx,my-40,'#fff');
+  flashPop('+'+pts+(mission.lightning?' ⚡x3!':(mission.bonus?' ⭐x2!':'')),mx,my+8,
+    mission.lightning?'#b28aff':(mission.bonus?'#FFD23F':'#5BFF9B'));
+  if(speedy)flashPop('⚡ SPEEDY! +50',mx,my+40,'#36E2FF');
+  confetti(mx,my);
+  if(streak>=4)confetti(mx,my);
+  collect(mission.phase.id);
+  holdRing.setAttribute('opacity',0);
+  doneInWave++;
+  setTimeout(function(){
+    if(!running)return;
+    if(doneInWave>=WAVES[waveIdx].count)nextWave();
+    else newMission();
+  },500);
+}
+function missionFail(){
+  state='success';
+  sadBuzz();
+  streak=1;$('streakval').textContent='–';
+  $('wrap').classList.remove('frenzy');
+  lives--;lives_render();
+  var mx=cx+Math.cos(moonA)*OR,my=cy+Math.sin(moonA)*OR;
+  flashPop('Too slow — the '+mission.phase.name+' got away! 😴',mx,my-30,'#FF3D6E');
+  shakeBoard();
+  holdRing.setAttribute('opacity',0);
+  if(lives<=0){setTimeout(function(){endGame(false);},600);return;}
+  setTimeout(function(){if(running)newMission();},650);
+}
+function nextWave(){
+  waveIdx++;doneInWave=0;
+  if(waveIdx>=WAVES.length)addEndlessWave(waveIdx-BASE_WAVE_COUNT);
+  $('wavebadge').textContent='WAVE '+WAVES[waveIdx].name;
+  var isBonus=waveIdx>=BASE_WAVE_COUNT;
+  showFlash((isBonus?'WARP WAVE ':'WAVE ')+WAVES[waveIdx].name,
+    WAVES[waveIdx].label+'<br><span style="color:#9affff;">'+pick(FACTS)+'</span>');
+  chime();
+  setTimeout(function(){if(running)newMission();},1500);
+}
+function showFlash(big,small){
+  $('flashtext').innerHTML=big+'<div style="font-family:Rajdhani;font-size:16px;color:var(--text);letter-spacing:.04em;margin-top:8px;max-width:520px;font-weight:600;">'+small+'</div>';
+  var f=$('flash');f.classList.remove('show');void f.offsetWidth;f.classList.add('show');
+}
+
+/* ============ VISUAL POPS (engine) ============ */
+function flashPop(txt,x,y,col){
+  var rect=board.getBoundingClientRect();
+  var px=rect.left+x*(rect.width/W),py=rect.top+y*(rect.height/H);
+  var d=document.createElement('div');
+  d.style.cssText='position:fixed;left:'+px+'px;top:'+py+'px;transform:translate(-50%,-50%);z-index:30;'+
+    'font-family:Orbitron,sans-serif;font-weight:900;font-size:17px;pointer-events:none;color:'+col+';'+
+    'text-shadow:0 0 14px rgba(0,0,0,.7),0 0 10px currentColor;transition:all .9s ease-out;white-space:nowrap;';
+  d.textContent=txt;document.body.appendChild(d);
+  requestAnimationFrame(function(){d.style.top=(py-44)+'px';d.style.opacity='0';});
+  setTimeout(function(){d.remove();},900);
+}
+function confetti(x,y){
+  var glyphs=['✨','⭐','🌟','💫'];
+  for(var i=0;i<6;i++){
+    (function(i){
+      var rect=board.getBoundingClientRect();
+      var px=rect.left+x*(rect.width/W),py=rect.top+y*(rect.height/H);
+      var d=document.createElement('div');
+      var dx=(Math.random()-0.5)*140,dy=-40-Math.random()*90;
+      d.style.cssText='position:fixed;left:'+px+'px;top:'+py+'px;z-index:29;pointer-events:none;'+
+        'font-size:'+(14+Math.random()*12)+'px;transition:all .8s ease-out;';
+      d.textContent=glyphs[i%glyphs.length];
+      document.body.appendChild(d);
+      requestAnimationFrame(function(){d.style.transform='translate('+dx+'px,'+dy+'px) rotate('+(Math.random()*360)+'deg)';d.style.opacity='0';});
+      setTimeout(function(){d.remove();},820);
+    })(i);
+  }
+}
+function shakeBoard(){board.animate?board.animate([{transform:'translateX(0)'},{transform:'translateX(-6px)'},{transform:'translateX(5px)'},{transform:'translateX(0)'}],{duration:300}):0;}
+
+/* ============ SPIN INPUT (engine + fling) ============ */
+var dragging=false,dragStartAng=0,dragStartMoon=0,lastDragAng=0,lastDragT=0,dragVel=0;
+function pointAngle(clientX,clientY){
+  var rect=board.getBoundingClientRect();
+  var x=(clientX-rect.left)*(W/rect.width),y=(clientY-rect.top)*(H/rect.height);
+  return Math.atan2(y-cy,x-cx);
+}
+function dragStart(x,y){
+  if(!running)return;
+  dragging=true;board.classList.add('grabbing');
+  dragStartAng=pointAngle(x,y);dragStartMoon=moonA;boostV=0;
+  lastDragAng=dragStartAng;lastDragT=performance.now();dragVel=0;
+}
+function dragMove(x,y){
+  if(!dragging)return;
+  var a=pointAngle(x,y),now=performance.now();
+  moonA=dragStartMoon+angDiff(a,dragStartAng);
+  var dt=(now-lastDragT)/1000;
+  if(dt>0.005){dragVel=0.7*dragVel+0.3*(angDiff(a,lastDragAng)/dt);lastDragAng=a;lastDragT=now;}
+}
+function dragEnd(){
+  if(dragging&&performance.now()-lastDragT<90){
+    boostV=Math.max(-10,Math.min(10,dragVel)); /* fling! */
+  }
+  dragging=false;dragVel=0;board.classList.remove('grabbing');
+}
+board.addEventListener('mousedown',function(e){e.preventDefault();dragStart(e.clientX,e.clientY);});
+document.addEventListener('mousemove',function(e){dragMove(e.clientX,e.clientY);});
+document.addEventListener('mouseup',dragEnd);
+board.addEventListener('touchstart',function(e){e.preventDefault();var t=e.touches[0];dragStart(t.clientX,t.clientY);},{passive:false});
+board.addEventListener('touchmove',function(e){e.preventDefault();var t=e.touches[0];dragMove(t.clientX,t.clientY);},{passive:false});
+board.addEventListener('touchend',function(e){e.preventDefault();dragEnd();},{passive:false});
+document.addEventListener('keydown',function(e){
+  if(!running)return;
+  if(e.key==='ArrowLeft')moonA-=0.09;
+  if(e.key==='ArrowRight')moonA+=0.09;
+});
+$('boostbtn').addEventListener('click',function(){
+  if(!running)return;
+  boostV=9*(Math.random()<0.5?1:-1);
+  whoosh();
+  flashPop('WHEEE! 🌙💨',cx,cy-OR-64,'#FFD23F');
+});
+
+/* ============ MAIN LOOP ============ */
+function loop(ts){
+  requestAnimationFrame(loop);
+  var dt=Math.min((ts-lastT)/1000||0,0.05);lastT=ts;
+  if(Math.abs(boostV)>0.02){moonA+=boostV*dt;boostV*=Math.pow(0.15,dt);}
+  /* draw the Moon at its orbit position — its lit hemisphere always FACES the Sun,
+     so at the top, bottom or far side of the orbit the shading tilts correctly */
+  var mx=cx+Math.cos(moonA)*OR,my=cy+Math.sin(moonA)*OR;
+  var litDir=Math.atan2(sunPY-my,sunPX-mx); /* direction from Moon to Sun */
+  moonG.innerHTML='';
+  var mg=el('g',{transform:'translate('+mx+' '+my+') rotate('+deg(litDir)+')'});
+  mg.appendChild(el('circle',{cx:0,cy:0,r:MR,fill:'var(--moondark)',stroke:'rgba(220,230,255,.5)','stroke-width':1.5}));
+  /* lit half on the side pointing at the Sun (+x in this rotated group) */
+  mg.appendChild(el('path',{d:'M 0 '+(-MR)+' A '+MR+' '+MR+' 0 0 1 0 '+MR+' Z',fill:'var(--moonlit)'}));
+  mg.appendChild(el('circle',{cx:MR*0.35,cy:-MR*0.2,r:MR*0.14,fill:'rgba(0,0,0,.15)'}));
+  mg.appendChild(el('circle',{cx:MR*0.15,cy:MR*0.3,r:MR*0.1,fill:'rgba(0,0,0,.1)'}));
+  moonG.appendChild(mg);
+  /* live phase view */
+  if(phaseViewG){
+    renderPhase(phaseViewG,+phaseViewG.getAttribute('data-r'),phaseS());
+    var cp=currentPhase();
+    phaseName.textContent=DIFFS[diff].showZone?cp.e+' '+cp.name:cp.e;
+  }
+  /* honest astronomy: the Earth spins, Stapleford rides on it, and it can only
+     see the Moon when the Moon is above ITS horizon — so a full moon shows up
+     at Stapleford's NIGHT, exactly like real life */
+  if(earthSpinG){
+    earthSpin+=dt*TAU/DAY_SECONDS;
+    earthSpinG.setAttribute('transform','rotate('+deg(-earthSpin)+' '+cx+' '+cy+')');
+    var sa=SUN_DIR-earthSpin;                       /* spins the SAME way the Moon orbits */
+    var sx=cx+Math.cos(sa)*ERg,sy=cy+Math.sin(sa)*ERg;
+    stapleTag.setAttribute('x',cx+Math.cos(sa)*(ERg+22));
+    stapleTag.setAttribute('y',cy+Math.sin(sa)*(ERg+22)+4);
+    var hour=Math.floor(((12+earthSpin/TAU*24)%24+24)%24);
+    var isDay=Math.abs(angDiff(sa,SUN_DIR))<Math.PI/2;
+    stapleTime.textContent='🕐 Stapleford time: '+(hour<10?'0':'')+hour+':00 '+(isDay?'☀ daytime':'🌙 night-time');
+    if(stapleNote){
+      var phi=Math.abs(phaseS());
+      var moonUp=Math.abs(angDiff(moonA,sa))<Math.PI/2;   /* above Stapleford's horizon? */
+      if(!moonUp)stapleNote.textContent='⬇️ Moon is below Stapleford\'s horizon — can\'t see it right now';
+      else if(phi<Math.PI*0.17)stapleNote.textContent='🌑 Moon is up over Stapleford — but too dark to spot!';
+      else if(isDay)stapleNote.textContent='👀 Stapleford can see this Moon in the DAYTIME sky!';
+      else stapleNote.textContent='🌕 Stapleford sees this Moon in the NIGHT sky!';
+    }
+  }
+  if(running&&state==='play'&&mission){
+    mission.timeLeft-=dt;
+    updateTimeHUD();
+    if(mission.timeLeft<3&&mission.timeLeft>0){
+      if(Math.floor(mission.timeLeft*2)!==Math.floor((mission.timeLeft+dt)*2))tone(740,0.05,'square',0.04);
+    }
+    if(mission.timeLeft<=0){missionFail();return;}
+    if(inTargetZone()){
+      mission.holdT+=dt;
+      var C=2*Math.PI*(MR+12);
+      holdRing.setAttribute('cx',mx);holdRing.setAttribute('cy',my);
+      holdRing.setAttribute('opacity',0.95);
+      holdRing.setAttribute('stroke-dasharray',C);
+      holdRing.setAttribute('stroke-dashoffset',C*(1-Math.min(1,mission.holdT/HOLD_NEED)));
+      if(mission.holdT>=HOLD_NEED)missionSuccess();
+    }else{
+      mission.holdT=Math.max(0,mission.holdT-dt*2);
+      if(mission.holdT<=0)holdRing.setAttribute('opacity',0);
+    }
+  }
+}
+function updateTimeHUD(){
+  if(!mission){$('timeval').textContent='–';return;}
+  var t=Math.max(0,mission.timeLeft);
+  $('timeval').textContent=t.toFixed(1)+'s';
+  $('timeval').classList.toggle('low',t<3);
+}
+
+/* ============ START / END (engine flow) ============ */
+function startGame(){
+  score=0;lives=3;streak=1;maxStreak=1;waveIdx=0;doneInWave=0;missions=0;moonA=Math.PI/2;boostV=0;
+  collected={};collectionDone=false;
+  WAVES.length=BASE_WAVE_COUNT;
+  $('scoreval').textContent='0';$('streakval').textContent='–';
+  $('wavebadge').textContent='WAVE '+WAVES[0].name;
+  $('wrap').classList.remove('frenzy');
+  lives_render();trayRender();
+  $('startpanel').style.display='none';$('endpanel').style.display='none';$('boardpanel').style.display='none';
+  $('boostbtn').classList.add('show');$('tray').classList.add('show');
+  $('wolf').classList.add('show');$('wolf').textContent='🧑';
+  buildScene();
+  running=true;state='idle';mission=null;
+  showFlash('WAVE 1',WAVES[0].label+'<br><span style="color:#9affff;">'+FACTS[0]+'</span>');
+  setTimeout(function(){if(running)newMission();},1500);
+}
+
+var pendingScore=0,pendingSaved=false;
+async function endGame(won){
+  running=false;state='over';mission=null;
+  $('wrap').classList.remove('frenzy');
+  $('boostbtn').classList.remove('show');$('tray').classList.remove('show');$('wolf').classList.remove('show');
+  var reachedEndless=waveIdx>=BASE_WAVE_COUNT;
+  var got=PHASES.filter(function(p){return collected[p.id];}).length;
+  var rank,col;
+  if(reachedEndless&&waveIdx>=BASE_WAVE_COUNT+2){rank='LUNAR LEGEND';col='#FFD23F';}
+  else if(reachedEndless){rank='WARP-SPEED MOONWATCHER';col='#36E2FF';}
+  else if(waveIdx>=3){rank='MOON MASTER';col='#5BFF9B';}
+  else if(waveIdx>=1){rank='PHASE DETECTIVE';col='#FF7A3D';}
+  else{rank='CRESCENT CADET';col='#7E8DB5';}
+  $('endbadge').textContent=collectionDone?'🌕':(waveIdx>=3?'★':'✦');
+  $('endbadge').style.color=col;$('endbadge').style.borderColor=col;$('endbadge').style.boxShadow='0 0 30px '+col;
+  $('endrank').textContent=rank;$('endrank').style.color=col;
+  $('endtitle').textContent=reachedEndless?'WARP SPEED!':'OUT OF LIVES';
+  $('endscore').textContent=score;
+  $('endstats').innerHTML=missions+' phases matched &middot; best streak x'+Math.min(maxStreak,5)+
+    '<br>Collection: '+got+'/8 phases'+(collectionDone?' — FULL SET! 🌙':'')+
+    '<br>You reached wave '+WAVES[Math.min(waveIdx,WAVES.length-1)].name+(reachedEndless?' — warp speed!':'. Keep orbiting!');
+  if(reachedEndless){tone(523,0.14,'sine',0.06);tone(659,0.14,'sine',0.06,0.15);tone(784,0.3,'sine',0.06,0.3);}
+  else{tone(220,0.3,'sawtooth',0.07);tone(110,0.5,'sawtooth',0.07,0.25);}
+  $('endpanel').style.display='flex';
+  pendingScore=score;pendingSaved=false;
+  $('hsbadge').style.display='none';$('nameform').style.display='none';
+  if(score>0){
+    var p=currentPlayer();
+    if(p){sbInsert(p.name,score).then(function(){loadEndBoard(p.name,score);});$('hsbadge').textContent='✓ Saved to '+p.name+"'s record";$('hsbadge').style.display='block';}
+    else{sbQualifies(score).then(function(q){if(q){$('hsbadge').textContent='🏆 Top score! Log your name:';$('hsbadge').style.display='block';$('nameform').style.display='flex';$('nameinput').value='';setTimeout(function(){try{$('nameinput').focus();}catch(e){}},300);}});}
+  }
+  loadEndBoard(null,null);
+}
+$('savescore').addEventListener('click',async function(){
+  if(pendingSaved)return;
+  var name=$('nameinput').value.trim().slice(0,14)||'Mystery moonwatcher';
+  $('savescore').textContent='Saving…';$('savescore').disabled=true;
+  var ok=await sbInsert(name,pendingScore);
+  if(ok){pendingSaved=true;$('hsbadge').style.display='none';$('nameform').style.display='none';tone(660,0.1,'sine',0.06);tone(990,0.2,'sine',0.06,0.12);loadEndBoard(name,pendingScore);}
+  else{$('savescore').textContent='Save';$('savescore').disabled=false;$('hsbadge').textContent='Connection error — try again';$('hsbadge').style.display='block';}
+});
+$('nameinput').addEventListener('keydown',function(e){if(e.key==='Enter')$('savescore').click();e.stopPropagation();});
+
+/* ============ DIFFICULTY + BUTTONS (engine) ============ */
+$('difficulty').addEventListener('click',function(e){
+  var b=e.target.closest('.diffbtn');if(!b)return;
+  diff=parseInt(b.dataset.d,10);
+  document.querySelectorAll('.diffbtn').forEach(function(x){x.classList.toggle('on',x===b);});
+  $('diffNote').textContent=DIFFS[diff].note;
+});
+function openBoard(){$('boardpanel').style.display='flex';loadMainBoard();}
+$('boardbtn').addEventListener('click',openBoard);
+$('boardbtn2').addEventListener('click',openBoard);
+$('closeboard').addEventListener('click',function(){$('boardpanel').style.display='none';});
+$('refreshboard').addEventListener('click',loadMainBoard);
+$('launchbtn').addEventListener('click',startGame);
+$('againbtn').addEventListener('click',startGame);
+
+window.addEventListener('resize',function(){initStars();if(running){buildScene();if(mission)newMission();}});
+
+/* init */
+initStars();drawStars();lives=3;lives_render();trayRender();layout();buildScene();
+requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

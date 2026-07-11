@@ -179,6 +179,12 @@
   .daynight .card-art{background:radial-gradient(circle at 20% 50%,rgba(255,203,69,.3),transparent 55%),
     linear-gradient(100deg,#132a55 45%,#0a0f2e 55%);}
   .daynight .card-tag{color:#ffcb45;} .daynight .play{background:#ffcb45;color:#3a2400;}
+
+  .moon{background:linear-gradient(160deg,#141234,#251a3f 55%,#070b1e);}
+  .moon:hover{box-shadow:0 18px 50px rgba(178,138,255,.32);border-color:#b28aff;}
+  .moon .card-art{background:radial-gradient(circle at 70% 30%,rgba(237,233,218,.18),transparent 50%),
+    linear-gradient(160deg,#141234,#0a0f2e);}
+  .moon .card-tag{color:#b28aff;} .moon .play{background:#b28aff;color:#1d0f38;}
   .worldcup{background:linear-gradient(160deg,#0f3d24,#071f12);}
   .worldcup:hover{box-shadow:0 18px 50px rgba(255,210,63,.38);border-color:#FFD23F;}
   .worldcup .card-art{background:radial-gradient(circle at 50% 118%,rgba(91,255,155,.24),transparent 60%),
@@ -255,7 +261,7 @@
     <div class="kicker">Choose your game</div>
     <h1 id="bigtitle" title="Psst… try clicking me!">Year 5 Arcade</h1>
     <p class="hello" id="hello">🎮 Ready to play?</p>
-    <p class="sub">Fourteen games in one place — match all 48 real World Cup flags and win penalty shootouts, run a theme park stall by reading graphs, carve and print in the lino studio, spot the odd stage in life cycles, explore South America and save the rainforest, defend your Legion outpost, master Roman numerals from I to C, explore Victorian Britain and the British Empire, and classify and measure angles with a real protractor. Sign in, and every game you play is saved to your record.</p>
+    <p class="sub">Seventeen games in one place — spin the Earth to wake up real cities, orbit the Moon through all 8 phases, match all 48 real World Cup flags and win penalty shootouts, run a theme park stall by reading graphs, carve and print in the lino studio, spot the odd stage in life cycles, explore South America and save the rainforest, defend your Legion outpost, master Roman numerals from I to C, explore Victorian Britain and the British Empire, and classify and measure angles with a real protractor. Sign in, and every game you play is saved to your record.</p>
   </header>
 
   <main class="cards">
@@ -326,6 +332,37 @@
         <div class="card-tag">Spin It</div>
         <div class="card-title">Day &amp; Night Spinner</div>
         <div class="card-desc">Spin a real world map so London, Berlin or Hong Kong get day, night, sunrise or sunset — even two cities at once — before the clock runs out.</div>
+        <span class="play">PLAY ▶</span>
+      </div>
+    </a>
+
+    <a class="card moon" id="card-moon" href="moon-phases-clicker.html">
+      <span class="badge2d" style="background:rgba(178,138,255,.92);color:#1d0f38;">NEW</span>
+      <div class="lockmsg">🔒 Sign in first</div>
+      <div class="card-art">
+        <svg class="art-svg pulse" viewBox="0 0 200 150" aria-hidden="true">
+          <circle cx="100" cy="78" r="18" fill="#1d6fa5"/>
+          <ellipse cx="94" cy="72" rx="7" ry="5" fill="#2e7d4f"/>
+          <path d="M100 60 A18 18 0 0 1 100 96 Z" fill="rgba(4,8,30,.55)"/>
+          <circle cx="93" cy="78" r="2.5" fill="#FFD23F" stroke="#fff" stroke-width="1"/>
+          <circle cx="100" cy="78" r="46" fill="none" stroke="rgba(126,141,181,.45)" stroke-width="2" stroke-dasharray="4 6"/>
+          <circle cx="146" cy="78" r="11" fill="#232842" stroke="rgba(220,230,255,.5)"/>
+          <path d="M146 67 A11 11 0 0 0 146 89 Z" fill="#EDE9DA"/>
+          <circle cx="100" cy="32" r="9" fill="#232842" stroke="rgba(220,230,255,.4)"/>
+          <path d="M100 23 A9 9 0 0 0 100 41 Z" fill="#EDE9DA"/>
+          <ellipse cx="100" cy="32" rx="4.5" ry="9" fill="#232842"/>
+          <circle cx="54" cy="78" r="9" fill="#232842" stroke="rgba(220,230,255,.4)"/>
+          <circle cx="100" cy="124" r="9" fill="#EDE9DA" stroke="rgba(220,230,255,.5)"/>
+          <line x1="8" y1="70" x2="24" y2="70" stroke="#ffcb45" stroke-width="3" stroke-linecap="round"/>
+          <line x1="8" y1="86" x2="24" y2="86" stroke="#ffcb45" stroke-width="3" stroke-linecap="round"/>
+          <text x="168" y="34" font-size="15">🐺</text>
+          <circle cx="176" cy="120" r="1.5" fill="#fff"/><circle cx="36" cy="24" r="1.4" fill="#fff"/><circle cx="160" cy="60" r="1.2" fill="#fff"/>
+        </svg>
+      </div>
+      <div class="card-body">
+        <div class="card-tag">Orbit It</div>
+        <div class="card-title">Moon Phases Clicker</div>
+        <div class="card-desc">Drag the Moon around a spinning Earth and watch the phase change live from Stapleford. Collect all 8 phases — and beware the full-moon werewolf!</div>
         <span class="play">PLAY ▶</span>
       </div>
     </a>
@@ -778,6 +815,7 @@ function setCardsLocked(locked){
   $('card-nebula').classList.toggle('locked',locked);
   $('card-builder').classList.toggle('locked',locked);
   $('card-daynight').classList.toggle('locked',locked);
+  $('card-moon').classList.toggle('locked',locked);
   $('card-outpost').classList.toggle('locked',locked);
   $('card-empire').classList.toggle('locked',locked);
   $('card-museum').classList.toggle('locked',locked);
@@ -971,7 +1009,8 @@ async function loadRecords(p){
   var extraNames={solar:'🪐 SOLAR SYSTEM BUILDER',solarbuilder:'🪐 SOLAR SYSTEM BUILDER',
     solarsystem:'🪐 SOLAR SYSTEM BUILDER',builder:'🪐 SOLAR SYSTEM BUILDER',
     outpost:'🏰 LEGION OUTPOST',legionoutpost:'🏰 LEGION OUTPOST',legion:'🏰 LEGION OUTPOST',
-    daynight:'🌍 DAY & NIGHT SPINNER',dayandnight:'🌍 DAY & NIGHT SPINNER',spinner:'🌍 DAY & NIGHT SPINNER'};
+    daynight:'🌍 DAY & NIGHT SPINNER',dayandnight:'🌍 DAY & NIGHT SPINNER',spinner:'🌍 DAY & NIGHT SPINNER',
+    moonphases:'🌕 MOON PHASES CLICKER',moon:'🌕 MOON PHASES CLICKER',phases:'🌕 MOON PHASES CLICKER'};
   var othersBy={};
   rows.forEach(function(x){
     if(knownIds.indexOf(x.game)<0){(othersBy[x.game]=othersBy[x.game]||[]).push(x);}
