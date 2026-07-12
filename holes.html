@@ -103,6 +103,20 @@
   .lb-loading{display:flex;align-items:center;justify-content:center;gap:8px;font-size:13px;color:var(--text-dim);font-weight:600;padding:12px 0;}
   .lb-spin{width:18px;height:18px;border:3px solid rgba(196,160,110,.3);border-top-color:var(--gold);border-radius:50%;animation:lbspin .7s linear infinite;}
   @keyframes lbspin{to{transform:rotate(360deg);}}
+
+  /* morning quiz */
+  #quizpanel{display:none;}
+  #quizq{font-family:'Orbitron',sans-serif;font-weight:700;font-size:clamp(15px,4vw,20px);
+    color:#fff;line-height:1.4;max-width:440px;text-shadow:0 0 14px rgba(255,210,63,.3);}
+  #quizopts{display:flex;flex-direction:column;gap:9px;width:100%;max-width:400px;}
+  .qopt{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:16px;color:var(--text);
+    background:rgba(58,44,16,.75);border:1.5px solid var(--sand-dim);border-radius:13px;
+    padding:13px 14px;cursor:pointer;transition:transform .07s,background .12s;line-height:1.3;}
+  .qopt:active{transform:scale(.97);}
+  .qopt.right{background:rgba(91,255,155,.25);border-color:var(--ok);color:#dfffe9;}
+  .qopt.wrongpick{background:rgba(255,61,110,.25);border-color:var(--danger);color:#ffdfe8;}
+  #quizreward{font-family:'Orbitron',sans-serif;font-weight:900;font-size:17px;color:var(--gold);
+    min-height:24px;text-shadow:0 0 16px rgba(255,210,63,.5);}
 </style>
 </head>
 <body>
@@ -144,12 +158,12 @@
       <div>🧅 Onion — lizards flee from you!</div>
       <div>🦎 Lizard — costs a heart… unless onioned</div>
       <div>🐍 Rattlesnake — onions DON'T work!</div>
+      <div>🌻 Sunflower seeds — +120, but lizards smell them: double bite!</div>
       <div>🪨 Rock — dig under it and it FALLS…</div>
       <div>🧨 TNT — blasts through one rock</div>
       <div>✨ Golden shovel — 12 digs use no water</div>
       <div>🔥 Dig fast — combos multiply points ×5</div>
-      <div>🍑 Sploosh jar — big points</div>
-      <div>💄 Kate Barlow's tube — huge points</div>
+      <div>☀️ Morning question — right answer = bonus tool!</div>
       <div>🧰 Treasure chest — finishes the hole!</div>
       <div>⬆️ Stuck? You can always climb back up</div>
     </div>
@@ -180,6 +194,15 @@
       <button class="cta" id="againbtn">DIG AGAIN</button>
       <button class="cta ghost" id="boardbtn2">🏆 Full board</button>
     </div>
+  </div>
+
+  <!-- MORNING QUIZ -->
+  <div class="panel" id="quizpanel">
+    <div class="rank" style="color:var(--gold);">☀️ MORNING QUESTION</div>
+    <div class="endstat" style="margin-top:-8px;">Mr Pendanski quizzes D-tent before the dig. Get it right for bonus marks and a tool!</div>
+    <div id="quizq">Question…</div>
+    <div id="quizopts"></div>
+    <div id="quizreward"></div>
   </div>
 
   <!-- LEADERBOARD -->
@@ -222,7 +245,9 @@ function tone(f,d,type,vol,delay){try{if(!actx)actx=new(window.AudioContext||win
 function digSound(){tone(120+Math.random()*40,0.08,'square',0.05);tone(70,0.1,'sawtooth',0.03,0.02);}
 
 /* ============ TILE TYPES ============ */
-var T={EMPTY:0,DIRT:1,CLAY:2,ROCK:3,WATER:4,ONION:5,SPLOOSH:6,LIZARD:7,CHEST:8,FOSSIL:9,TUBE:10,TNT:11,SNAKE:12,SHOVEL:13};
+var T={EMPTY:0,DIRT:1,CLAY:2,ROCK:3,WATER:4,ONION:5,SPLOOSH:6,LIZARD:7,CHEST:8,FOSSIL:9,TUBE:10,TNT:11,SNAKE:12,SHOVEL:13,SEED:14};
+
+var QUIZ=[{"q":"What is the name of the detention camp Stanley is sent to?","a":"Camp Green Lake","w":["Camp Sunshine","Camp Timber Lake","Camp Desert Rose"]},{"q":"What crime was Stanley wrongly accused of?","a":"Stealing trainers","w":["Stealing a car","Breaking a window","Shoplifting sweets"]},{"q":"What is Stanley's family name?","a":"Yelnats","w":["Walker","Barlow","Pendanski"]},{"q":"What do the boys dig every day?","a":"Holes","w":["Tunnels","Wells","Trenches"]},{"q":"How wide and deep must each hole be?","a":"Five feet","w":["Three feet","Ten feet","Two feet"]},{"q":"What does the Warden claim digging holes builds?","a":"Character","w":["Muscles","Patience","Discipline"]},{"q":"What is Zero's real name?","a":"Hector Zeroni","w":["Rex Zeroni","Theodore Zeroni","Jose Zeroni"]},{"q":"What does Stanley teach Zero?","a":"To read","w":["To dig faster","To swim","To fight"]},{"q":"What is X-Ray's real name?","a":"Rex","w":["Alan","Ricky","Jose"]},{"q":"Who runs the camp and secretly searches for treasure?","a":"The Warden","w":["Mr Sir","Mr Pendanski","The Sheriff"]},{"q":"What does Mr Sir constantly eat?","a":"Sunflower seeds","w":["Peanuts","Gum","Onions"]},{"q":"What does the Warden paint her nails with, which is actually dangerous?","a":"Rattlesnake venom polish","w":["Cactus juice polish","Spider venom polish","Scorpion polish"]},{"q":"What happens if a boy finds something interesting while digging?","a":"They get the rest of the day off","w":["They get extra water","They get a prize","Nothing happens"]},{"q":"What is Camp Green Lake mostly covered in?","a":"Dry, cracked dirt","w":["Grass","Sand dunes","Forest"]},{"q":"What dangerous creature lives near the camp?","a":"Yellow-spotted lizards","w":["Scorpions","Rattlesnakes","Coyotes"]},{"q":"What is Stanley's family famous for, according to legend?","a":"A curse","w":["Good luck","Great wealth","Being outlaws"]},{"q":"Who cursed the Yelnats family long ago?","a":"Madame Zeroni","w":["Kissin' Kate Barlow","The Warden","Sam the onion man"]},{"q":"What did Stanley's great-great-grandfather fail to do?","a":"Carry a pig up a mountain","w":["Marry Madame Zeroni","Pay a debt","Dig a hole"]},{"q":"What must the boys drink lots of in the heat?","a":"Water","w":["Juice","Milk","Soda"]},{"q":"Who does Stanley go looking for in the desert?","a":"Zero","w":["Mr Sir","X-Ray","The Warden"]},{"q":"What old object do Stanley and Zero shelter under?","a":"An overturned boat","w":["A broken truck","A cave","A barn"]},{"q":"What is the name of the thumb-shaped rock formation?","a":"God's Thumb","w":["Devil's Fist","Eagle's Peak","Green Lake Rock"]},{"q":"What food do Stanley and Zero survive on in the desert?","a":"Onions","w":["Berries","Cactus fruit","Peaches"]},{"q":"Why don't the yellow-spotted lizards bite Stanley and Zero?","a":"They smell of onions","w":["They are too fast","They wear boots","They hide well"]},{"q":"What does Stanley carry Zero up the mountain to do?","a":"Break the family curse","w":["Escape the camp","Find water","Find treasure"]},{"q":"What does Stanley sing to Zero on the mountain?","a":"The lullaby his father sang","w":["The camp song","A nursery rhyme","A church hymn"]},{"q":"Who was Kissin' Kate Barlow before she became an outlaw?","a":"A schoolteacher","w":["A sheriff","A nurse","A cook"]},{"q":"Who did Kate Barlow fall in love with?","a":"Sam, the onion man","w":["Elya Yelnats","Mr Sir","Trout Walker"]},{"q":"What happens to Green Lake after Sam is killed?","a":"It dries up","w":["It floods","It freezes","It disappears"]},{"q":"What is the buried treasure connected to?","a":"Stanley's great-great-grandfather's stolen suitcase","w":["Kate Barlow's gold coins","The Warden's jewellery","Sam's boat"]},{"q":"Why can't the Warden keep the suitcase Stanley finds?","a":"It has Stanley's family name on it","w":["It's empty","Mr Sir takes it","It's buried too deep"]},{"q":"What happens to Camp Green Lake at the end of the story?","a":"It is shut down","w":["It becomes a school","It floods again","It burns down"]},{"q":"What invention does Stanley's father finally succeed in creating?","a":"A cure for foot odour","w":["A new type of shoe","A rain machine","A treasure detector"]},{"q":"How is the family curse finally broken?","a":"Stanley carries Zero up the mountain and sings, like Elya should have done","w":["The Warden apologises","The camp closes","The treasure is found"]},{"q":"A place with no water and very dry","a":"arid","w":["humid","fertile","frozen"]},{"q":"Not guilty of a crime","a":"innocent","w":["guilty","ashamed","nervous"]},{"q":"Empty and lifeless","a":"desolate","w":["crowded","colourful","peaceful"]},{"q":"A relative from long ago","a":"ancestor","w":["sibling","neighbour","stranger"]},{"q":"Unable to read or write","a":"illiterate","w":["clever","forgetful","careless"]},{"q":"Very tired","a":"exhausted","w":["excited","nervous","curious"]},{"q":"A spell that brings bad luck","a":"curse","w":["blessing","gift","prize"]},{"q":"Stubbornly refusing to obey","a":"defiant","w":["obedient","shy","friendly"]},{"q":"Cruel and intending harm","a":"malicious","w":["kind","gentle","helpful"]},{"q":"Far away and hard to reach","a":"remote","w":["nearby","popular","crowded"]},{"q":"Famous for something bad","a":"notorious","w":["unknown","beloved","shy"]},{"q":"Very fierce or savage","a":"ferocious","w":["gentle","calm","friendly"]},{"q":"Dangerous and likely to betray you","a":"treacherous","w":["trustworthy","safe","loyal"]},{"q":"Showing no pity or mercy","a":"ruthless","w":["merciful","kind","forgiving"]},{"q":"Able to recover quickly from hardship","a":"resilient","w":["fragile","weak","lazy"]},{"q":"Weak and lacking strength","a":"feeble","w":["powerful","strong","sturdy"]},{"q":"A long period without rain","a":"drought","w":["flood","storm","blizzard"]},{"q":"Distrustful or wary of something","a":"suspicious","w":["trusting","careless","cheerful"]},{"q":"To dig out earth carefully","a":"excavate","w":["plant","water","flatten"]},{"q":"A person kept in prison","a":"convict","w":["visitor","guard","teacher"]},{"q":"Cut off from others","a":"isolated","w":["surrounded","connected","popular"]},{"q":"To make someone believe something false","a":"deceive","w":["help","warn","protect"]},{"q":"Extremely hot and dry weather","a":"scorching","w":["freezing","damp","mild"]},{"q":"A strong desire for revenge","a":"vengeance","w":["forgiveness","sympathy","patience"]},{"q":"To wrongly blame someone","a":"accuse","w":["praise","thank","forgive"]},{"q":"Poisonous, like a snake's bite","a":"venomous","w":["harmless","friendly","tasty"]},{"q":"Great and lasting sadness","a":"sorrow","w":["joy","relief","excitement"]},{"q":"To survive despite great difficulty","a":"endure","w":["surrender","quit","forget"]},{"q":"A strong feeling of loyalty between friends","a":"friendship","w":["rivalry","jealousy","distance"]},{"q":"To finally understand something confusing","a":"realise","w":["ignore","forget","doubt"]},{"q":"A person who breaks the law and hides from it","a":"outlaw","w":["sheriff","judge","witness"]},{"q":"Whose nickname is \"Zero\"?","a":"Hector Zeroni","w":["Rex","Alan","Jose"]},{"q":"Whose nickname is \"X-Ray\"?","a":"Rex","w":["Hector","Theodore","Ricky"]},{"q":"Whose nickname is \"Armpit\"?","a":"Theodore","w":["Alan","Jose","Rex"]},{"q":"Whose nickname is \"Magnet\"?","a":"Jose","w":["Ricky","Theodore","Hector"]},{"q":"Whose nickname is \"Squid\"?","a":"Alan","w":["Jose","Rex","Theodore"]},{"q":"Whose nickname is \"Zigzag\"?","a":"Ricky","w":["Alan","Jose","Theodore"]},{"q":"What object leads to Stanley's wrongful arrest?","a":"A pair of stolen trainers","w":["A stolen wallet","A stolen bike","A broken window"]},{"q":"What does the Warden paint on her nails, made from something dangerous?","a":"Rattlesnake venom","w":["Cactus juice","Scorpion poison","Snake oil"]},{"q":"What tool does every boy use to dig?","a":"A shovel","w":["A pickaxe","A trowel","Their hands"]},{"q":"What is the sweet treat made from spiced peaches called?","a":"Sploosh","w":["Jam","Chutney","Pickle"]},{"q":"What does Stanley find buried that changes everything?","a":"A suitcase","w":["A gold ring","A treasure chest","A diary"]},{"q":"What old object shelters Stanley and Zero in the desert?","a":"Sam's overturned boat","w":["Kate Barlow's wagon","A ruined cabin","A water tower"]},{"q":"Why does Zero run away from camp?","a":"He hits Mr Pendanski with a shovel and is scared","w":["He finds treasure","He is homesick","He is caught stealing"]},{"q":"Why does Stanley go after Zero into the desert?","a":"He is worried Zero won't survive alone","w":["He wants to escape too","The Warden orders him to","He wants treasure for himself"]},{"q":"What does Kissin' Kate Barlow do before she robs someone?","a":"Kiss them","w":["Shake their hand","Sing to them","Warn them"]},{"q":"Why do the yellow-spotted lizards avoid Stanley and Zero?","a":"They are covered in the smell of onions","w":["They are too fast","They hide underground","It is too hot"]},{"q":"Why can't the Warden legally take Stanley's suitcase?","a":"It already has his family name on it","w":["It's empty","It is government property","Stanley refuses to give it up"]},{"q":"What does Sam the onion man sell around the town?","a":"Onions","w":["Fish","Bread","Peaches"]},{"q":"How is Zero connected to the Yelnats family curse?","a":"He is a descendant of Madame Zeroni, who cursed the family","w":["He is descended from Kate Barlow","He is descended from the Warden","He has no connection"]},{"q":"What does Stanley do to break the curse, echoing his great-great-grandfather's broken promise?","a":"Carries Zero up a mountain","w":["Buries treasure","Escapes camp alone","Writes a letter"]},{"q":"What does Stanley teach Zero in return for help digging?","a":"How to read","w":["How to swim","How to fight","How to sing"]},{"q":"What happens to the treasure Stanley and Zero find?","a":"Stanley's family and Zero's family share it","w":["The Warden keeps it all","It is given to the camp","It is never found"]},{"q":"Who turns out to be a descendant of Camp Green Lake's original owners?","a":"The Warden","w":["Mr Sir","Mr Pendanski","X-Ray"]},{"q":"What happens to Camp Green Lake by the end of the story?","a":"It is shut down for good","w":["It reopens as a school","It becomes a national park","Nothing changes"]},{"q":"What was Madame Zeroni's one condition for giving Elya her pig?","a":"He must carry her up a mountain and sing to her","w":["He must marry her daughter","He must give her gold","He must dig her a well"]},{"q":"What does Elya Yelnats fail to do, causing the curse?","a":"Keep his promise to Madame Zeroni","w":["Pay off his debts","Marry Myra Menke","Leave Latvia"]},{"q":"Who does Elya Yelnats want to marry before leaving for America?","a":"Myra Menke","w":["Kate Barlow","Madame Zeroni's daughter","Myra Walker"]},{"q":"What finally breaks the curse, according to the legend?","a":"A descendant carrying a Zeroni up the mountain","w":["Finding gold","Marrying into the Zeroni family","Digging a thousand holes"]},{"q":"What is Stanley's father's job?","a":"An inventor","w":["A teacher","A lawyer","A farmer"]},{"q":"What smell does Stanley's father's final invention get rid of?","a":"Foot odour","w":["Bad breath","Body odour","Onion smell"]},{"q":"What sport did Clyde Livingston play?","a":"Baseball","w":["Basketball","Football","Tennis"]},{"q":"What is Clyde Livingston's nickname?","a":"Sweet Feet","w":["Fast Eddie","Big Shot","Lightning"]},{"q":"What falls onto Stanley, leading to his arrest?","a":"A pair of trainers","w":["A brick","A ball","A backpack"]},{"q":"How many holes must each boy dig per day?","a":"One","w":["Two","Three","Five"]},{"q":"What do the boys use to measure a hole?","a":"Their shovel","w":["A tape measure","Their arms","A ruler"]},{"q":"What is unusual about the lake at Camp Green Lake?","a":"It has dried up completely","w":["It is bright blue","It is full of fish","It is frozen"]},{"q":"What tent group is Stanley assigned to?","a":"D tent","w":["A tent","B tent","C tent"]},{"q":"What is Squid's real name?","a":"Alan","w":["Jose","Ricky","Theodore"]},{"q":"What is Armpit's real name?","a":"Theodore","w":["Jose","Alan","Rex"]},{"q":"What is Magnet's real name?","a":"Jose","w":["Ricky","Alan","Theodore"]},{"q":"What did Magnet once try to steal, giving him his nickname?","a":"A dog","w":["A car stereo","A bicycle","A wallet"]},{"q":"What does Mr Pendanski always insist on calling the boys?","a":"Their real names","w":["Their nicknames","Numbers","Nothing"]},{"q":"What do Stanley and Zero find inside the old boat?","a":"Jars of preserved peaches (Sploosh)","w":["Gold coins","Old letters","A shovel"]},{"q":"Who first discovered onions keep the lizards away?","a":"Sam the onion man","w":["Elya Yelnats","Kissin' Kate Barlow","The Warden"]},{"q":"What does Sam sell around the town of Green Lake?","a":"Onions","w":["Fish","Bread","Peaches"]},{"q":"What happens to Sam near the start of the town's story?","a":"He is shot and killed","w":["He moves away","He becomes rich","He marries Kate"]},{"q":"Why is Sam killed?","a":"He and schoolteacher Kate Barlow kissed, against the law at the time","w":["He stole gold","He attacked the sheriff","He refused to pay taxes"]},{"q":"What does Green Lake become after this tragedy?","a":"A dried-up desert","w":["A swimming resort","A forest","A swamp"]},{"q":"How is the Warden related to Trout Walker?","a":"She is his descendant","w":["She is his sister","They are not related","He is her son"]},{"q":"What is the Warden secretly searching for?","a":"Buried treasure","w":["Water","A missing person","Gold-painted rocks"]},{"q":"What is the real reason the boys are made to dig holes?","a":"The Warden is searching for buried treasure","w":["To build character as claimed","To find water","To punish them"]},{"q":"What finally stops the Warden from digging further?","a":"A huge nest of yellow-spotted lizards","w":["The police arriving","A storm","Running out of water"]},{"q":"Who arrives to rescue Stanley and Zero near the end?","a":"Stanley's parents and a lawyer","w":["The police alone","Mr Sir","X-Ray"]},{"q":"What happens to the camp after the rescue?","a":"It is closed down by the attorney general","w":["The Warden is promoted","The camp becomes famous","Nothing changes"]},{"q":"What breaks the Yelnats family curse?","a":"Stanley carrying Zero up the mountain and singing to him","w":["Finding the treasure","Leaving the camp","Zero learning to read"]},{"q":"Who does Stanley's family split the treasure with?","a":"Zero's family","w":["The Warden","Mr Sir","The camp"]},{"q":"What does Stanley's father finally invent?","a":"A cure for foot odour","w":["A new fuel","A water filter","A type of shoe"]},{"q":"Who wrote the book Holes?","a":"Louis Sachar","w":["Roald Dahl","J.K. Rowling","R.J. Palacio"]},{"q":"In which US state is Camp Green Lake set?","a":"Texas","w":["Arizona","Nevada","California"]},{"q":"What happened to the real Green Lake long before Stanley arrived?","a":"It dried up completely","w":["It became a resort","It flooded the town","It turned into a forest"]},{"q":"What year was the film adaptation of Holes released?","a":"2003","w":["1998","2008","2010"]}];
 
 /* story events revealed on special digs */
 var STORIES=[
@@ -240,7 +265,7 @@ var cv=$('game'),cx=cv.getContext('2d');
 var COLS=9,tile=40,rows=0,grid=[],hits=[]; // hits for clay
 var px=4,py=0,camY=0;
 var score=0,hearts=3,water=100,level=1,depthMax=0,onion=0,running=false,tnt=1;
-var combo=1,lastDigT=0,goldDigs=0,fallingRocks=[];
+var combo=1,lastDigT=0,goldDigs=0,fallingRocks=[],seedSmell=0,gameOver=false;
 var chestRow=0,drainMult=1,facing=1,digFlash=0,thirstT=0;
 var particles=[];
 
@@ -274,7 +299,8 @@ function genLevel(){
         else if(rnd<0.225)t=T.FOSSIL;
         else if(rnd<0.233+deep*0.03)t=T.SNAKE;
         else if(rnd<0.241)t=T.SHOVEL;
-        else if(rnd<0.2445&&r>6)t=T.TUBE;
+        else if(rnd<0.251)t=T.SEED;
+        else if(rnd<0.2545&&r>6)t=T.TUBE;
       }
       grid[r].push(t);hits[r].push(0);
     }
@@ -350,15 +376,20 @@ function tryMove(dx,dy){
   }
   // collectibles / hazards
   if(t===T.WATER){water=Math.min(100,water+42);score+=50;tone(700,0.12,'sine',0.06);tone(1000,0.16,'sine',0.06,0.1);flashToast('💧 <b>Canteen!</b> Water refilled.',1100);}
-  else if(t===T.ONION){onion=14;score+=60;tone(500,0.1,'sine',0.06);tone(750,0.14,'sine',0.06,0.08);flashToast('🧅 <b>Sam\'s onions!</b> Lizards will flee for 14 digs.',1400);}
+  else if(t===T.ONION){onion=14;if(seedSmell>0){seedSmell=0;flashToast('🧅 <b>Sam\'s onions!</b> The onion smell hides the sunflower seeds too. Lizards flee for 14 digs.',1800);}else flashToast('🧅 <b>Sam\'s onions!</b> Lizards will flee for 14 digs.',1400);score+=60;tone(500,0.1,'sine',0.06);tone(750,0.14,'sine',0.06,0.08);}
   else if(t===T.TNT){tnt++;score+=40;tone(400,0.1,'square',0.06);tone(600,0.12,'square',0.06,0.08);flashToast('🧨 <b>TNT!</b> Walk into a rock to blast it. You have '+tnt+'.',1500);}
   else if(t===T.SHOVEL){goldDigs=12;score+=80;tone(784,0.1,'sine',0.07);tone(1046,0.14,'sine',0.07,0.08);flashToast('✨ <b>Golden shovel!</b> The next 12 digs use NO water.',1600);}
+  else if(t===T.SEED){seedSmell=20;score+=120;tone(620,0.1,'sine',0.06);tone(830,0.12,'sine',0.06,0.08);flashToast('🌻 <b>Mr Sir\'s sunflower seeds!</b> +120… but lizards LOVE the smell. Careful for 20 digs! (An onion hides it.)',2400);}
   else if(t===T.SPLOOSH){score+=150;tone(880,0.14,'sine',0.07);flashToast('🍑 <b>Sploosh!</b> A jar of Kate Barlow\'s spiced peaches. +150',1400);}
   else if(t===T.FOSSIL){score+=50;tone(600,0.12,'triangle',0.06);flashToast(STORIES[Math.floor(Math.random()*STORIES.length)],2600);}
   else if(t===T.TUBE){score+=300;tone(1046,0.2,'sine',0.08);flashToast('💄 <b>A gold tube — KB!</b> Kissin\' Kate Barlow\'s lipstick. +300',1800);confettiPop(nx,ny);}
   else if(t===T.LIZARD){
     if(onion>0){score+=100;tone(300,0.12,'sawtooth',0.05);flashToast('🦎💨 <b>The lizard smells onion and flees!</b> +100',1300);}
-    else{hearts--;renderHearts();shake();tone(140,0.3,'sawtooth',0.09);flashToast('🦎 <b>Yellow-spotted lizard!</b> It gets you. −1 heart',1500);
+    else{
+      var dmg=seedSmell>0?2:1;
+      hearts-=dmg;renderHearts();shake();tone(140,0.3,'sawtooth',0.09);
+      if(dmg===2){seedSmell=0;flashToast('🦎🌻 <b>The lizard smells sunflower seeds on you!</b> Double bite! −2 hearts',1900);}
+      else flashToast('🦎 <b>Yellow-spotted lizard!</b> It gets you. −1 heart',1500);
       if(hearts<=0){grid[ny][nx]=T.EMPTY;endGame(false,'A yellow-spotted lizard got you');return;}}
   }
   else if(t===T.SNAKE){
@@ -370,6 +401,7 @@ function tryMove(dx,dy){
   grid[ny][nx]=T.EMPTY;
   px=nx;py=ny;
   if(t!==T.EMPTY&&onion>0){onion--;}
+  if(t!==T.EMPTY&&seedSmell>0){seedSmell--;}
   checkRockAbove(nx,ny);
   depthMax=Math.max(depthMax,py-1);
   // gravity: fall while below is empty — but NOT when climbing up
@@ -438,12 +470,13 @@ function updateHUD(){
   if(tnt>0)chips.push('🧨 ×'+tnt);
   if(onion>0)chips.push('🧅 ×'+onion);
   if(goldDigs>0)chips.push('✨ ×'+goldDigs);
+  if(seedSmell>0)chips.push('🌻⚠️ ×'+seedSmell);
   $('onionchip').style.display=chips.length?'inline-block':'none';
   $('onionchip').textContent=chips.join('  ');
 }
 
 /* ============ RENDER ============ */
-var EMO={};EMO[T.WATER]='💧';EMO[T.ONION]='🧅';EMO[T.SPLOOSH]='🍑';EMO[T.LIZARD]='🦎';EMO[T.CHEST]='🧰';EMO[T.FOSSIL]='🦴';EMO[T.TUBE]='💄';EMO[T.TNT]='🧨';EMO[T.SNAKE]='🐍';EMO[T.SHOVEL]='✨';
+var EMO={};EMO[T.WATER]='💧';EMO[T.ONION]='🧅';EMO[T.SPLOOSH]='🍑';EMO[T.LIZARD]='🦎';EMO[T.CHEST]='🧰';EMO[T.FOSSIL]='🦴';EMO[T.TUBE]='💄';EMO[T.TNT]='🧨';EMO[T.SNAKE]='🐍';EMO[T.SHOVEL]='✨';EMO[T.SEED]='🌻';
 function draw(){
   var w=cv.width/devicePixelRatio,h=cv.height/devicePixelRatio;
   // camera follows player
@@ -605,25 +638,75 @@ function winLevel(){
   flashToast('🧰 <b>TREASURE!</b> Hole '+level+' complete! +'+bonus+' (water bonus included)',2200);
   level++;
   setTimeout(function(){
-    if(!running)return;
+    if(gameOver)return;
     genLevel();
     water=100;thirstT=0;
     updateHUD();
-    flashToast('🌅 <b>A new day at camp!</b> Canteen refilled. Hole '+level+': deeper, hotter, more danger…',2200);
-    tone(523,0.1,'sine',0.05);tone(659,0.14,'sine',0.05,0.09);
+    askQuestion(function(){
+      flashToast('🌅 <b>A new day at camp!</b> Canteen refilled. Hole '+level+': deeper, hotter, more danger…',2200);
+      tone(523,0.1,'sine',0.05);tone(659,0.14,'sine',0.05,0.09);
+    });
   },1600);
 }
+/* ============ MORNING QUIZ ============ */
+function askQuestion(done){
+  running=false;
+  var item=QUIZ[Math.floor(Math.random()*QUIZ.length)];
+  $('quizq').textContent=item.q;
+  $('quizreward').textContent='';
+  var opts=item.w.slice(0,3).concat([item.a]);
+  opts.sort(function(){return Math.random()-0.5;});
+  var box=$('quizopts');box.innerHTML='';
+  var answered=false;
+  opts.forEach(function(v){
+    var b=document.createElement('button');
+    b.className='qopt';b.textContent=v;
+    b.addEventListener('click',function(){
+      if(answered)return;answered=true;
+      var all=box.querySelectorAll('.qopt');
+      for(var i=0;i<all.length;i++){if(all[i].textContent===item.a)all[i].classList.add('right');}
+      if(v===item.a){
+        score+=200;
+        var rewards=[
+          {k:'tnt', msg:'+200 marks & a stick of TNT 🧨!', run:function(){tnt++;}},
+          {k:'shovel', msg:'+200 marks & the golden shovel ✨ (12 free digs)!', run:function(){goldDigs=12;}},
+          {k:'water', msg:'+200 marks & a full canteen 💧!', run:function(){water=100;}},
+          {k:'onion', msg:'+200 marks & onion power 🧅 (14 digs)!', run:function(){onion=14;seedSmell=0;}}
+        ];
+        var rw=rewards[Math.floor(Math.random()*rewards.length)];
+        rw.run();
+        $('quizreward').textContent='✅ Correct! '+rw.msg;
+        tone(659,0.12,'sine',0.07);tone(880,0.16,'sine',0.07,0.1);
+      }else{
+        b.classList.add('wrongpick');
+        $('quizreward').textContent='❌ Not this time — the answer is shown in green.';
+        tone(180,0.25,'sawtooth',0.06);
+      }
+      updateHUD();
+      setTimeout(function(){
+        $('quizpanel').style.display='none';
+        running=true;
+        done&&done();
+      },v===item.a?1500:2300);
+    });
+    box.appendChild(b);
+  });
+  $('quizpanel').style.display='flex';
+}
+
 function startGame(){
   score=0;hearts=3;water=100;level=1;depthMax=0;onion=0;thirstT=0;particles=[];tnt=1;
-  combo=1;lastDigT=0;goldDigs=0;fallingRocks=[];
+  combo=1;lastDigT=0;goldDigs=0;fallingRocks=[];seedSmell=0;gameOver=false;
   genLevel();renderHearts();updateHUD();
   $('startpanel').style.display='none';
   $('endpanel').style.display='none';
-  running=true;
-  flashToast('⛏️ <b>Dig!</b> Find the treasure chest buried below.',2000);
+  askQuestion(function(){
+    flashToast('⛏️ <b>Dig!</b> Find the treasure chest buried below.',2000);
+  });
 }
 async function endGame(won,reason){
-  running=false;
+  running=false;gameOver=true;
+  $('quizpanel').style.display='none';
   var rank,badge;
   if(score>=6000){rank='LEGEND OF D-TENT';badge='👑';}
   else if(score>=3500){rank='CAVEMAN';badge='🏆';}
