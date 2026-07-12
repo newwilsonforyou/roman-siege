@@ -265,8 +265,42 @@
   </header>
 
   <main class="cards">
-    <a class="card worldcup" id="card-worldcup" href="worldcup-flag-match.html">
+    <a class="card holes" id="card-holes" href="holes.html">
       <span class="newbadge">✦ NEW!</span>
+      <div class="lockmsg">🔒 Sign in first</div>
+      <div class="card-art" style="background:linear-gradient(180deg,#7ec8ff 0%,#ffd9a0 55%,#C7935B 55%);">
+        <svg class="art-svg pulse" viewBox="0 0 200 150" aria-hidden="true">
+          <circle cx="168" cy="26" r="16" fill="#FFF3B0"/>
+          <path d="M0 84 Q50 74 100 84 Q150 92 200 82 L200 150 L0 150 Z" fill="#C7935B"/>
+          <ellipse cx="86" cy="102" rx="34" ry="13" fill="#3A2A14"/>
+          <ellipse cx="86" cy="99" rx="34" ry="13" fill="#5a4222"/>
+          <ellipse cx="86" cy="100" rx="26" ry="9" fill="#241a0c"/>
+          <path d="M45 96 Q40 78 52 66" stroke="#8a6017" stroke-width="5" fill="none" stroke-linecap="round"/>
+          <rect x="44" y="56" width="18" height="14" rx="4" fill="#9B968A" transform="rotate(-18 53 63)"/>
+          <g transform="translate(128,60)">
+            <rect x="6" y="14" width="14" height="18" rx="4" fill="#E86A17"/>
+            <circle cx="13" cy="7" r="8" fill="#C98A5E"/>
+            <path d="M4 5 a9 9 0 0 1 18 0 Z" fill="#F2C14E"/>
+          </g>
+          <g transform="translate(20,118)">
+            <ellipse cx="12" cy="6" rx="12" ry="5" fill="#9BBF3B"/>
+            <circle cx="22" cy="4" r="4" fill="#9BBF3B"/>
+            <circle cx="8" cy="5" r="1.6" fill="#3a2400"/><circle cx="14" cy="6" r="1.6" fill="#3a2400"/>
+          </g>
+          <rect x="152" y="112" width="26" height="17" rx="3" fill="#8a6017" stroke="#F2C14E" stroke-width="2"/>
+          <rect x="152" y="108" width="26" height="7" rx="3" fill="#F2C14E"/>
+        </svg>
+      </div>
+      <div class="card-body">
+        <div class="card-tag">Book Adventure &middot; Digger</div>
+        <div class="card-title">Holes</div>
+        <div class="card-desc">Inspired by Louis Sachar's book <i>Holes</i>! Dig tunnels at Camp Green Lake, watch your water, dodge yellow-spotted lizards with Sam's onions, and blast rocks with TNT to reach the buried treasure.</div>
+        <span class="play">PLAY ▶</span>
+      </div>
+    </a>
+
+    <a class="card worldcup" id="card-worldcup" href="worldcup-flag-match.html">
+      <span class="badge2d" style="background:rgba(91,217,127,.92);color:#063;">⚽ 2026</span>
       <div class="lockmsg">🔒 Sign in first</div>
       <div class="card-art">
         <svg class="art-svg pulse" viewBox="0 0 200 150" aria-hidden="true">
@@ -1102,9 +1136,9 @@ function renderHello(){
     '🔥 The leaderboards await, '+name+'…'
   ]:[
     '🎮 Ready to play?',
-    '⚡ Fourteen games. One champion. You?',
+    '⚡ Fifteen games. One champion. You?',
     '🏆 Sign in and chase the high scores!',
-    '⚽ New! Match all 48 World Cup flags…'
+    '⛏️ New! Dig for treasure in Holes…'
   ];
   $('hello').textContent=msgs[Math.floor(Math.random()*msgs.length)];
 }
