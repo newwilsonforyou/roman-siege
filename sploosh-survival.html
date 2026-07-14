@@ -257,10 +257,10 @@ var CFG={
 
   /* ---- difficulty ramp: EASY at the start, gets HARDER over time ----
      Everything scales with "progress" = time/DIFF_RAMP (0 → 1).           */
-  DIFF_RAMP:150,                // seconds to reach full difficulty
-  HEAT_MIN:0.72,               // decay multiplier at the very start (gentle first day)
+  DIFF_RAMP:165,                // seconds to reach full difficulty (stays gentle a bit longer)
+  HEAT_MIN:0.58,               // decay multiplier at the very start (slower first day)
   HEAT_MAX:2.6,                // decay multiplier once fully ramped up (harsh)
-  NIGHT_EXTRA_MIN:0.08,        // extra night decay early (small — first night is calm)
+  NIGHT_EXTRA_MIN:0.06,        // extra night decay early (very small — first night is calm)
   NIGHT_EXTRA_MAX:0.65,        // extra night decay late (nights get deadly)
   STORM_EXTRA_MIN:0.22,        // extra storm decay early
   STORM_EXTRA_MAX:0.60,        // extra storm decay late
@@ -1070,16 +1070,26 @@ async function endGame(reason){
     '<br>"If only, if only, the woodpecker sighs…"';
   $('endpanel').style.display='flex';
   try{window.parent.postMessage({holesArcade:true,game:GAME_ID,score:score},'*');}catch(e){}
-  /* leaderboard qualify + save flow */
+  /* leaderboard: auto-save under the signed-in name — no prompt to the child */
   $('hsbadge').style.display='none';$('nameform').style.display='none';
   $('endboard').innerHTML=lbLoading();
-  var q=await sbQualifies(score);
-  if(q&&score>0){
-    $('hsbadge').style.display='inline-block';
-    $('nameform').style.display='flex';
-    var pn=playerName();if(pn)$('nameinput').value=pn;
+  var pn=playerName();
+  if(pn){
+    /* signed in via the arcade: save straight away with their login name */
+    if(score>0){
+      var wasTop=await sbQualifies(score);
+      await sbInsert(pn,score);
+      $('hsbadge').textContent=wasTop?('🏆 New top score — saved as '+pn+'!'):('✓ Saved to your record, '+pn);
+      $('hsbadge').style.display='inline-block';
+    }
+    loadEndBoard(pn,score);
+  }else{
+    /* not signed in (playing the file directly): keep a manual save as a fallback */
+    $('hsbadge').innerHTML='🏆 Top score! Log your name:';
+    var q=await sbQualifies(score);
+    if(q&&score>0){$('hsbadge').style.display='inline-block';$('nameform').style.display='flex';}
+    loadEndBoard(null,null);
   }
-  loadEndBoard(null,null);
 }
 $('savescore').addEventListener('click',async function(){
   var n=$('nameinput').value.trim().slice(0,14);
