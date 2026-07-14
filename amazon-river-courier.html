@@ -1219,13 +1219,8 @@ async function openBoard(from){
   $('boardpanel').style.display='flex';
   $('boardlist').innerHTML='<div class="yard-row" style="justify-content:center;">Loading couriers…</div>';
   try{
-    var r=await fetch(SB_URL+'/rest/v1/scores?select=name,score,created_at&game=eq.'+GAME_ID+
+    var r=await fetch(SB_URL+'/rest/v1/scores?select=name,score&game=eq.'+GAME_ID+
       '&order=score.desc&limit=15',{headers:sbH()});
-    if(!r.ok){
-      /* maybe the created_at column isn't there — retry without it */
-      r=await fetch(SB_URL+'/rest/v1/scores?select=name,score&game=eq.'+GAME_ID+
-        '&order=score.desc&limit=15',{headers:sbH()});
-    }
     if(!r.ok){
       var em='';try{em=await r.text();}catch(e){}
       $('boardlist').innerHTML='<div class="yard-row" style="justify-content:center;">Board error '+r.status+'. '+esc2(em.slice(0,80))+'</div>';
@@ -1253,8 +1248,7 @@ async function openBoard(from){
       return '<div class="yard-row" style="'+(mine?'border-color:var(--accent2);background:rgba(82,214,138,.14);':'')+'">'+
         '<div style="font-size:15px;width:26px;text-align:center;font-weight:800;color:var(--dim);">'+(medals[i]||(i+1))+'</div>'+
         '<div class="board-av">'+av+'</div>'+
-        '<div class="yard-info" style="flex:1;"><div class="yard-nm">'+esc2(x.name||'Mystery capybara')+(mine?' ⭐':'')+'</div>'+
-        '<div class="yard-desc">'+(x.created_at?new Date(x.created_at).toLocaleDateString():'')+'</div></div>'+
+        '<div class="yard-info" style="flex:1;"><div class="yard-nm">'+esc2(x.name||'Mystery capybara')+(mine?' ⭐':'')+'</div></div>'+
         '<div class="wallet" style="font-size:16px;">'+x.score+' 🪙</div></div>';
     }).join('');
   }catch(e){
