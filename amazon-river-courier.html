@@ -67,8 +67,16 @@
   #btnBoost{background:rgba(255,179,64,.4);border-color:rgba(255,179,64,.8);}
 
   .panel{position:absolute;inset:0;z-index:10;display:flex;flex-direction:column;
-    align-items:center;justify-content:center;gap:14px;padding:24px;text-align:center;
+    align-items:center;justify-content:flex-start;gap:12px;padding:20px 18px 96px;text-align:center;
+    overflow-y:auto;-webkit-overflow-scrolling:touch;
     background:radial-gradient(circle at 50% 25%,rgba(30,66,42,.78),rgba(10,24,16,.95));backdrop-filter:blur(3px);}
+  .panel::before{content:'';flex:1 0 auto;}   /* centre content when it fits, allow scroll when it doesn't */
+  .panel::after{content:'';flex:1 0 auto;}
+  /* sticky action bar: buttons ALWAYS visible at the bottom of the panel */
+  .actionbar{position:sticky;bottom:0;left:0;right:0;margin:8px -18px -96px;padding:12px 14px calc(14px + env(safe-area-inset-bottom));
+    display:flex;gap:10px;flex-wrap:wrap;justify-content:center;z-index:2;
+    background:linear-gradient(180deg,rgba(10,24,16,0),rgba(8,20,13,.96) 42%);}
+  .actionbar .cta{margin:0;}
   .title{font-family:'Baloo 2',sans-serif;font-weight:800;font-size:clamp(32px,8vw,56px);line-height:1;
     background:linear-gradient(180deg,#fff,var(--accent));-webkit-background-clip:text;background-clip:text;
     -webkit-text-fill-color:transparent;filter:drop-shadow(0 4px 14px rgba(255,179,64,.35));}
@@ -81,6 +89,13 @@
     background:linear-gradient(120deg,var(--accent2),#a5ffcb);border:0;border-radius:16px;padding:15px 46px;
     cursor:pointer;box-shadow:0 6px 24px rgba(82,214,138,.45);transition:transform .08s;}
   .cta:active{transform:scale(.96);}
+  @media (max-width:520px){
+    .cta{font-size:16px;padding:13px 22px;}
+    .tagline{font-size:14px;}
+    .chips{gap:6px;} .chip{font-size:12px;padding:5px 11px;}
+    .keys{font-size:12px;}
+    .title{font-size:clamp(30px,9vw,52px);}
+  }
   .cta.ghost{background:rgba(255,255,255,.08);color:var(--text);
     border:2px solid rgba(255,255,255,.25);box-shadow:none;}
   .wallet{font-family:'Baloo 2',sans-serif;font-weight:800;font-size:17px;color:var(--accent);}
@@ -89,6 +104,9 @@
   .yard-row{display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.07);
     border:1.5px solid rgba(255,255,255,.14);border-radius:14px;padding:10px 12px;text-align:left;}
   .yard-ic{font-size:30px;}
+  .board-av{width:38px;height:38px;min-width:38px;border-radius:50%;
+    background:rgba(255,255,255,.12);border:2px solid rgba(255,255,255,.22);
+    display:flex;align-items:center;justify-content:center;font-size:22px;}
   .yard-info{flex:1;min-width:0;}
   .yard-nm{font-family:'Baloo 2',sans-serif;font-weight:800;font-size:15px;}
   .yard-desc{font-size:12px;color:var(--dim);font-weight:700;line-height:1.3;}
@@ -160,7 +178,7 @@
   <div class="panel" id="startpanel">
     <div style="font-size:56px;">🛶</div>
     <div class="title">AMAZON RIVER<br>COURIER</div>
-    <div class="tagline">Deep in the Amazon rainforest, you're the fastest capybara boat courier on the river. Dolphins leap, monkeys chatter, and sudden storms sweep in off the canopy. Load fruit at the floating market, then weave through the jungle channels to the glowing dock before the timer runs out — and mind the floating logs! Three late orders and your shift is over.</div>
+    <div class="tagline">You're the fastest capybara boat courier in the Amazon! Load fruit at the floating market, race it to the glowing dock before the timer runs out, and mind the logs. Three late orders ends your shift.</div>
     <div class="chips">
       <div class="chip">🧭 Follow the <b>arrow</b> to the dock</div>
       <div class="chip">⚡ Boost your motor for a burst</div>
@@ -176,7 +194,7 @@
     </div>
     <div class="keys">Steer <b>W A S D</b> or <b>arrows</b> &nbsp;·&nbsp; Boost <b>SHIFT</b> or <b>SPACE</b> &nbsp;·&nbsp; Horn <b>H</b><br>On tablets &amp; phones, use the on-screen buttons</div>
     <div class="wallet" id="walletStart">🪙 0 coins in the bank</div>
-    <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;">
+    <div class="actionbar">
       <button class="cta" id="startbtn">START SHIFT</button>
       <button class="cta ghost" id="yardbtn">🔧 Boat Yard</button>
       <button class="cta ghost" id="boardbtn">🏆 Leaderboard</button>
@@ -189,7 +207,7 @@
     <div class="title" style="font-size:clamp(26px,6vw,40px);">RIVER LEGENDS</div>
     <div class="tagline" style="font-size:14px;">The best single-shift coin hauls from couriers all over the world.</div>
     <div class="yard-list" id="boardlist" style="max-width:400px;"></div>
-    <button class="cta ghost" id="boardclose">← Back</button>
+    <div class="actionbar"><button class="cta ghost" id="boardclose">← Back</button></div>
   </div>
 
   <!-- END -->
@@ -202,7 +220,7 @@
     <div class="endstat" id="saveline" style="color:var(--accent2);font-size:13px;"></div>
     <div class="endstat" id="topboard" style="font-size:13px;"></div>
     <div class="wallet" id="walletEnd"></div>
-    <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;">
+    <div class="actionbar">
       <button class="cta" id="againbtn">NEW SHIFT</button>
       <button class="cta ghost" id="yardbtn2">🔧 Boat Yard</button>
       <button class="cta ghost" id="boardbtn2">🏆 Full board</button>
@@ -216,7 +234,7 @@
     <div class="tagline" style="font-size:14px;">Coins you earn on every shift go into your bank. Spend them here — upgrades are saved to your account and make every future shift better!</div>
     <div class="wallet" id="walletYard">🪙 0 coins</div>
     <div class="yard-list" id="yardlist"></div>
-    <button class="cta ghost" id="yardclose">← Back</button>
+    <div class="actionbar"><button class="cta ghost" id="yardclose">← Back</button></div>
   </div>
 </div>
 <script>
@@ -1204,12 +1222,24 @@ async function openBoard(from){
       $('boardlist').innerHTML='<div class="yard-row" style="justify-content:center;">No couriers logged yet — be the first!</div>';
       return;
     }
+    /* look up each courier's chosen avatar from the players table */
+    var avatars={};
+    try{
+      var names=rows.map(function(x){return x.player;}).filter(function(n,i,a){return n&&a.indexOf(n)===i;});
+      if(names.length){
+        var inList=names.map(function(n){return '"'+String(n).replace(/"/g,'')+'"';}).join(',');
+        var ar=await fetch(SB_URL+'/rest/v1/players?select=name,avatar&name=in.('+encodeURIComponent(inList)+')',{headers:sbH()});
+        if(ar.ok){(await ar.json()).forEach(function(p){avatars[p.name]=p.avatar;});}
+      }
+    }catch(e){}
     var me=getPlayer(),medals=['🥇','🥈','🥉'];
     $('boardlist').innerHTML=rows.map(function(x,i){
       var mine=me&&x.player===me.name;
+      var av=avatars[x.player]||(mine&&me.avatar)||'🦫';   /* fallback: capybara */
       return '<div class="yard-row" style="'+(mine?'border-color:var(--accent2);background:rgba(82,214,138,.14);':'')+'">'+
-        '<div class="yard-ic" style="font-size:20px;width:34px;text-align:center;">'+(medals[i]||(i+1)+'.')+'</div>'+
-        '<div class="yard-info"><div class="yard-nm">'+esc2(x.player||'Mystery capybara')+(mine?' ⭐':'')+'</div>'+
+        '<div style="font-size:15px;width:26px;text-align:center;font-weight:800;color:var(--dim);">'+(medals[i]||(i+1))+'</div>'+
+        '<div class="board-av">'+av+'</div>'+
+        '<div class="yard-info" style="flex:1;"><div class="yard-nm">'+esc2(x.player||'Mystery capybara')+(mine?' ⭐':'')+'</div>'+
         '<div class="yard-desc">'+(x.created_at?new Date(x.created_at).toLocaleDateString():'')+'</div></div>'+
         '<div class="wallet" style="font-size:16px;">'+x.score+' 🪙</div></div>';
     }).join('');
@@ -1228,8 +1258,12 @@ async function loadTop(){
     var rows=await r.json();
     if(!rows.length){$('topboard').innerHTML='';return;}
     var medals=['🥇','🥈','🥉','4.','5.'];
+    var me2=getPlayer();
     $('topboard').innerHTML='<b style="color:var(--accent);">RIVER LEGENDS</b><br>'+
-      rows.map(function(x,i){return medals[i]+' '+String(x.player).replace(/[<>&]/g,'')+' — '+x.score;}).join('<br>');
+      rows.map(function(x,i){
+        var av=(me2&&x.player===me2.name&&me2.avatar)||'🦫';
+        return medals[i]+' '+av+' '+String(x.player).replace(/[<>&]/g,'')+' — '+x.score;
+      }).join('<br>');
   }catch(e){}
 }
 
@@ -1450,7 +1484,14 @@ bindHold('btnL','l');bindHold('btnR','r');bindHold('btnGo','go');bindHold('btnBa
 ['touchstart','mousedown'].forEach(function(ev){
   $('btnHorn').addEventListener(ev,function(e){e.preventDefault();if(running)honk();},{passive:false});
 });
-if('ontouchstart' in window)$('touch').classList.add('show');
+function isTouchDevice(){return ('ontouchstart' in window)||(navigator.maxTouchPoints>0)||(navigator.msMaxTouchPoints>0);}
+if(isTouchDevice())$('touch').classList.add('show');
+/* safety net: iPads in desktop-Safari mode under-report touch, so reveal
+   the controls the first time the screen is actually touched */
+window.addEventListener('touchstart',function reveal(){
+  $('touch').classList.add('show');
+  window.removeEventListener('touchstart',reveal);
+},{passive:true});
 
 /* ============ PHYSICS + LOOP ============ */
 var clock=new THREE.Clock();
