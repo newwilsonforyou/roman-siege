@@ -1202,7 +1202,7 @@ async function saveScore(score){
   try{
     var h=sbH();h['Prefer']='return=minimal';
     var r=await fetch(SB_URL+'/rest/v1/scores',{method:'POST',headers:h,
-      body:JSON.stringify({player:name,game:GAME_ID,score:score})});
+      body:JSON.stringify({name:name,game:GAME_ID,score:score})});
     if(r.ok){
       $('saveline').textContent=p?('\u2713 Saved to '+p.name+"'s record"):'\u2713 Saved as Guest \u2014 sign in on the arcade to use your name!';
     }else{
@@ -1219,11 +1219,11 @@ async function openBoard(from){
   $('boardpanel').style.display='flex';
   $('boardlist').innerHTML='<div class="yard-row" style="justify-content:center;">Loading couriers…</div>';
   try{
-    var r=await fetch(SB_URL+'/rest/v1/scores?select=player,score,created_at&game=eq.'+GAME_ID+
+    var r=await fetch(SB_URL+'/rest/v1/scores?select=name,score,created_at&game=eq.'+GAME_ID+
       '&order=score.desc&limit=15',{headers:sbH()});
     if(!r.ok){
       /* maybe the created_at column isn't there — retry without it */
-      r=await fetch(SB_URL+'/rest/v1/scores?select=player,score&game=eq.'+GAME_ID+
+      r=await fetch(SB_URL+'/rest/v1/scores?select=name,score&game=eq.'+GAME_ID+
         '&order=score.desc&limit=15',{headers:sbH()});
     }
     if(!r.ok){
@@ -1239,7 +1239,7 @@ async function openBoard(from){
     /* look up each courier's chosen avatar from the players table */
     var avatars={};
     try{
-      var names=rows.map(function(x){return x.player;}).filter(function(n,i,a){return n&&a.indexOf(n)===i;});
+      var names=rows.map(function(x){return x.name;}).filter(function(n,i,a){return n&&a.indexOf(n)===i;});
       if(names.length){
         var inList=names.map(function(n){return '"'+String(n).replace(/"/g,'')+'"';}).join(',');
         var ar=await fetch(SB_URL+'/rest/v1/players?select=name,avatar&name=in.('+encodeURIComponent(inList)+')',{headers:sbH()});
@@ -1248,12 +1248,12 @@ async function openBoard(from){
     }catch(e){}
     var me=getPlayer(),medals=['🥇','🥈','🥉'];
     $('boardlist').innerHTML=rows.map(function(x,i){
-      var mine=me&&x.player===me.name;
-      var av=avatars[x.player]||(mine&&me.avatar)||'🦫';   /* fallback: capybara */
+      var mine=me&&x.name===me.name;
+      var av=avatars[x.name]||(mine&&me.avatar)||'🦫';   /* fallback: capybara */
       return '<div class="yard-row" style="'+(mine?'border-color:var(--accent2);background:rgba(82,214,138,.14);':'')+'">'+
         '<div style="font-size:15px;width:26px;text-align:center;font-weight:800;color:var(--dim);">'+(medals[i]||(i+1))+'</div>'+
         '<div class="board-av">'+av+'</div>'+
-        '<div class="yard-info" style="flex:1;"><div class="yard-nm">'+esc2(x.player||'Mystery capybara')+(mine?' ⭐':'')+'</div>'+
+        '<div class="yard-info" style="flex:1;"><div class="yard-nm">'+esc2(x.name||'Mystery capybara')+(mine?' ⭐':'')+'</div>'+
         '<div class="yard-desc">'+(x.created_at?new Date(x.created_at).toLocaleDateString():'')+'</div></div>'+
         '<div class="wallet" style="font-size:16px;">'+x.score+' 🪙</div></div>';
     }).join('');
@@ -1266,7 +1266,7 @@ function closeBoard(){$('boardpanel').style.display='none';
 
 async function loadTop(){
   try{
-    var r=await fetch(SB_URL+'/rest/v1/scores?select=player,score&game=eq.'+GAME_ID+
+    var r=await fetch(SB_URL+'/rest/v1/scores?select=name,score&game=eq.'+GAME_ID+
       '&order=score.desc&limit=5',{headers:sbH()});
     if(!r.ok)return;
     var rows=await r.json();
@@ -1275,8 +1275,8 @@ async function loadTop(){
     var me2=getPlayer();
     $('topboard').innerHTML='<b style="color:var(--accent);">RIVER LEGENDS</b><br>'+
       rows.map(function(x,i){
-        var av=(me2&&x.player===me2.name&&me2.avatar)||'🦫';
-        return medals[i]+' '+av+' '+String(x.player).replace(/[<>&]/g,'')+' — '+x.score;
+        var av=(me2&&x.name===me2.name&&me2.avatar)||'🦫';
+        return medals[i]+' '+av+' '+String(x.name).replace(/[<>&]/g,'')+' — '+x.score;
       }).join('<br>');
   }catch(e){}
 }
