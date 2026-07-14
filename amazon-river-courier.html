@@ -1,0 +1,1675 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Amazon River Courier — Capybara Rainforest Delivery</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --panel:rgba(20,42,30,.88); --accent:#ffb340; --accent2:#52d68a;
+    --danger:#ff5d6e; --text:#fff8ec; --dim:#cfe3c9;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;overflow:hidden;}
+  body{font-family:'Nunito',sans-serif;background:#14301e;color:var(--text);user-select:none;-webkit-user-select:none;}
+  #wrap{position:relative;width:100vw;height:100vh;height:100dvh;overflow:hidden;}
+  canvas{display:block;width:100%;height:100%;}
+
+  /* ---- HUD ---- */
+  .hud{position:absolute;pointer-events:none;z-index:5;}
+  #topbar{top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:flex-start;padding:12px 14px;}
+  .card{background:var(--panel);border-radius:14px;padding:8px 14px;backdrop-filter:blur(4px);
+    border:2px solid rgba(255,255,255,.12);}
+  .lbl{font-size:10px;letter-spacing:.2em;color:var(--dim);font-weight:800;}
+  .val{font-family:'Baloo 2',sans-serif;font-size:22px;font-weight:800;line-height:1.05;}
+  #coinval{color:var(--accent);}
+  #hearts{font-size:16px;letter-spacing:2px;}
+  #delval{color:var(--accent2);}
+
+  #order{top:12px;left:50%;transform:translateX(-50%);text-align:center;max-width:92vw;}
+  #ordertext{font-family:'Baloo 2',sans-serif;font-weight:700;font-size:15px;}
+  #timerbar{width:220px;max-width:70vw;height:10px;border-radius:6px;background:rgba(0,0,0,.35);
+    margin:6px auto 0;overflow:hidden;border:1.5px solid rgba(255,255,255,.2);}
+  #timerfill{height:100%;width:100%;background:linear-gradient(90deg,var(--accent2),var(--accent));
+    border-radius:6px;transition:width .2s linear;}
+  #timerbar.low #timerfill{background:var(--danger);}
+
+  #arrow{top:86px;left:50%;transform:translateX(-50%);font-size:34px;
+    filter:drop-shadow(0 2px 6px rgba(0,0,0,.5));transition:transform .1s;}
+  #dist{top:124px;left:50%;transform:translateX(-50%);font-family:'Baloo 2',sans-serif;
+    font-weight:700;font-size:13px;color:var(--text);text-shadow:0 1px 4px rgba(0,0,0,.6);}
+
+  #toast{top:38%;left:50%;transform:translate(-50%,-50%);text-align:center;opacity:0;
+    font-family:'Baloo 2',sans-serif;font-weight:800;font-size:clamp(26px,6vw,44px);
+    color:#fff;text-shadow:0 0 18px var(--accent2),0 3px 8px rgba(0,0,0,.6);}
+  #toast.show{animation:toastin 1.4s ease;}
+  @keyframes toastin{0%{opacity:0;transform:translate(-50%,-50%) scale(.6);}
+    18%{opacity:1;transform:translate(-50%,-50%) scale(1.08);}30%{transform:translate(-50%,-50%) scale(1);}
+    75%{opacity:1;}100%{opacity:0;}}
+
+  #speedo{bottom:14px;right:14px;text-align:right;}
+
+  #touch{position:absolute;bottom:0;left:0;right:0;z-index:6;display:none;
+    justify-content:space-between;align-items:flex-end;padding:0 12px 16px;pointer-events:none;}
+  #touch.show{display:flex;}
+  .tgroup{display:flex;gap:12px;align-items:flex-end;}
+  .tcol{display:flex;flex-direction:column;gap:12px;align-items:center;}
+  .tbtn{pointer-events:auto;width:72px;height:72px;border-radius:22px;border:3px solid rgba(255,255,255,.45);
+    background:rgba(20,42,30,.65);color:#fff;font-size:34px;font-family:'Baloo 2',sans-serif;font-weight:800;
+    display:flex;align-items:center;justify-content:center;backdrop-filter:blur(3px);
+    box-shadow:0 4px 12px rgba(0,0,0,.35);touch-action:none;}
+  .tbtn:active,.tbtn.held{background:rgba(82,214,138,.55);transform:scale(.94);}
+  #btnGo{width:84px;height:84px;background:rgba(82,214,138,.4);border-color:rgba(82,214,138,.8);}
+  #btnBack{width:64px;height:64px;font-size:26px;}
+  #btnBoost{background:rgba(255,179,64,.4);border-color:rgba(255,179,64,.8);}
+
+  .panel{position:absolute;inset:0;z-index:10;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:14px;padding:24px;text-align:center;
+    background:radial-gradient(circle at 50% 25%,rgba(30,66,42,.78),rgba(10,24,16,.95));backdrop-filter:blur(3px);}
+  .title{font-family:'Baloo 2',sans-serif;font-weight:800;font-size:clamp(32px,8vw,56px);line-height:1;
+    background:linear-gradient(180deg,#fff,var(--accent));-webkit-background-clip:text;background-clip:text;
+    -webkit-text-fill-color:transparent;filter:drop-shadow(0 4px 14px rgba(255,179,64,.35));}
+  .tagline{font-size:16px;color:var(--dim);max-width:440px;line-height:1.45;font-weight:700;}
+  .chips{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;max-width:470px;}
+  .chip{font-size:13px;font-weight:700;background:rgba(255,255,255,.1);border:1.5px solid rgba(255,255,255,.18);
+    border-radius:999px;padding:6px 14px;}
+  .chip b{color:var(--accent);}
+  .cta{font-family:'Baloo 2',sans-serif;font-weight:800;font-size:19px;letter-spacing:.06em;color:#1c2a20;
+    background:linear-gradient(120deg,var(--accent2),#a5ffcb);border:0;border-radius:16px;padding:15px 46px;
+    cursor:pointer;box-shadow:0 6px 24px rgba(82,214,138,.45);transition:transform .08s;}
+  .cta:active{transform:scale(.96);}
+  .cta.ghost{background:rgba(255,255,255,.08);color:var(--text);
+    border:2px solid rgba(255,255,255,.25);box-shadow:none;}
+  .wallet{font-family:'Baloo 2',sans-serif;font-weight:800;font-size:17px;color:var(--accent);}
+  .yard-list{display:flex;flex-direction:column;gap:10px;width:100%;max-width:440px;
+    max-height:46vh;overflow-y:auto;padding:2px;}
+  .yard-row{display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.07);
+    border:1.5px solid rgba(255,255,255,.14);border-radius:14px;padding:10px 12px;text-align:left;}
+  .yard-ic{font-size:30px;}
+  .yard-info{flex:1;min-width:0;}
+  .yard-nm{font-family:'Baloo 2',sans-serif;font-weight:800;font-size:15px;}
+  .yard-desc{font-size:12px;color:var(--dim);font-weight:700;line-height:1.3;}
+  .pips{display:flex;gap:3px;margin-top:4px;}
+  .pip{width:16px;height:7px;border-radius:4px;background:rgba(255,255,255,.15);}
+  .pip.on{background:var(--accent2);}
+  .yard-buy{font-family:'Baloo 2',sans-serif;font-weight:800;font-size:14px;color:#1c2a20;
+    background:linear-gradient(120deg,var(--accent),#ffd98a);border:0;border-radius:12px;
+    padding:9px 14px;cursor:pointer;white-space:nowrap;}
+  .yard-buy:disabled{opacity:.4;cursor:default;}
+  .yard-buy.maxed{background:rgba(82,214,138,.3);color:var(--accent2);}
+  .endbig{font-family:'Baloo 2',sans-serif;font-size:46px;font-weight:800;color:var(--accent);
+    text-shadow:0 0 18px rgba(255,179,64,.5);}
+  .endstat{font-size:15px;font-weight:700;color:var(--text);}
+  .rank{font-family:'Baloo 2',sans-serif;font-weight:800;font-size:22px;color:var(--accent2);letter-spacing:.06em;}
+  .keys{font-size:13px;color:var(--dim);font-weight:700;line-height:1.7;}
+  .keys b{color:#fff;background:rgba(255,255,255,.14);border-radius:6px;padding:1px 8px;border:1px solid rgba(255,255,255,.2);}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div class="hud" id="topbar">
+    <div class="card">
+      <div class="lbl">COINS</div>
+      <div class="val" id="coinval">0</div>
+      <div id="hearts">❤️❤️❤️</div>
+    </div>
+    <div class="card" style="text-align:right;">
+      <div class="lbl">DELIVERED</div>
+      <div class="val" id="delval">0</div>
+    </div>
+  </div>
+
+  <div class="hud" id="order"><div class="card">
+    <div id="ordertext">🍉 Load fruit at the floating market!</div>
+    <div id="timerbar"><div id="timerfill"></div></div>
+  </div></div>
+
+  <div class="hud" id="arrow">⬆️</div>
+  <div class="hud" id="dist">0m</div>
+  <div class="hud" id="toast"></div>
+
+  <div class="hud card" id="spotter" style="bottom:14px;left:14px;">
+    <div class="lbl">🔍 ANIMALS</div>
+    <div class="val" id="spotval" style="font-size:18px;">0/10</div>
+  </div>
+
+  <div class="hud card" id="speedo">
+    <div class="lbl">SPEED</div>
+    <div class="val" id="speedval">0</div>
+  </div>
+
+  <div id="touch">
+    <div class="tgroup">
+      <button class="tbtn" id="btnL">◀</button>
+      <button class="tbtn" id="btnR">▶</button>
+    </div>
+    <div class="tgroup">
+      <button class="tbtn" id="btnBoost">⚡</button>
+      <div class="tcol">
+        <button class="tbtn" id="btnGo">▲</button>
+        <button class="tbtn" id="btnBack">▼</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- START -->
+  <div class="panel" id="startpanel">
+    <div style="font-size:56px;">🛶</div>
+    <div class="title">AMAZON RIVER<br>COURIER</div>
+    <div class="tagline">Deep in the Amazon rainforest, you're the fastest capybara boat courier on the river. Dolphins leap, monkeys chatter, and sudden storms sweep in off the canopy. Load fruit at the floating market, then weave through the jungle channels to the glowing dock before the timer runs out — and mind the floating logs! Three late orders and your shift is over.</div>
+    <div class="chips">
+      <div class="chip">🧭 Follow the <b>arrow</b> to the dock</div>
+      <div class="chip">⚡ Boost your motor for a burst</div>
+      <div class="chip">🪵 Hitting a log costs <b>4s</b></div>
+      <div class="chip">⏱️ The trip back is timed too</div>
+      <div class="chip">⛈️ Watch out for sudden storms!</div>
+      <div class="chip">🔍 Spot all <b>10</b> animals for bonus coins</div>
+      <div class="chip">⏳ Timers shrink the longer you survive</div>
+      <div class="chip">🔧 Bank coins &amp; upgrade your boat in the <b>Boat Yard</b></div>
+      <div class="chip">💰 Faster delivery = more coins</div>
+    </div>
+    <div class="keys">Steer <b>W A S D</b> or <b>arrows</b> &nbsp;·&nbsp; Boost <b>SHIFT</b> or <b>SPACE</b> &nbsp;·&nbsp; Horn <b>H</b><br>On tablets &amp; phones, use the on-screen buttons</div>
+    <div class="wallet" id="walletStart">🪙 0 coins in the bank</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;">
+      <button class="cta" id="startbtn">START SHIFT</button>
+      <button class="cta ghost" id="yardbtn">🔧 Boat Yard</button>
+    </div>
+  </div>
+
+  <!-- END -->
+  <div class="panel" id="endpanel" style="display:none;">
+    <div style="font-size:52px;" id="endemoji">🌅</div>
+    <div class="rank" id="endrank">RIVER COURIER</div>
+    <div class="title" style="font-size:clamp(26px,6vw,40px);">SHIFT OVER</div>
+    <div class="endbig" id="endcoins">0 coins</div>
+    <div class="endstat" id="endstats"></div>
+    <div class="endstat" id="saveline" style="color:var(--accent2);font-size:13px;"></div>
+    <div class="endstat" id="topboard" style="font-size:13px;"></div>
+    <div class="wallet" id="walletEnd"></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;">
+      <button class="cta" id="againbtn">NEW SHIFT</button>
+      <button class="cta ghost" id="yardbtn2">🔧 Boat Yard</button>
+    </div>
+  </div>
+
+  <!-- BOAT YARD -->
+  <div class="panel" id="yardpanel" style="display:none;">
+    <div style="font-size:44px;">🔧</div>
+    <div class="title" style="font-size:clamp(26px,6vw,40px);">BOAT YARD</div>
+    <div class="tagline" style="font-size:14px;">Coins you earn on every shift go into your bank. Spend them here — upgrades are saved to your account and make every future shift better!</div>
+    <div class="wallet" id="walletYard">🪙 0 coins</div>
+    <div class="yard-list" id="yardlist"></div>
+    <button class="cta ghost" id="yardclose">← Back</button>
+  </div>
+</div>
+<script>
+/* ============================================================
+   CAPYBARA RIVER DELIVERY — Amazon boat delivery game
+   ============================================================ */
+(function(){
+"use strict";
+var $=function(id){return document.getElementById(id);};
+
+/* ============ AUDIO ============ */
+var actx=null;
+function tone(f,d,type,vol,delay){
+  try{
+    if(!actx)actx=new(window.AudioContext||window.webkitAudioContext)();
+    var t0=actx.currentTime+(delay||0);
+    var o=actx.createOscillator(),g=actx.createGain();
+    o.type=type||'sine';o.frequency.setValueAtTime(f,t0);
+    g.gain.setValueAtTime(vol||0.06,t0);g.gain.exponentialRampToValueAtTime(0.001,t0+d);
+    o.connect(g);g.connect(actx.destination);o.start(t0);o.stop(t0+d);
+  }catch(e){}
+}
+function splash(vol){
+  try{
+    if(!actx)actx=new(window.AudioContext||window.webkitAudioContext)();
+    var len=actx.sampleRate*0.35,buf=actx.createBuffer(1,len,actx.sampleRate),d=buf.getChannelData(0);
+    for(var i=0;i<len;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/len,2.2);
+    var s=actx.createBufferSource(),g=actx.createGain(),f=actx.createBiquadFilter();
+    f.type='lowpass';f.frequency.value=800;g.gain.value=vol||0.16;
+    s.buffer=buf;s.connect(f);f.connect(g);g.connect(actx.destination);s.start();
+  }catch(e){}
+}
+/* boat motor putt-putt */
+var engOsc=null,engGain=null,engLfo=null,engLfoGain=null;
+function engineStart(){
+  try{
+    if(!actx)actx=new(window.AudioContext||window.webkitAudioContext)();
+    engOsc=actx.createOscillator();engGain=actx.createGain();
+    var f=actx.createBiquadFilter();f.type='lowpass';f.frequency.value=320;
+    engOsc.type='sawtooth';engOsc.frequency.value=42;
+    engGain.gain.value=0.0;
+    /* tremolo for the putt-putt feel */
+    engLfo=actx.createOscillator();engLfoGain=actx.createGain();
+    engLfo.frequency.value=7;engLfoGain.gain.value=0.012;
+    engLfo.connect(engLfoGain);engLfoGain.connect(engGain.gain);
+    engOsc.connect(f);f.connect(engGain);engGain.connect(actx.destination);
+    engOsc.start();engLfo.start();
+  }catch(e){}
+}
+function engineUpdate(spd,max){
+  if(!engOsc)return;
+  var r=Math.min(1,Math.abs(spd)/max);
+  engOsc.frequency.value=42+r*70;
+  if(engLfo)engLfo.frequency.value=6+r*10;
+  engGain.gain.value=0.018+r*0.03;
+}
+function engineStop(){try{if(engOsc){engOsc.stop();engLfo.stop();engOsc=null;engLfo=null;}}catch(e){}}
+
+/* ============ THREE SETUP ============ */
+var wrap=$('wrap');
+var W=wrap.clientWidth,H=wrap.clientHeight;
+var scene=new THREE.Scene();
+scene.background=new THREE.Color(0xbfe0c4);          /* hazy jungle sky */
+scene.fog=new THREE.Fog(0xbfe0c4,55,190);
+
+var camera=new THREE.PerspectiveCamera(62,W/H,0.1,500);
+var renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(W,H);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+renderer.shadowMap.enabled=true;
+renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+wrap.appendChild(renderer.domElement);
+
+scene.add(new THREE.HemisphereLight(0xeafce8,0x2e5a3a,0.95));
+var sun=new THREE.DirectionalLight(0xfff0c2,1.1);
+sun.position.set(40,70,25);
+sun.castShadow=true;
+sun.shadow.mapSize.set(2048,2048);
+sun.shadow.camera.left=-90;sun.shadow.camera.right=90;
+sun.shadow.camera.top=90;sun.shadow.camera.bottom=-90;
+sun.shadow.camera.far=220;
+scene.add(sun);
+
+/* ============ RIVER DELTA LAYOUT ============
+   Grid of jungle islands separated by water channels.
+   Everything between islands is navigable river.        */
+var CHAN=11, BLOCK=21, CELLS=5;
+var SPAN=CELLS*BLOCK+(CELLS+1)*CHAN;
+var HALF=SPAN/2;
+var mats={
+  water:new THREE.MeshLambertMaterial({color:0x2f7d6a}),          /* dark jungle river */
+  waterlit:new THREE.MeshLambertMaterial({color:0x3f977e,transparent:true,opacity:0.5}),
+  grass:new THREE.MeshLambertMaterial({color:0x3f7d33}),
+  mud:new THREE.MeshLambertMaterial({color:0x7a5a38}),
+  trunk:new THREE.MeshLambertMaterial({color:0x6a4528}),
+  leaf:new THREE.MeshLambertMaterial({color:0x2e6e2e}),
+  leaf2:new THREE.MeshLambertMaterial({color:0x3f8f3f}),
+  leaf3:new THREE.MeshLambertMaterial({color:0x57a84e}),
+  wood:new THREE.MeshLambertMaterial({color:0x9a7248}),
+  woodDark:new THREE.MeshLambertMaterial({color:0x6f4e2e})
+};
+
+/* the river — one big plane, plus soft ripple rings added later */
+var water=new THREE.Mesh(new THREE.PlaneGeometry(SPAN+240,SPAN+240),mats.water);
+water.rotation.x=-Math.PI/2;water.receiveShadow=true;scene.add(water);
+
+/* jungle islands + collision boxes */
+var colliders=[];  /* {x,z,hw,hz} static */
+var huts=[];       /* delivery docks {x,z} on water */
+
+function makeTree(g,x,z,big){
+  var h=big?3.2+Math.random()*2.4:1.6+Math.random()*1.2;
+  var t=new THREE.Mesh(new THREE.CylinderGeometry(0.16,0.3,h,7),mats.trunk);
+  t.position.set(x,h/2,z);t.castShadow=true;g.add(t);
+  var lm=[mats.leaf,mats.leaf2,mats.leaf3][Math.floor(Math.random()*3)];
+  var layers=big?3:2;
+  for(var i=0;i<layers;i++){
+    var r=(big?2.2:1.3)-i*0.55;
+    var l=new THREE.Mesh(new THREE.SphereGeometry(Math.max(0.6,r),8,7),lm);
+    l.position.set(x+(Math.random()-0.5)*0.6,h+i*0.9,z+(Math.random()-0.5)*0.6);
+    l.scale.y=0.8;l.castShadow=true;g.add(l);
+  }
+}
+function makeIsland(cx,cz){
+  var g=new THREE.Group();
+  var hw=BLOCK/2;
+  /* mud bank slightly wider than the grass top */
+  var bank=new THREE.Mesh(new THREE.BoxGeometry(BLOCK+2.4,1.1,BLOCK+2.4),mats.mud);
+  bank.position.y=0.15;bank.castShadow=true;bank.receiveShadow=true;g.add(bank);
+  var top=new THREE.Mesh(new THREE.BoxGeometry(BLOCK,0.7,BLOCK),mats.grass);
+  top.position.y=0.75;top.receiveShadow=true;g.add(top);
+  /* dense jungle trees */
+  var n=7+Math.floor(Math.random()*5);
+  for(var i=0;i<n;i++){
+    makeTree(g,(Math.random()-0.5)*(BLOCK-5),(Math.random()-0.5)*(BLOCK-5),Math.random()<0.55);
+  }
+  /* a couple of bushes */
+  for(var b=0;b<4;b++){
+    var bu=new THREE.Mesh(new THREE.SphereGeometry(0.5+Math.random()*0.4,7,6),mats.leaf3);
+    bu.position.set((Math.random()-0.5)*(BLOCK-4),1.2,(Math.random()-0.5)*(BLOCK-4));
+    bu.scale.y=0.7;g.add(bu);
+  }
+  g.position.set(cx,0,cz);
+  scene.add(g);
+  colliders.push({x:cx,z:cz,hw:hw+0.2,hz:hw+0.2});
+  return g;
+}
+
+/* stilt hut on the island edge, with a wooden dock reaching into the channel */
+var hutCols=[0xffc95e,0xff8d6b,0x9bd0ff,0xc9a2ff,0xff9fc0,0x9fe8b0];
+function makeHut(island,cx,cz,side){
+  /* side: 0=+z 1=-z 2=+x 3=-x  (which channel it faces) */
+  var dir=[[0,1],[0,-1],[1,0],[-1,0]][side];
+  var edge=BLOCK/2;
+  var hx=cx+dir[0]*(edge-2.2), hz=cz+dir[1]*(edge-2.2);
+  var g=new THREE.Group();
+  var col=hutCols[Math.floor(Math.random()*hutCols.length)];
+  /* stilts */
+  for(var i=-1;i<=1;i+=2)for(var j=-1;j<=1;j+=2){
+    var st=new THREE.Mesh(new THREE.CylinderGeometry(0.14,0.14,2.2,6),mats.woodDark);
+    st.position.set(i*1.5,1.1,j*1.3);g.add(st);
+  }
+  var body=new THREE.Mesh(new THREE.BoxGeometry(3.6,2.1,3),
+    new THREE.MeshLambertMaterial({color:col}));
+  body.position.y=3.1;body.castShadow=true;g.add(body);
+  var roof=new THREE.Mesh(new THREE.CylinderGeometry(0,3,1.6,4),
+    new THREE.MeshLambertMaterial({color:0x8a6238,flatShading:true}));
+  roof.position.y=4.9;roof.rotation.y=Math.PI/4;roof.castShadow=true;g.add(roof);
+  var door=new THREE.Mesh(new THREE.BoxGeometry(0.9,1.3,0.14),mats.woodDark);
+  door.position.set(0,2.9,1.55);g.add(door);
+  g.position.set(hx,0.4,hz);
+  g.lookAt(hx+dir[0]*10,0.4,hz+dir[1]*10);
+  scene.add(g);
+  /* dock: planks from the bank into the channel */
+  var dockLen=2.8;
+  var dx=cx+dir[0]*(edge+1.2+dockLen/2), dz=cz+dir[1]*(edge+1.2+dockLen/2);
+  var dock=new THREE.Mesh(new THREE.BoxGeometry(dir[0]?dockLen:1.5,0.22,dir[1]?dockLen:1.5),mats.wood);
+  dock.position.set(dx,0.55,dz);dock.castShadow=true;dock.receiveShadow=true;scene.add(dock);
+  for(var p=-1;p<=1;p+=2){
+    var pole=new THREE.Mesh(new THREE.CylinderGeometry(0.12,0.12,1.6,6),mats.woodDark);
+    pole.position.set(dx+(dir[1]?p*0.6:dir[0]*dockLen/2*0.9),0.8,dz+(dir[0]?p*0.6:dir[1]*dockLen/2*0.9));
+    scene.add(pole);
+  }
+  /* the boat pulls up in OPEN WATER, well clear of the dock */
+  var tx=cx+dir[0]*(edge+2.2+dockLen+1.8), tz=cz+dir[1]*(edge+2.2+dockLen+1.8);
+  huts.push({x:tx,z:tz});
+  /* no dock collider — boats glide straight past the low planks */
+}
+
+/* build the delta */
+var mid=Math.floor(CELLS/2);
+var islandCenters=[];
+for(var bi=0;bi<CELLS;bi++){
+  for(var bj=0;bj<CELLS;bj++){
+    var bx=-HALF+CHAN+bi*(BLOCK+CHAN)+BLOCK/2;
+    var bz=-HALF+CHAN+bj*(BLOCK+CHAN)+BLOCK/2;
+    if(bi===mid&&bj===mid){islandCenters.push(null);continue;}  /* open lagoon in the middle */
+    makeIsland(bx,bz);
+    islandCenters.push({x:bx,z:bz});
+    if(Math.random()<0.4)continue;   /* many islands are pure jungle — fewer docks */
+    /* one hut per island on a random side (not facing outward on rim islands) */
+    var sides=[];
+    if(bj<CELLS-1)sides.push(0);
+    if(bj>0)sides.push(1);
+    if(bi<CELLS-1)sides.push(2);
+    if(bi>0)sides.push(3);
+    makeHut(null,bx,bz,sides[Math.floor(Math.random()*sides.length)]);
+  }
+}
+
+/* rim jungle: thick tree wall around the whole map so the world feels enclosed */
+(function(){
+  var rim=new THREE.Group();
+  for(var i=0;i<90;i++){
+    var ang=Math.random()*Math.PI*2;
+    var r=HALF+16+Math.random()*22;
+    makeTree(rim,Math.cos(ang)*r,Math.sin(ang)*r,true);
+  }
+  /* mud ring under the rim forest */
+  var ring=new THREE.Mesh(new THREE.RingGeometry(HALF+10,HALF+50,40),mats.mud);
+  ring.rotation.x=-Math.PI/2;ring.position.y=0.05;rim.add(ring);
+  scene.add(rim);
+})();
+
+/* floating market in the central lagoon (pickup point) */
+var standPos=new THREE.Vector3(0,0,0);
+(function(){
+  var g=new THREE.Group();
+  /* raft of planks */
+  var raft=new THREE.Mesh(new THREE.BoxGeometry(7,0.5,5),mats.wood);
+  raft.position.y=0.3;raft.castShadow=true;g.add(raft);
+  [[-3.2,-2.2],[3.2,-2.2],[-3.2,2.2],[3.2,2.2]].forEach(function(p){
+    var barrel=new THREE.Mesh(new THREE.CylinderGeometry(0.5,0.5,0.7,10),mats.woodDark);
+    barrel.position.set(p[0],0.2,p[1]);g.add(barrel);
+  });
+  /* stall + stripy awning */
+  var base=new THREE.Mesh(new THREE.BoxGeometry(4.6,1.3,2.6),mats.woodDark);
+  base.position.y=1.15;base.castShadow=true;g.add(base);
+  var poleM=mats.trunk;
+  [[-2,-1],[2,-1],[-2,1],[2,1]].forEach(function(p){
+    var pl=new THREE.Mesh(new THREE.CylinderGeometry(0.1,0.1,3.2,6),poleM);
+    pl.position.set(p[0],2.1,p[1]);g.add(pl);
+  });
+  var aw=new THREE.Group();
+  for(var s=0;s<6;s++){
+    var stripe=new THREE.Mesh(new THREE.BoxGeometry(0.84,0.12,3.4),
+      new THREE.MeshLambertMaterial({color:s%2?0xffffff:0xffb340}));
+    stripe.position.x=-2.1+s*0.84;
+    aw.add(stripe);
+  }
+  aw.position.y=3.7;aw.rotation.z=0.07;g.add(aw);
+  var fr=[[0xff4d5e,-1.4],[0xffb340,0],[0x7cd83f,1.4]];
+  fr.forEach(function(f){
+    for(var q=0;q<3;q++){
+      var b=new THREE.Mesh(new THREE.SphereGeometry(0.32,8,7),
+        new THREE.MeshLambertMaterial({color:f[0]}));
+      b.position.set(f[1]+(Math.random()-0.5)*0.4,2+q*0.12,(Math.random()-0.5)*0.7);
+      g.add(b);
+    }
+  });
+  /* market keeper capybara */
+  var keeper=makeCapyMesh(0.55);
+  keeper.position.set(0,0.55,-1.6);keeper.rotation.y=Math.PI;
+  g.add(keeper);
+  g.position.copy(standPos);
+  g.userData.bob=true;
+  scene.add(g);
+  window.__market=g;
+  colliders.push({x:0,z:0,hw:3.9,hz:2.9});
+})();
+
+/* lily pads scattered in channels (decor only) */
+(function(){
+  var padM=new THREE.MeshLambertMaterial({color:0x4fae4a});
+  for(var i=0;i<70;i++){
+    var x=(Math.random()-0.5)*SPAN, z=(Math.random()-0.5)*SPAN;
+    /* only on water: skip if inside an island */
+    var onIsland=false;
+    for(var c=0;c<colliders.length;c++){
+      var co=colliders[c];
+      if(Math.abs(x-co.x)<co.hw+1&&Math.abs(z-co.z)<co.hz+1){onIsland=true;break;}
+    }
+    if(onIsland)continue;
+    var pad=new THREE.Mesh(new THREE.CylinderGeometry(0.5+Math.random()*0.45,0.5,0.06,9),padM);
+    pad.position.set(x,0.06,z);
+    scene.add(pad);
+  }
+})();
+
+/* ============ CAPYBARA MESH ============ */
+function makeCapyMesh(scale,col){
+  var g=new THREE.Group();
+  var bodyM=new THREE.MeshLambertMaterial({color:col||0xb5854e});
+  var darkM=new THREE.MeshLambertMaterial({color:0x8a6238});
+  var body=new THREE.Mesh(new THREE.BoxGeometry(1.5,0.95,0.85),bodyM);
+  body.position.y=0.85;body.castShadow=true;g.add(body);
+  var head=new THREE.Mesh(new THREE.BoxGeometry(0.75,0.68,0.62),bodyM);
+  head.position.set(0.95,1.12,0);head.castShadow=true;g.add(head);
+  var snout=new THREE.Mesh(new THREE.BoxGeometry(0.3,0.4,0.5),darkM);
+  snout.position.set(1.35,1.0,0);g.add(snout);
+  [[0.75,1.5,0.22],[0.75,1.5,-0.22]].forEach(function(p){
+    var e=new THREE.Mesh(new THREE.BoxGeometry(0.16,0.2,0.14),darkM);
+    e.position.set(p[0],p[1],p[2]);g.add(e);
+  });
+  var eyeM=new THREE.MeshLambertMaterial({color:0x1c140c});
+  [[1.15,1.24,0.28],[1.15,1.24,-0.28]].forEach(function(p){
+    var e=new THREE.Mesh(new THREE.SphereGeometry(0.06,6,6),eyeM);
+    e.position.set(p[0],p[1],p[2]);g.add(e);
+  });
+  [[0.55,0.28],[0.55,-0.28],[-0.55,0.28],[-0.55,-0.28]].forEach(function(p){
+    var leg=new THREE.Mesh(new THREE.BoxGeometry(0.22,0.55,0.22),darkM);
+    leg.position.set(p[0],0.28,p[1]);g.add(leg);
+  });
+  g.scale.setScalar(scale);
+  return g;
+}
+
+/* villagers walking around their huts */
+function makeVillager(){
+  var g=new THREE.Group();
+  var shirtCols=[0xff6b5e,0x4d9de0,0xffd23f,0x9b5de5,0x2ec4b6,0xff8fab];
+  var shirt=new THREE.MeshLambertMaterial({color:shirtCols[Math.floor(Math.random()*shirtCols.length)]});
+  var skinCols=[0x8d5a3b,0xc68642,0x6b4226,0xe0ac69];
+  var skin=new THREE.MeshLambertMaterial({color:skinCols[Math.floor(Math.random()*skinCols.length)]});
+  var pants=new THREE.MeshLambertMaterial({color:0x4a4038});
+  var body=new THREE.Mesh(new THREE.CylinderGeometry(0.26,0.3,0.7,8),shirt);
+  body.position.y=1.0;body.castShadow=true;g.add(body);
+  var head=new THREE.Mesh(new THREE.SphereGeometry(0.24,8,8),skin);
+  head.position.y=1.6;head.castShadow=true;g.add(head);
+  var hat=new THREE.Mesh(new THREE.CylinderGeometry(0.34,0.4,0.08,9),
+    new THREE.MeshLambertMaterial({color:0xd9b36a}));
+  hat.position.y=1.78;g.add(hat);
+  var hatTop=new THREE.Mesh(new THREE.CylinderGeometry(0.16,0.18,0.16,8),hat.material);
+  hatTop.position.y=1.86;g.add(hatTop);
+  var legL=new THREE.Mesh(new THREE.CylinderGeometry(0.09,0.09,0.6,6),pants);
+  legL.position.set(0.12,0.35,0);g.add(legL);
+  var legR=legL.clone();legR.position.x=-0.12;g.add(legR);
+  var armL=new THREE.Mesh(new THREE.CylinderGeometry(0.07,0.07,0.5,6),skin);
+  armL.position.set(0.36,1.05,0);g.add(armL);
+  var armR=armL.clone();armR.position.x=-0.36;g.add(armR);
+  g.userData={legL:legL,legR:legR,armL:armL,armR:armR};
+  return g;
+}
+var walkers=[];
+islandCenters.forEach(function(ic){
+  if(!ic)return;
+  var n=1+(Math.random()<0.5?1:0);
+  for(var k=0;k<n;k++){
+    var v=makeVillager();
+    var ax=ic.x+(Math.random()-0.5)*(BLOCK-7), az=ic.z+(Math.random()-0.5)*(BLOCK-7);
+    var bx2=ic.x+(Math.random()-0.5)*(BLOCK-7), bz2=ic.z+(Math.random()-0.5)*(BLOCK-7);
+    v.position.set(ax,1.1,az);
+    scene.add(v);
+    walkers.push({m:v,ax:ax,az:az,bx:bx2,bz:bz2,t:Math.random(),dir:1,sp:0.14+Math.random()*0.12});
+  }
+});
+
+/* capybara families lounging on the banks */
+var loungers=[];
+islandCenters.forEach(function(ic){
+  if(!ic||Math.random()<0.4)return;
+  var m=makeCapyMesh(0.55+Math.random()*0.25,[0xb5854e,0xa87a44,0xc29258][Math.floor(Math.random()*3)]);
+  var side=Math.random()<0.5?1:-1;
+  m.position.set(ic.x+(Math.random()-0.5)*BLOCK*0.6,1.1,ic.z+side*(BLOCK/2-1.2));
+  m.rotation.y=Math.random()*Math.PI*2;
+  scene.add(m);
+  loungers.push(m);
+});
+
+/* pink river dolphins (botos) leaping in the channels */
+var dolphins=[];
+(function(){
+  var pinkM=new THREE.MeshLambertMaterial({color:0xf2a2c0});
+  var chanCenters=[];
+  for(var i=0;i<=CELLS;i++)chanCenters.push(-HALF+CHAN/2+i*(BLOCK+CHAN));
+  for(var n=0;n<3;n++){
+    var g=new THREE.Group();
+    var body=new THREE.Mesh(new THREE.SphereGeometry(0.5,10,8),pinkM);
+    body.scale.set(2.1,0.8,0.8);g.add(body);
+    var snout=new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.16,0.7,7),pinkM);
+    snout.rotation.z=-Math.PI/2;snout.position.x=1.15;g.add(snout);
+    var fin=new THREE.Mesh(new THREE.CylinderGeometry(0,0.22,0.5,4),pinkM);
+    fin.position.set(0,0.45,0);g.add(fin);
+    var tail=new THREE.Mesh(new THREE.CylinderGeometry(0,0.4,0.5,4),pinkM);
+    tail.rotation.z=Math.PI/2;tail.position.x=-1.2;tail.scale.z=0.3;g.add(tail);
+    var lane=chanCenters[1+Math.floor(Math.random()*(chanCenters.length-2))];
+    var vert=n%2===0;
+    scene.add(g);
+    dolphins.push({m:g,vert:vert,lane:lane,u:Math.random()*100,sp:3+Math.random()*2});
+  }
+})();
+
+/* caimans cruising low in the water (decoration — they won't bite... probably) */
+var caimans=[];
+(function(){
+  var cM=new THREE.MeshLambertMaterial({color:0x4a5a35});
+  var eyeM=new THREE.MeshLambertMaterial({color:0xffd23f});
+  for(var n=0;n<3;n++){
+    var g=new THREE.Group();
+    var body=new THREE.Mesh(new THREE.BoxGeometry(2.6,0.35,0.8),cM);
+    body.position.y=0.02;g.add(body);
+    var head=new THREE.Mesh(new THREE.BoxGeometry(1,0.25,0.55),cM);
+    head.position.set(1.7,0.05,0);g.add(head);
+    [[0.22],[-0.22]].forEach(function(p){
+      var e=new THREE.Mesh(new THREE.SphereGeometry(0.09,6,6),eyeM);
+      e.position.set(1.35,0.22,p[0]);g.add(e);
+    });
+    var ridge=new THREE.Mesh(new THREE.BoxGeometry(1.8,0.14,0.18),cM);
+    ridge.position.y=0.24;g.add(ridge);
+    g.position.set((Math.random()-0.5)*SPAN*0.7,0,(Math.random()-0.5)*SPAN*0.7);
+    g.rotation.y=Math.random()*Math.PI*2;
+    scene.add(g);
+    caimans.push({m:g,sp:0.5+Math.random()*0.5,turn:(Math.random()-0.5)*0.2});
+  }
+})();
+
+/* monkeys perched in the canopy */
+var monkeys=[];
+islandCenters.forEach(function(ic){
+  if(!ic||Math.random()<0.5)return;
+  var g=new THREE.Group();
+  var brown=new THREE.MeshLambertMaterial({color:0x7a5230});
+  var tan=new THREE.MeshLambertMaterial({color:0xc9a06a});
+  var body=new THREE.Mesh(new THREE.SphereGeometry(0.32,8,7),brown);
+  body.scale.y=1.2;g.add(body);
+  var head=new THREE.Mesh(new THREE.SphereGeometry(0.22,8,7),brown);
+  head.position.y=0.45;g.add(head);
+  var face=new THREE.Mesh(new THREE.SphereGeometry(0.13,7,6),tan);
+  face.position.set(0,0.45,0.15);g.add(face);
+  var tail=new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.05,0.9,6),brown);
+  tail.position.set(0,-0.15,-0.4);tail.rotation.x=0.9;g.add(tail);
+  g.position.set(ic.x+(Math.random()-0.5)*8,4.6+Math.random()*1.4,ic.z+(Math.random()-0.5)*8);
+  scene.add(g);
+  monkeys.push({m:g,ph:Math.random()*6,tail:tail});
+});
+
+/* jaguars lounging on the banks */
+var jaguars=[];
+(function(){
+  var furM=new THREE.MeshLambertMaterial({color:0xe0a13c});
+  var spotM=new THREE.MeshLambertMaterial({color:0x3a2a14});
+  var picks=islandCenters.filter(function(x){return x;});
+  for(var n=0;n<2&&picks.length;n++){
+    var ic=picks[Math.floor(Math.random()*picks.length)];
+    var g=new THREE.Group();
+    var body=new THREE.Mesh(new THREE.BoxGeometry(1.6,0.55,0.6),furM);
+    body.position.y=0.4;body.castShadow=true;g.add(body);
+    var head=new THREE.Mesh(new THREE.BoxGeometry(0.55,0.45,0.5),furM);
+    head.position.set(1.0,0.62,0);g.add(head);
+    [[0.86,0.9,0.16],[0.86,0.9,-0.16]].forEach(function(p){
+      var e=new THREE.Mesh(new THREE.BoxGeometry(0.12,0.14,0.1),spotM);
+      e.position.set(p[0],p[1],p[2]);g.add(e);
+    });
+    for(var s=0;s<8;s++){
+      var sp=new THREE.Mesh(new THREE.BoxGeometry(0.1,0.1,0.03),spotM);
+      sp.position.set(-0.6+Math.random()*1.2,0.35+Math.random()*0.3,0.315*(s%2?1:-1));
+      g.add(sp);
+    }
+    var tail=new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.06,1,6),furM);
+    tail.position.set(-0.95,0.55,0);tail.rotation.z=1.2;g.add(tail);
+    g.position.set(ic.x+(Math.random()-0.5)*6,1.05,ic.z+(BLOCK/2-1.5)*(Math.random()<0.5?1:-1));
+    g.rotation.y=Math.random()*Math.PI*2;
+    scene.add(g);
+    jaguars.push({m:g,tail:tail,ph:Math.random()*6});
+  }
+})();
+
+/* sloths hanging in the canopy */
+var sloths=[];
+islandCenters.forEach(function(ic){
+  if(!ic||Math.random()<0.7)return;
+  var g=new THREE.Group();
+  var fur=new THREE.MeshLambertMaterial({color:0x9a8a6a});
+  var branch=new THREE.Mesh(new THREE.CylinderGeometry(0.09,0.09,2.4,6),mats.trunk);
+  branch.rotation.z=Math.PI/2;g.add(branch);
+  var body=new THREE.Mesh(new THREE.SphereGeometry(0.42,8,7),fur);
+  body.scale.set(1.25,0.9,0.9);body.position.y=-0.62;g.add(body);
+  var head=new THREE.Mesh(new THREE.SphereGeometry(0.24,8,7),fur);
+  head.position.set(0.55,-0.5,0);g.add(head);
+  var mask=new THREE.Mesh(new THREE.SphereGeometry(0.14,7,6),
+    new THREE.MeshLambertMaterial({color:0xd9c9a5}));
+  mask.position.set(0.68,-0.5,0);g.add(mask);
+  [[-0.35],[0.35]].forEach(function(p){
+    var arm=new THREE.Mesh(new THREE.CylinderGeometry(0.07,0.07,0.75,6),fur);
+    arm.position.set(p[0],-0.3,0);g.add(arm);
+  });
+  g.position.set(ic.x+(Math.random()-0.5)*7,5.2+Math.random(),ic.z+(Math.random()-0.5)*7);
+  scene.add(g);
+  sloths.push({m:g,ph:Math.random()*6});
+});
+
+/* butterflies fluttering over the water's edge */
+var butterflies=[];
+(function(){
+  var cols=[0x4d9de0,0xffd23f,0xff6b9e,0x9b5de5,0x52d68a,0xff8c2e];
+  for(var n=0;n<12;n++){
+    var g=new THREE.Group();
+    var m=new THREE.MeshBasicMaterial({color:cols[n%cols.length],side:THREE.DoubleSide});
+    var w1=new THREE.Mesh(new THREE.PlaneGeometry(0.32,0.42),m);w1.position.x=0.16;g.add(w1);
+    var w2=new THREE.Mesh(new THREE.PlaneGeometry(0.32,0.42),m);w2.position.x=-0.16;g.add(w2);
+    g.position.set((Math.random()-0.5)*SPAN*0.8,1.2+Math.random()*1.6,(Math.random()-0.5)*SPAN*0.8);
+    scene.add(g);
+    butterflies.push({m:g,w1:w1,w2:w2,ph:Math.random()*20,cx:g.position.x,cz:g.position.z,
+      r:2+Math.random()*4,sp:0.4+Math.random()*0.5});
+  }
+})();
+
+/* river turtles sunning on the mud banks */
+var turtles=[];
+islandCenters.forEach(function(ic){
+  if(!ic||Math.random()<0.65)return;
+  var g=new THREE.Group();
+  var shell=new THREE.Mesh(new THREE.SphereGeometry(0.35,9,7),
+    new THREE.MeshLambertMaterial({color:0x4a6a35}));
+  shell.scale.set(1.15,0.5,1);g.add(shell);
+  var head=new THREE.Mesh(new THREE.SphereGeometry(0.11,7,6),
+    new THREE.MeshLambertMaterial({color:0x6a8a45}));
+  head.position.set(0.42,0.05,0);g.add(head);
+  var side=Math.random()<0.5?1:-1;
+  g.position.set(ic.x+(Math.random()-0.5)*BLOCK*0.5,0.45,ic.z+side*(BLOCK/2+1.1));
+  g.rotation.y=Math.random()*Math.PI*2;
+  scene.add(g);
+  turtles.push({m:g,head:head,ph:Math.random()*8});
+});
+
+/* parrots circling overhead */
+var parrots=[];
+var parrotCols=[0xff3d3d,0x3d7dff,0xffd23f,0x52d68a];
+for(var pN=0;pN<5;pN++){
+  var g=new THREE.Group();
+  var toucan=pN>=3;   /* the last two are toucans */
+  var body=new THREE.Mesh(new THREE.SphereGeometry(0.35,8,7),
+    new THREE.MeshLambertMaterial({color:toucan?0x1c1c22:parrotCols[pN]}));
+  body.scale.set(1.5,0.9,0.8);g.add(body);
+  if(toucan){
+    var chest=new THREE.Mesh(new THREE.SphereGeometry(0.2,7,6),
+      new THREE.MeshLambertMaterial({color:0xfff2c2}));
+    chest.position.set(0.3,-0.05,0);g.add(chest);
+  }
+  var wingM=new THREE.MeshLambertMaterial({color:toucan?0x2b2b33:parrotCols[(pN+1)%4]});
+  var w1=new THREE.Mesh(new THREE.BoxGeometry(0.5,0.06,1.1),wingM);w1.position.z=0.6;g.add(w1);
+  var w2=new THREE.Mesh(new THREE.BoxGeometry(0.5,0.06,1.1),wingM);w2.position.z=-0.6;g.add(w2);
+  var beak=new THREE.Mesh(new THREE.CylinderGeometry(0,toucan?0.16:0.12,toucan?0.75:0.3,6),
+    new THREE.MeshLambertMaterial({color:toucan?0xff8c2e:0xffb340}));
+  beak.rotation.z=-Math.PI/2;beak.position.x=toucan?0.75:0.55;g.add(beak);
+  g.userData={r:20+Math.random()*40,h:12+Math.random()*8,sp:0.25+Math.random()*0.3,
+    ph:Math.random()*Math.PI*2,cx:(Math.random()-0.5)*60,cz:(Math.random()-0.5)*60,w1:w1,w2:w2};
+  scene.add(g);
+  parrots.push(g);
+}
+
+/* ============ PLAYER: capybara in a proper motorboat ============ */
+var player=new THREE.Group();
+(function(){
+  var paintM=new THREE.MeshLambertMaterial({color:0xd8623a});   /* recoloured by Paint Job */
+  var paintM2=new THREE.MeshLambertMaterial({color:0xb14b2a});
+  var darkM=new THREE.MeshLambertMaterial({color:0x2b2b30});
+  var woodM=new THREE.MeshLambertMaterial({color:0x9a7248});
+  var chromeM=new THREE.MeshLambertMaterial({color:0xcfd6d9});
+
+  /* keel + hull */
+  var keel=new THREE.Mesh(new THREE.BoxGeometry(1.05,0.26,2.6),paintM2);
+  keel.position.y=0.26;keel.castShadow=true;player.add(keel);
+  var hull=new THREE.Mesh(new THREE.BoxGeometry(1.35,0.5,2.5),paintM);
+  hull.position.y=0.56;hull.castShadow=true;player.add(hull);
+  /* pointed bow */
+  var bow=new THREE.Mesh(new THREE.CylinderGeometry(0.001,0.95,1.3,4),paintM);
+  bow.rotation.x=-Math.PI/2;bow.rotation.y=Math.PI/4;
+  bow.position.set(0,0.56,1.9);bow.scale.set(1,1,0.55);bow.castShadow=true;player.add(bow);
+  var bowDeck=new THREE.Mesh(new THREE.CylinderGeometry(0.001,0.68,1.05,4),woodM);
+  bowDeck.rotation.x=-Math.PI/2;bowDeck.rotation.y=Math.PI/4;
+  bowDeck.position.set(0,0.83,1.85);bowDeck.scale.set(1,1,0.08);player.add(bowDeck);
+  /* gunwale rails */
+  [[0.72],[-0.72]].forEach(function(p){
+    var rail=new THREE.Mesh(new THREE.BoxGeometry(0.12,0.1,2.55),woodM);
+    rail.position.set(p[0],0.86,0);player.add(rail);
+  });
+  var sternRail=new THREE.Mesh(new THREE.BoxGeometry(1.5,0.1,0.12),woodM);
+  sternRail.position.set(0,0.86,-1.26);player.add(sternRail);
+  /* windshield */
+  var shield=new THREE.Mesh(new THREE.PlaneGeometry(0.95,0.42),
+    new THREE.MeshLambertMaterial({color:0xbfe8ff,transparent:true,opacity:0.45,side:THREE.DoubleSide}));
+  shield.position.set(0,1.05,0.72);shield.rotation.x=-0.35;player.add(shield);
+  /* bench seat */
+  var bench=new THREE.Mesh(new THREE.BoxGeometry(1.15,0.12,0.42),woodM);
+  bench.position.set(0,0.7,-0.25);player.add(bench);
+
+  /* outboard motor + spinning propeller */
+  var motor=new THREE.Mesh(new THREE.BoxGeometry(0.38,0.5,0.34),darkM);
+  motor.position.set(0,0.95,-1.46);motor.castShadow=true;player.add(motor);
+  var mtop=new THREE.Mesh(new THREE.BoxGeometry(0.42,0.14,0.38),
+    new THREE.MeshLambertMaterial({color:0x494952}));
+  mtop.position.set(0,1.25,-1.46);player.add(mtop);
+  var shaft=new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.06,0.7,7),darkM);
+  shaft.position.set(0,0.45,-1.5);player.add(shaft);
+  var prop=new THREE.Group();
+  for(var pb=0;pb<2;pb++){
+    var blade=new THREE.Mesh(new THREE.BoxGeometry(0.36,0.09,0.03),chromeM);
+    blade.rotation.z=pb*Math.PI/2;
+    prop.add(blade);
+  }
+  prop.position.set(0,0.16,-1.56);player.add(prop);
+  /* tiller from motor to the capybara's paw */
+  var tiller=new THREE.Mesh(new THREE.CylinderGeometry(0.035,0.035,0.75,6),darkM);
+  tiller.rotation.x=Math.PI/2-0.35;tiller.position.set(0.12,1.0,-1.05);player.add(tiller);
+
+  /* flag on the bow, waving */
+  var pole=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,0.85,6),woodM);
+  pole.position.set(0,1.25,1.85);player.add(pole);
+  var flag=new THREE.Mesh(new THREE.PlaneGeometry(0.5,0.3),
+    new THREE.MeshLambertMaterial({color:0x52d68a,side:THREE.DoubleSide}));
+  flag.position.set(0.26,1.55,1.85);player.add(flag);
+
+  /* upgrade visuals (toggled by the Boat Yard) */
+  var lantern=new THREE.Group();
+  var lmount=new THREE.Mesh(new THREE.CylinderGeometry(0.04,0.04,0.3,6),darkM);
+  lmount.position.y=0.15;lantern.add(lmount);
+  var lglow=new THREE.Mesh(new THREE.SphereGeometry(0.11,8,8),
+    new THREE.MeshBasicMaterial({color:0xffe9a0}));
+  lglow.position.y=0.36;lantern.add(lglow);
+  lantern.position.set(0,0.86,1.45);lantern.visible=false;player.add(lantern);
+
+  var fenders=new THREE.Group();
+  [[0.74],[-0.74]].forEach(function(p){
+    for(var f=-1;f<=1;f++){
+      var fd=new THREE.Mesh(new THREE.TorusGeometry(0.13,0.05,6,10),darkM);
+      fd.position.set(p[0],0.62,f*0.8);fd.rotation.y=Math.PI/2;
+      fenders.add(fd);
+    }
+  });
+  fenders.visible=false;player.add(fenders);
+
+  var pipes=new THREE.Group();
+  [[0.3],[-0.3]].forEach(function(p){
+    var pipe=new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.08,0.5,7),chromeM);
+    pipe.rotation.x=0.9;pipe.position.set(p[0],1.0,-1.28);
+    pipes.add(pipe);
+  });
+  pipes.visible=false;player.add(pipes);
+
+  /* rider */
+  var capy=makeCapyMesh(0.62);
+  capy.rotation.y=-Math.PI/2;
+  capy.position.set(0,0.62,-0.2);
+  player.add(capy);
+  /* fruit crate */
+  var crate=new THREE.Mesh(new THREE.BoxGeometry(0.7,0.5,0.7),woodM);
+  crate.position.set(0,1.0,-0.8);crate.castShadow=true;player.add(crate);
+  var mel=new THREE.Mesh(new THREE.SphereGeometry(0.28,10,8),
+    new THREE.MeshLambertMaterial({color:0x3f8f3f}));
+  mel.position.set(0,1.35,-0.8);player.add(mel);
+
+  player.userData.paintMats=[paintM,paintM2];
+  player.userData.prop=prop;
+  player.userData.flag=flag;
+  player.userData.lantern=lantern;
+  player.userData.lanternGlow=lglow;
+  player.userData.fenders=fenders;
+  player.userData.pipes=pipes;
+})();
+scene.add(player);
+
+/* delivery beacon */
+var beacon=new THREE.Group();
+(function(){
+  var ring=new THREE.Mesh(new THREE.CylinderGeometry(2.4,2.4,0.12,24,1,true),
+    new THREE.MeshBasicMaterial({color:0xffb340,transparent:true,opacity:0.9,side:THREE.DoubleSide}));
+  ring.position.y=0.3;beacon.add(ring);
+  var beam=new THREE.Mesh(new THREE.CylinderGeometry(1.2,2.1,17,16,1,true),
+    new THREE.MeshBasicMaterial({color:0xffcf70,transparent:true,opacity:0.28,
+      side:THREE.DoubleSide,depthWrite:false}));
+  beam.position.y=8.5;beacon.add(beam);
+})();
+scene.add(beacon);beacon.visible=false;
+
+var standBeacon=beacon.clone();
+standBeacon.children.forEach(function(c){c.material=c.material.clone();c.material.color.set(0x52d68a);});
+scene.add(standBeacon);
+standBeacon.position.set(0,0,5);
+
+/* ============ FLOATING LOGS (moving obstacles) ============ */
+var logs=[];
+(function(){
+  var logM=new THREE.MeshLambertMaterial({color:0x5e4226});
+  var chanCenters=[];
+  for(var i=0;i<=CELLS;i++)chanCenters.push(-HALF+CHAN/2+i*(BLOCK+CHAN));
+  for(var n=0;n<7;n++){
+    var vert=n%2===0;                       /* drift along z or along x */
+    var lane=chanCenters[1+Math.floor(Math.random()*(chanCenters.length-2))];
+    var g=new THREE.Group();
+    var len=2.6+Math.random()*1.6;
+    var body=new THREE.Mesh(new THREE.CylinderGeometry(0.42,0.48,len,9),logM);
+    body.rotation.z=Math.PI/2;body.castShadow=true;g.add(body);
+    var stub=new THREE.Mesh(new THREE.CylinderGeometry(0.14,0.18,0.6,6),logM);
+    stub.position.set(len*0.2,0.35,0);g.add(stub);
+    g.rotation.y=vert?Math.PI/2:0;
+    g.position.set(vert?lane:(Math.random()-0.5)*SPAN*0.8, 0.25, vert?(Math.random()-0.5)*SPAN*0.8:lane);
+    scene.add(g);
+    logs.push({m:g,vert:vert,dir:Math.random()<0.5?1:-1,sp:1.3+Math.random()*1.2,r:1.15,len:len});
+  }
+})();
+
+/* ============ WEATHER: sudden Amazon storms ============ */
+var weather={state:'clear',kind:'storm',clearFor:18+Math.random()*14,stormFor:0,intensity:0};
+var wind=new THREE.Vector3();
+var CLEAR_SKY=new THREE.Color(0xbfe0c4),STORM_SKY=new THREE.Color(0x53695e);
+var CLEAR_FOG=new THREE.Color(0xbfe0c4),STORM_FOG=new THREE.Color(0x5d7468);
+/* rain: a curtain of falling points that follows the boat */
+var rain=(function(){
+  var N=1400,g=new THREE.BufferGeometry(),p=new Float32Array(N*3);
+  for(var i=0;i<N;i++){
+    p[i*3]=(Math.random()-0.5)*70;
+    p[i*3+1]=Math.random()*28;
+    p[i*3+2]=(Math.random()-0.5)*70;
+  }
+  g.setAttribute('position',new THREE.BufferAttribute(p,3));
+  var m=new THREE.PointsMaterial({color:0xd8ecff,size:0.22,transparent:true,opacity:0,
+    sizeAttenuation:true,depthWrite:false});
+  var pts=new THREE.Points(g,m);
+  pts.visible=false;
+  scene.add(pts);
+  return pts;
+})();
+function thunder(){
+  splash(0.3);tone(60,0.8,'sawtooth',0.09);tone(45,1.1,'sawtooth',0.07,0.15);
+  scene.background.setHex(0xf5fff8);   /* lightning flash; weatherUpdate fades it back */
+}
+function weatherUpdate(dt){
+  if(weather.state==='clear'){
+    weather.clearFor-=dt;
+    weather.intensity=Math.max(0,weather.intensity-dt*0.5);
+    if(weather.clearFor<=0){
+      weather.state='storm';
+      weather.kind=Math.random()<0.35?'typhoon':'storm';   /* 1 in 3 blows are BIG */
+      var a=Math.random()*Math.PI*2;
+      if(weather.kind==='typhoon'){
+        weather.stormFor=11+Math.random()*6;
+        var s=5.2+Math.random()*2.4;                       /* seriously strong wind */
+        wind.set(Math.cos(a)*s,0,Math.sin(a)*s);
+        toast('🌀 TYPHOON! Fight the wind!','#ff5d6e');
+        thunder();setTimeout(thunder,500);
+      }else{
+        weather.stormFor=13+Math.random()*9;
+        var s2=2.2+Math.random()*1.8;
+        wind.set(Math.cos(a)*s2,0,Math.sin(a)*s2);
+        toast('⛈️ STORM! Rain and wind!','#9bd0ff');
+        thunder();
+      }
+    }
+  }else{
+    weather.stormFor-=dt;
+    weather.intensity=Math.min(1,weather.intensity+dt*0.7);
+    if(Math.random()<dt*(weather.kind==='typhoon'?0.3:0.12))thunder();
+    if(weather.stormFor<=0){
+      weather.state='clear';
+      weather.clearFor=22+Math.random()*18;
+      wind.set(0,0,0);
+      toast('🌤️ Storm passed!','#52d68a');
+    }
+  }
+  var k=weather.intensity;
+  /* sky + fog close in */
+  scene.background.lerp(weather.state==='storm'?STORM_SKY:CLEAR_SKY,dt*1.2);
+  scene.fog.color.lerp(weather.state==='storm'?STORM_FOG:CLEAR_FOG,dt*1.2);
+  scene.fog.near=55-30*k;
+  scene.fog.far=190-95*k;
+  sun.intensity=1.1-0.6*k;
+  /* rain follows the player and falls */
+  rain.visible=k>0.02;
+  rain.material.opacity=(weather.kind==='typhoon'?0.95:0.75)*k;
+  rain.material.size=weather.kind==='typhoon'?0.3:0.22;
+  if(rain.visible){
+    rain.position.set(pos.x,0,pos.z);
+    var arr=rain.geometry.attributes.position.array;
+    for(var i=1;i<arr.length;i+=3){
+      arr[i]-=(26+(weather.kind==='typhoon'?26:10)*k)*dt;
+      if(arr[i]<0)arr[i]=28;
+    }
+    rain.geometry.attributes.position.needsUpdate=true;
+    rain.rotation.z=-wind.x*0.04;rain.rotation.x=wind.z*0.04;
+  }
+}
+
+/* ============ PARTICLES ============ */
+var parts=[];
+function burst(pos,cols,n,up){
+  for(var i=0;i<n;i++){
+    var m=new THREE.Mesh(new THREE.BoxGeometry(0.16,0.16,0.16),
+      new THREE.MeshBasicMaterial({color:cols[i%cols.length]}));
+    m.position.copy(pos);
+    parts.push({m:m,v:new THREE.Vector3((Math.random()-0.5)*6,(up||4)+Math.random()*4,(Math.random()-0.5)*6),
+      life:1.1,spin:Math.random()*8,grav:12});
+    scene.add(m);
+  }
+}
+/* boat wake: flat white fading discs */
+var wakeM=new THREE.MeshBasicMaterial({color:0xdff5ec,transparent:true,opacity:0.55,depthWrite:false});
+function wake(x,z,big){
+  var m=new THREE.Mesh(new THREE.CylinderGeometry(big?0.5:0.3,big?0.5:0.3,0.02,10),wakeM.clone());
+  m.position.set(x,0.05,z);
+  parts.push({m:m,ring:true,life:0.9,grow:big?3.4:2.2});
+  scene.add(m);
+}
+
+/* ============ SPOT THE ANIMALS ============ */
+var SPECIES=[
+  {key:'dolphin',  name:'River dolphin', emoji:'🐬', r:9},
+  {key:'caiman',   name:'Caiman',        emoji:'🐊', r:7},
+  {key:'monkey',   name:'Monkey',        emoji:'🐒', r:11},
+  {key:'sloth',    name:'Sloth',         emoji:'🦥', r:11},
+  {key:'jaguar',   name:'Jaguar',        emoji:'🐆', r:9},
+  {key:'butterfly',name:'Butterfly',     emoji:'🦋', r:5},
+  {key:'turtle',   name:'River turtle',  emoji:'🐢', r:7},
+  {key:'toucan',   name:'Toucan',        emoji:'🦜', r:16},
+  {key:'parrot',   name:'Parrot',        emoji:'🦜', r:16},
+  {key:'capybara', name:'Wild capybara', emoji:'🦫', r:8}
+];
+var spotted={},spotCount=0,spotCheck=0;
+function speciesInstances(key){
+  switch(key){
+    case 'dolphin':return dolphins.map(function(d){return d.m;});
+    case 'caiman':return caimans.map(function(c){return c.m;});
+    case 'monkey':return monkeys.map(function(m){return m.m;});
+    case 'sloth':return sloths.map(function(s){return s.m;});
+    case 'jaguar':return jaguars.map(function(j){return j.m;});
+    case 'butterfly':return butterflies.map(function(b){return b.m;});
+    case 'turtle':return turtles.map(function(t2){return t2.m;});
+    case 'toucan':return parrots.slice(3);
+    case 'parrot':return parrots.slice(0,3);
+    case 'capybara':return loungers;
+  }
+  return [];
+}
+function checkSpots(){
+  for(var s=0;s<SPECIES.length;s++){
+    var sp=SPECIES[s];
+    if(spotted[sp.key])continue;
+    var list=speciesInstances(sp.key);
+    for(var i=0;i<list.length;i++){
+      var m=list[i];
+      if(sp.key==='dolphin'&&!m.visible)continue;   /* only counts mid-leap! */
+      var dx=m.position.x-pos.x,dz=m.position.z-pos.z;
+      if(dx*dx+dz*dz<sp.r*sp.r){
+        spotted[sp.key]=true;spotCount++;
+        coins+=5;$('coinval').textContent=coins;
+        $('spotval').textContent=spotCount+'/10';
+        toast(sp.emoji+' '+sp.name+' spotted! +5 💰','#9bd0ff');
+        tone(880,0.09,'triangle',0.06);tone(1175,0.14,'triangle',0.06,0.08);
+        if(spotCount===SPECIES.length){
+          coins+=25;$('coinval').textContent=coins;
+          toast('🏅 ALL ANIMALS SPOTTED! +25 💰','#ffd23f');
+          tone(659,0.12,'sine',0.07);tone(784,0.12,'sine',0.07,0.1);tone(1047,0.25,'sine',0.07,0.2);
+        }
+        return;   /* one spot per check keeps toasts readable */
+      }
+    }
+  }
+}
+
+/* ============ ARCADE RECORD (shared with the Year 5 Arcade) ============ */
+var GAME_ID='amazoncourier';
+var SB_URL='https://wpohvsjkrskhlrayaubp.supabase.co';
+var SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indwb2h2c2prcnNraGxyYXlhdWJwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzMDEzOTcsImV4cCI6MjA5Njg3NzM5N30.Xi07ayGB5CykR-_7QX-b8UsUmMmTbGIlYpctXYgW9JI';
+function sbH(){return {'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'};}
+function getPlayer(){try{return JSON.parse(localStorage.getItem('rna_player')||'null');}catch(e){return null;}}
+async function saveScore(score){
+  var p=getPlayer();
+  if(!p){$('saveline').textContent='Sign in on the arcade page to save your record!';return;}
+  try{
+    var h=sbH();h['Prefer']='return=minimal';
+    var r=await fetch(SB_URL+'/rest/v1/scores',{method:'POST',headers:h,
+      body:JSON.stringify({player:p.name,game:GAME_ID,score:score})});
+    $('saveline').textContent=r.ok?('✓ Saved to '+p.name+"'s record"):'Could not save this time.';
+  }catch(e){$('saveline').textContent='Could not save this time.';}
+}
+async function loadTop(){
+  try{
+    var r=await fetch(SB_URL+'/rest/v1/scores?select=player,score&game=eq.'+GAME_ID+
+      '&order=score.desc&limit=5',{headers:sbH()});
+    if(!r.ok)return;
+    var rows=await r.json();
+    if(!rows.length){$('topboard').innerHTML='';return;}
+    var medals=['🥇','🥈','🥉','4.','5.'];
+    $('topboard').innerHTML='<b style="color:var(--accent);">RIVER LEGENDS</b><br>'+
+      rows.map(function(x,i){return medals[i]+' '+String(x.player).replace(/[<>&]/g,'')+' — '+x.score;}).join('<br>');
+  }catch(e){}
+}
+
+/* ============ BOAT YARD: persistent wallet + upgrades ============
+   Same save pattern as the arcade's other games: local save per player,
+   plus a silent cloud sync via a text column `arc` on the players table
+   (newest save wins; upgrade levels are merged with max()). */
+var UPGRADES=[
+  {id:'eng',  ic:'💨', nm:'River Engine', max:5, costs:[20,40,70,110,160],
+   desc:'+8% top speed per level'},
+  {id:'turbo',ic:'⚡',      nm:'Turbo Tank',   max:5, costs:[15,30,55,90,140],
+   desc:'Boost lasts longer and pushes harder'},
+  {id:'rud',  ic:'🛞', nm:'Sharp Rudder', max:5, costs:[15,30,50,80,120],
+   desc:'+9% turning per level'},
+  {id:'hull', ic:'🛡️', nm:'Tough Hull', max:4, costs:[25,50,90,150],
+   desc:'Log crashes cost fewer seconds'},
+  {id:'luck', ic:'🍀', nm:'Lucky Charm',  max:3, costs:[30,70,130],
+   desc:'+1 bonus coin per delivery per level'},
+  {id:'lant', ic:'🏮', nm:'Storm Lantern', max:3, costs:[25,60,110],
+   desc:'Storm & typhoon winds push you 20% less per level — shows on your bow!'},
+  {id:'heart',ic:'❤️', nm:'Spare Heart',  max:2, costs:[40,100],
+   desc:'Start every shift with an extra heart'},
+  {id:'net',  ic:'🪝', nm:'Wide Net',      max:3, costs:[20,45,85],
+   desc:'Bigger pickup & delivery zone — dock from further away'},
+  {id:'paint',ic:'🎨', nm:'Paint Job',     max:5, costs:[10,20,30,40,50],
+   desc:'A fresh hull colour every level: blue, green, purple, gold, pink!'}
+];
+function saveKey(){var p=getPlayer();return 'arc_save_'+(p?p.name:'guest');}
+function loadSave(){
+  var blank={coins:0,upg:{},ts:0};
+  UPGRADES.forEach(function(u){blank.upg[u.id]=0;});
+  try{
+    var s=JSON.parse(localStorage.getItem(saveKey())||'null');
+    if(s&&s.upg){
+      UPGRADES.forEach(function(u){if(s.upg[u.id]==null)s.upg[u.id]=0;});  /* older saves get new slots */
+      return s;
+    }
+  }catch(e){}
+  return blank;
+}
+function storeSave(s){s.ts=Date.now();localStorage.setItem(saveKey(),JSON.stringify(s));cloudPush(s);}
+async function cloudPush(s){
+  var p=getPlayer();if(!p)return;
+  try{
+    await fetch(SB_URL+'/rest/v1/players?name=eq.'+encodeURIComponent(p.name),
+      {method:'PATCH',headers:sbH(),body:JSON.stringify({arc:JSON.stringify(s)})});
+  }catch(e){}
+}
+async function cloudLoad(){
+  var p=getPlayer();if(!p)return;
+  try{
+    var r=await fetch(SB_URL+'/rest/v1/players?select=arc&name=eq.'+encodeURIComponent(p.name),{headers:sbH()});
+    if(!r.ok)return;
+    var rows=await r.json();
+    if(!rows.length||!rows[0].arc)return;
+    var cloud=JSON.parse(rows[0].arc),local=loadSave();
+    var newer=(cloud.ts||0)>(local.ts||0)?cloud:local;
+    var merged={coins:newer.coins||0,ts:newer.ts||0,upg:{}};
+    UPGRADES.forEach(function(u){
+      merged.upg[u.id]=Math.max((cloud.upg&&cloud.upg[u.id])||0,(local.upg&&local.upg[u.id])||0);
+    });
+    localStorage.setItem(saveKey(),JSON.stringify(merged));
+    refreshWallets();
+  }catch(e){}
+}
+function lvl(id){var s=loadSave();return (s.upg&&s.upg[id])||0;}
+function refreshWallets(){
+  var s=loadSave();
+  $('walletStart').textContent='🪙 '+s.coins+' coins in the bank';
+  $('walletYard').textContent='🪙 '+s.coins+' coins';
+}
+function renderYard(){
+  var s=loadSave();
+  $('walletYard').textContent='🪙 '+s.coins+' coins';
+  var h='';
+  UPGRADES.forEach(function(u){
+    var L=s.upg[u.id]||0;
+    var pips='';
+    for(var i=0;i<u.max;i++)pips+='<div class="pip'+(i<L?' on':'')+'"></div>';
+    var btn;
+    if(L>=u.max)btn='<button class="yard-buy maxed" disabled>MAX ✓</button>';
+    else{
+      var cost=u.costs[L];
+      btn='<button class="yard-buy" data-id="'+u.id+'" '+(s.coins<cost?'disabled':'')+'>'+
+        cost+' 🪙</button>';
+    }
+    h+='<div class="yard-row"><div class="yard-ic">'+u.ic+'</div>'+
+      '<div class="yard-info"><div class="yard-nm">'+u.nm+' <span style="color:var(--dim);font-size:12px;">Lv '+L+'</span></div>'+
+      '<div class="yard-desc">'+u.desc+'</div><div class="pips">'+pips+'</div></div>'+btn+'</div>';
+  });
+  $('yardlist').innerHTML=h;
+  Array.prototype.forEach.call(document.querySelectorAll('.yard-buy[data-id]'),function(b){
+    b.addEventListener('click',function(){
+      var u=UPGRADES.filter(function(x){return x.id===b.dataset.id;})[0];
+      var s2=loadSave(),L2=s2.upg[u.id]||0;
+      if(L2>=u.max||s2.coins<u.costs[L2])return;
+      s2.coins-=u.costs[L2];
+      s2.upg[u.id]=L2+1;
+      storeSave(s2);
+      tone(523,0.1,'sine',0.07);tone(784,0.16,'sine',0.07,0.08);
+      renderYard();refreshWallets();
+    });
+  });
+}
+var yardFrom='start';
+function openYard(from){yardFrom=from;renderYard();
+  $('startpanel').style.display='none';$('endpanel').style.display='none';
+  $('yardpanel').style.display='flex';}
+function closeYard(){$('yardpanel').style.display='none';
+  $(yardFrom==='end'?'endpanel':'startpanel').style.display='flex';refreshWallets();}
+
+/* ============ GAME STATE ============ */
+var running=false;
+var coins=0,delivered=0,hearts=3;
+var pos=player.position, heading=0, speed=0, driftVel=new THREE.Vector3();
+var BASE_MAXSPD=14, BASE_ACC=11, BASE_STEER=1.7;
+var MAXSPD=14, ACC=11, BRAKE=16, FRICT=2.6, STEER=1.7;
+var boostDrain=0.5, boostPower=1.5, boostAcc=1.7, logPen=4, luckBonus=0;
+var windResist=1, heartsStart=3, arriveR=4;
+var PAINTS=[[0xd8623a,0xb14b2a],[0x3fa4d6,0x2a7ba6],[0x52d68a,0x35a066],
+            [0x9b5de5,0x7440b3],[0xffd23f,0xd0a318],[0xff5d9e,0xd03a78]];
+function applyUpgrades(){
+  MAXSPD=BASE_MAXSPD*(1+0.08*lvl('eng'));
+  ACC=BASE_ACC*(1+0.06*lvl('eng'));
+  STEER=BASE_STEER*(1+0.09*lvl('rud'));
+  boostDrain=0.5*Math.pow(0.88,lvl('turbo'));
+  boostPower=1.5+0.06*lvl('turbo');
+  boostAcc=1.7+0.08*lvl('turbo');
+  logPen=Math.max(0.5,4-lvl('hull'));
+  luckBonus=lvl('luck');
+  windResist=Math.pow(0.8,lvl('lant'));
+  heartsStart=3+lvl('heart');
+  arriveR=4+0.4*lvl('net');
+  /* visible on the boat! */
+  var pc=PAINTS[Math.min(lvl('paint'),PAINTS.length-1)];
+  player.userData.paintMats[0].color.setHex(pc[0]);
+  player.userData.paintMats[1].color.setHex(pc[1]);
+  player.userData.lantern.visible=lvl('lant')>0;
+  player.userData.fenders.visible=lvl('hull')>0;
+  player.userData.pipes.visible=lvl('turbo')>=3;
+}
+applyUpgrades();   /* boat shows your upgrades on the start screen too */
+var boost=0, boostMeter=1;
+var phase='pickup';
+var target=new THREE.Vector3(0,0,5);
+var timeLeft=0,timeMax=1;
+var wakeAcc=0;
+var shiftTime=0,pressureStage=0;
+/* the longer the shift, the tighter the timers: -9% per minute, floor 55% */
+function pressure(){return Math.max(0.55,1-(shiftTime/60)*0.09);}
+
+function setOrder(){
+  phase='pickup';
+  target.set(0,0,5);
+  beacon.visible=false;standBeacon.visible=true;
+  $('ordertext').textContent='🍉 Race back to the market for more fruit!';
+  /* the trip back is timed too — a little more generous than deliveries */
+  var dist=Math.hypot(target.x-pos.x,target.z-pos.z);
+  timeMax=Math.max(16,dist/MAXSPD*3.0+9)*pressure();
+  timeLeft=timeMax;
+  $('timerfill').style.width='100%';
+  $('timerbar').classList.remove('low');
+}
+function assignDelivery(){
+  phase='deliver';
+  var h=huts[Math.floor(Math.random()*huts.length)];
+  var guard=0;
+  while(Math.hypot(h.x-pos.x,h.z-pos.z)<32&&guard<25){
+    h=huts[Math.floor(Math.random()*huts.length)];guard++;
+  }
+  target.set(h.x,0,h.z);
+  beacon.position.set(h.x,0,h.z);
+  beacon.visible=true;standBeacon.visible=false;
+  var dist=Math.hypot(h.x-pos.x,h.z-pos.z);
+  timeMax=Math.max(16,dist/MAXSPD*2.6+8)*pressure();
+  timeLeft=timeMax;
+  var fruits=['🍉 watermelon','🥭 mangoes','🍌 bananas','🍍 pineapple','🥥 coconuts','🫐 açaí berries'];
+  $('ordertext').textContent='Deliver '+fruits[Math.floor(Math.random()*fruits.length)]+' to the glowing dock!';
+  tone(660,0.1,'sine',0.06);tone(880,0.16,'sine',0.06,0.1);
+}
+function toast(msg,col){
+  var t=$('toast');
+  t.textContent=msg;
+  t.style.textShadow='0 0 18px '+(col||'#52d68a')+',0 3px 8px rgba(0,0,0,.6)';
+  t.classList.remove('show');void t.offsetWidth;t.classList.add('show');
+}
+function updateHearts(){$('hearts').textContent=hearts>0?'❤️'.repeat(hearts):'💔';}
+
+/* ============ INPUT ============ */
+var keys={};
+document.addEventListener('keydown',function(e){
+  keys[e.key.toLowerCase()]=true;
+  if(e.key===' ')e.preventDefault();
+  if(e.key.toLowerCase()==='h'&&running){tone(330,0.25,'square',0.07);tone(262,0.3,'square',0.07,0.08);}
+});
+document.addEventListener('keyup',function(e){keys[e.key.toLowerCase()]=false;});
+var tstate={l:false,r:false,go:false,back:false,boost:false};
+function bindHold(id,prop){
+  var el=$(id);
+  ['touchstart','mousedown'].forEach(function(ev){
+    el.addEventListener(ev,function(e){e.preventDefault();tstate[prop]=true;el.classList.add('held');},{passive:false});
+  });
+  ['touchend','touchcancel','mouseup','mouseleave'].forEach(function(ev){
+    el.addEventListener(ev,function(e){e.preventDefault();tstate[prop]=false;el.classList.remove('held');},{passive:false});
+  });
+}
+bindHold('btnL','l');bindHold('btnR','r');bindHold('btnGo','go');bindHold('btnBack','back');bindHold('btnBoost','boost');
+if('ontouchstart' in window)$('touch').classList.add('show');
+
+/* ============ PHYSICS + LOOP ============ */
+var clock=new THREE.Clock();
+var camPos=new THREE.Vector3(0,6,12);
+/* push the boat OUT of anything it overlaps and slide along the wall —
+   it can never get wedged inside an island again */
+function resolveStatic(){
+  var R=0.5,bumped=false;
+  if(pos.x<-HALF-6){pos.x=-HALF-6;driftVel.x=Math.max(0,driftVel.x);bumped=true;}
+  if(pos.x> HALF+6){pos.x= HALF+6;driftVel.x=Math.min(0,driftVel.x);bumped=true;}
+  if(pos.z<-HALF-6){pos.z=-HALF-6;driftVel.z=Math.max(0,driftVel.z);bumped=true;}
+  if(pos.z> HALF+6){pos.z= HALF+6;driftVel.z=Math.min(0,driftVel.z);bumped=true;}
+  for(var pass=0;pass<2;pass++){         /* two passes handles corners */
+    for(var i=0;i<colliders.length;i++){
+      var c=colliders[i];
+      var dx=pos.x-c.x,dz=pos.z-c.z;
+      var px=c.hw+R-Math.abs(dx), pz=c.hz+R-Math.abs(dz);
+      if(px>0&&pz>0){
+        bumped=true;
+        if(px<pz){                        /* pop out along x, slide on z */
+          pos.x=c.x+(dx>=0?1:-1)*(c.hw+R);
+          if((dx>=0&&driftVel.x<0)||(dx<0&&driftVel.x>0))driftVel.x=0;
+        }else{                            /* pop out along z, slide on x */
+          pos.z=c.z+(dz>=0?1:-1)*(c.hz+R);
+          if((dz>=0&&driftVel.z<0)||(dz<0&&driftVel.z>0))driftVel.z=0;
+        }
+      }
+    }
+  }
+  return bumped;
+}
+function hitLog(nx,nz){
+  for(var i=0;i<logs.length;i++){
+    var L=logs[i];
+    var dx=nx-L.m.position.x,dz=nz-L.m.position.z;
+    if(dx*dx+dz*dz<(L.r+0.9)*(L.r+0.9))return L;
+  }
+  return null;
+}
+
+function animate(){
+  requestAnimationFrame(animate);
+  var dt=Math.min(clock.getDelta(),0.05);
+  var t=clock.elapsedTime;
+
+  if(running){
+    var fwd=(keys['w']||keys['arrowup']||tstate.go)?1:0;
+    var back=(keys['s']||keys['arrowdown']||tstate.back)?1:0;
+    var left=(keys['a']||keys['arrowleft']||tstate.l)?1:0;
+    var right=(keys['d']||keys['arrowright']||tstate.r)?1:0;
+    var wantBoost=(keys['shift']||keys[' ']||tstate.boost)?1:0;
+
+    if(wantBoost&&boostMeter>0.05&&fwd){boost=1;boostMeter=Math.max(0,boostMeter-dt*boostDrain);}
+    else{boost=0;boostMeter=Math.min(1,boostMeter+dt*0.2);}
+
+    var maxNow=MAXSPD*(boost?boostPower:1);
+    if(fwd)speed+=ACC*(boost?boostAcc:1)*dt;
+    else if(back)speed-=BRAKE*dt*0.55;
+    else speed-=Math.sign(speed)*FRICT*dt;        /* boats coast — low friction */
+    speed=Math.max(-4,Math.min(maxNow,speed));
+    if(Math.abs(speed)<0.04&&!fwd&&!back)speed=0;
+
+    var steer=(left-right)*STEER*Math.min(1,Math.abs(speed)/3.5)*(speed<0?-1:1);
+    heading+=steer*dt;
+
+    /* boaty drift: velocity lags behind heading */
+    var want=new THREE.Vector3(Math.sin(heading),0,Math.cos(heading)).multiplyScalar(speed);
+    driftVel.lerp(want,1-Math.pow(0.02,dt));      /* slide through turns */
+
+    /* storm wind shoves the boat — typhoons come in gusts */
+    var gust=weather.kind==='typhoon'?(1+0.45*Math.sin(t*1.6)+0.25*Math.sin(t*4.3)):1;
+    gust*=windResist;   /* Storm Lantern steadies the boat */
+    var nx=pos.x+(driftVel.x+wind.x*weather.intensity*gust)*dt;
+    var nz=pos.z+(driftVel.z+wind.z*weather.intensity*gust)*dt;
+
+    var L=hitLog(nx,nz);
+    if(L&&Math.abs(speed)>1){
+      splash(0.18);tone(120,0.18,'sawtooth',0.06);
+      burst(pos.clone().setY(0.5),[0xdff5ec,0x8a6238],8,3);
+      speed*=-0.4;driftVel.multiplyScalar(-0.4);
+      L.dir*=-1;
+      if(timeMax>0){
+        timeLeft=Math.max(0.5,timeLeft-logPen);
+        toast('OUCH! −'+logPen+' seconds 🪵','#ff5d6e');
+        tone(196,0.25,'square',0.06,0.1);
+      }
+    }else{
+      pos.x=nx;pos.z=nz;
+      var wasFast=Math.abs(speed)>6;
+      if(resolveStatic()){
+        speed*=0.965;                     /* scraping the bank just slows you */
+        if(wasFast&&!player.userData.scraped){
+          splash(0.14);
+          burst(pos.clone().setY(0.4),[0xdff5ec,0x9a7248],4,2);
+          player.userData.scraped=true;
+          setTimeout(function(){player.userData.scraped=false;},600);
+        }
+      }
+    }
+
+    player.rotation.y=heading;
+    player.rotation.z=-(left-right)*Math.min(0.26,Math.abs(speed)*0.025)+Math.sin(t*2.2)*0.02;
+    player.rotation.x=Math.sin(t*1.7)*0.02-Math.min(0.09,speed*0.006);
+    player.position.y=0.05+Math.sin(t*2.4)*0.045;   /* bob on the water */
+
+    engineUpdate(speed,MAXSPD);
+    player.userData.prop.rotation.z+=(3+Math.abs(speed)*2.2)*dt*(boost?2:1)*4;
+    $('speedval').textContent=Math.round(Math.abs(speed)*4);
+
+    /* wake trail */
+    wakeAcc+=dt*Math.min(1,Math.abs(speed)/5);
+    if(wakeAcc>0.08&&Math.abs(speed)>2){
+      wakeAcc=0;
+      var bx=pos.x-Math.sin(heading)*1.4,bz=pos.z-Math.cos(heading)*1.4;
+      wake(bx,bz,boost);
+    }
+
+    /* --- target check --- */
+    var dx=target.x-pos.x,dz=target.z-pos.z;
+    var dist=Math.hypot(dx,dz);
+    $('dist').textContent=Math.round(dist*3)+'m';
+    var ang=Math.atan2(dx,dz)-heading;
+    $('arrow').style.transform='translateX(-50%) rotate('+(-ang)+'rad)';
+
+    if(dist<arriveR){
+      if(phase==='pickup'){
+        tone(740,0.1,'triangle',0.07);tone(988,0.18,'triangle',0.07,0.09);
+        toast('FRUIT LOADED!','#52d68a');
+        burst(pos.clone().setY(1.2),[0xff4d5e,0xffb340,0x7cd83f],14,5);
+        assignDelivery();
+      }else{
+        var bonus=Math.max(1,Math.round(timeLeft/timeMax*10));
+        var pay=10+bonus+luckBonus;
+        coins+=pay;delivered++;
+        $('coinval').textContent=coins;$('delval').textContent=delivered;
+        toast('DELIVERED! +'+pay+' 💰','#ffb340');
+        burst(target.clone().setY(1.5),[0xffb340,0x52d68a,0xffffff,0xff8d6b],22,6);
+        tone(523,0.12,'sine',0.07);tone(659,0.12,'sine',0.07,0.1);tone(784,0.22,'sine',0.07,0.2);
+        setOrder();
+      }
+    }
+
+    /* --- rising pressure: timers shrink as the shift goes on --- */
+    shiftTime+=dt;
+    var stage=Math.floor(shiftTime/60);
+    if(stage>pressureStage){
+      pressureStage=stage;
+      toast('⏱️ The river is getting busier — timers shorter!','#ffb340');
+      tone(587,0.12,'square',0.05);tone(523,0.18,'square',0.05,0.12);
+    }
+
+    /* --- animal spotting --- */
+    spotCheck+=dt;
+    if(spotCheck>0.25){spotCheck=0;checkSpots();}
+
+    /* --- timer (runs during deliveries AND the trip back) --- */
+    if(timeMax>0){
+      timeLeft-=dt;
+      var f=Math.max(0,timeLeft/timeMax);
+      $('timerfill').style.width=(f*100)+'%';
+      $('timerbar').classList.toggle('low',f<0.28);
+      if(f<0.28&&Math.floor(timeLeft*2)!==Math.floor((timeLeft+dt)*2))tone(880,0.05,'square',0.04);
+      if(timeLeft<=0){
+        hearts--;updateHearts();
+        toast(phase==='deliver'?'TOO LATE! 💔':'MARKET CLOSED! 💔','#ff5d6e');
+        tone(220,0.3,'sawtooth',0.07);tone(110,0.5,'sawtooth',0.07,0.2);
+        if(hearts<=0){endGame();}
+        else setOrder();
+      }
+    }
+  }
+
+  weatherUpdate(dt);
+
+  /* beacons pulse */
+  [beacon,standBeacon].forEach(function(b){
+    if(!b.visible)return;
+    var s=1+Math.sin(t*4)*0.12;
+    b.children[0].scale.set(s,1,s);
+    b.children[1].material.opacity=0.2+Math.sin(t*4)*0.08;
+    b.rotation.y+=0.01;
+  });
+
+  /* flag waves; lantern flickers in storms */
+  player.userData.flag.rotation.y=Math.sin(t*7)*0.35;
+  player.userData.flag.scale.x=1+Math.sin(t*7+1)*0.08;
+  if(player.userData.lantern.visible)
+    player.userData.lanternGlow.material.color.setHSL(0.12,0.85,0.68+Math.sin(t*9)*0.08+weather.intensity*0.1);
+
+  /* market raft bobs */
+  if(window.__market)window.__market.position.y=Math.sin(t*1.6)*0.06;
+
+  /* logs drift */
+  logs.forEach(function(L){
+    if(L.vert)L.m.position.z+=L.dir*L.sp*dt;
+    else L.m.position.x+=L.dir*L.sp*dt;
+    L.m.position.y=0.22+Math.sin(t*2+L.sp*7)*0.05;
+    L.m.rotation.x=Math.sin(t*1.4+L.sp)*0.06;
+    var lim=HALF-4;
+    if(L.vert){if(L.m.position.z>lim||L.m.position.z<-lim)L.dir*=-1;}
+    else{if(L.m.position.x>lim||L.m.position.x<-lim)L.dir*=-1;}
+  });
+
+  /* dolphins swim their lane and leap in arcs */
+  dolphins.forEach(function(d){
+    d.u+=d.sp*dt;
+    var travel=((d.u%160)-80)*1.0;          /* back and forth along the channel */
+    var fwd=Math.floor(d.u/160)%2===0?1:-1;
+    var a=d.u*1.6;
+    var y=Math.sin(a)*1.5-0.85;             /* mostly under water, arcs out */
+    var px=d.vert?d.lane:travel*fwd;
+    var pz=d.vert?travel*fwd:d.lane;
+    d.m.position.set(px,y,pz);
+    d.m.visible=y>-0.8;
+    d.m.rotation.y=d.vert?(fwd>0?0:Math.PI):(fwd>0?Math.PI/2:-Math.PI/2);
+    d.m.rotation.z=-Math.cos(a)*0.55;       /* pitch through the arc */
+    if(y>0.4&&Math.sin(a-0.1)*1.5-0.85<=0.4)wake(px,pz,false);
+  });
+
+  /* caimans cruise slowly, gently turning */
+  caimans.forEach(function(c){
+    c.m.rotation.y+=c.turn*dt;
+    c.m.position.x+=Math.sin(c.m.rotation.y)*c.sp*dt;
+    c.m.position.z+=Math.cos(c.m.rotation.y)*c.sp*dt;
+    c.m.position.y=Math.sin(t*1.1+c.sp*9)*0.03;
+    var lim=HALF-6;
+    if(Math.abs(c.m.position.x)>lim||Math.abs(c.m.position.z)>lim)c.m.rotation.y+=Math.PI*0.5*dt*4;
+  });
+
+  /* monkeys bob and swing their tails */
+  monkeys.forEach(function(mk){
+    mk.m.position.y+=Math.sin(t*2.2+mk.ph)*0.004;
+    mk.m.rotation.y=Math.sin(t*0.7+mk.ph)*0.5;
+    mk.tail.rotation.x=0.9+Math.sin(t*3+mk.ph)*0.3;
+  });
+
+  /* jaguar tails swish */
+  jaguars.forEach(function(j){j.tail.rotation.x=Math.sin(t*1.8+j.ph)*0.5;});
+
+  /* sloths sway sloooowly */
+  sloths.forEach(function(s){s.m.rotation.z=Math.sin(t*0.6+s.ph)*0.12;});
+
+  /* butterflies flutter in wobbly loops */
+  butterflies.forEach(function(b){
+    var a=t*b.sp+b.ph;
+    b.m.position.set(b.cx+Math.cos(a)*b.r,1.2+Math.sin(t*1.7+b.ph)*0.7,b.cz+Math.sin(a*1.3)*b.r);
+    b.m.rotation.y=-a;
+    var fl=Math.sin(t*16+b.ph)*1.1;
+    b.w1.rotation.y=fl;b.w2.rotation.y=-fl;
+  });
+
+  /* turtles peek their heads out now and then */
+  turtles.forEach(function(tu){tu.head.position.x=0.3+Math.max(0,Math.sin(t*0.5+tu.ph))*0.16;});
+
+  /* parrots circle + flap */
+  parrots.forEach(function(p){
+    var u=p.userData;
+    var a=t*u.sp+u.ph;
+    p.position.set(u.cx+Math.cos(a)*u.r,u.h+Math.sin(t*1.3+u.ph)*1.2,u.cz+Math.sin(a)*u.r);
+    p.rotation.y=-a;
+    var flap=Math.sin(t*10+u.ph)*0.6;
+    u.w1.rotation.x=flap;u.w2.rotation.x=-flap;
+  });
+
+  /* villagers pace between their two spots */
+  walkers.forEach(function(w){
+    w.t+=w.dir*w.sp*dt;
+    if(w.t>=1){w.t=1;w.dir=-1;}
+    if(w.t<=0){w.t=0;w.dir=1;}
+    var wx=w.ax+(w.bx-w.ax)*w.t, wz=w.az+(w.bz-w.az)*w.t;
+    var fx=w.dir>0?w.bx-w.ax:w.ax-w.bx, fz=w.dir>0?w.bz-w.az:w.az-w.bz;
+    w.m.position.x=wx;w.m.position.z=wz;
+    w.m.rotation.y=Math.atan2(fx,fz);
+    var sw=Math.sin(t*7+w.sp*40)*0.45;
+    w.m.userData.legL.rotation.x=sw;w.m.userData.legR.rotation.x=-sw;
+    w.m.userData.armL.rotation.x=-sw*0.7;w.m.userData.armR.rotation.x=sw*0.7;
+    w.m.position.y=1.1+Math.abs(Math.sin(t*7+w.sp*40))*0.03;
+  });
+
+  /* lounging capybaras breathe */
+  loungers.forEach(function(m,i){m.scale.y=(0.55+((i%3)*0.08))*(1+Math.sin(t*2+i)*0.02);});
+
+  /* particles */
+  for(var i=parts.length-1;i>=0;i--){
+    var P=parts[i];P.life-=dt;
+    if(P.life<=0){scene.remove(P.m);parts.splice(i,1);continue;}
+    if(P.ring){
+      var s2=1+(0.9-P.life)*P.grow;
+      P.m.scale.set(s2,1,s2);
+      P.m.material.opacity=P.life*0.55;
+      continue;
+    }
+    P.v.y-=P.grav*dt;
+    P.m.position.addScaledVector(P.v,dt);
+    P.m.rotation.x+=P.spin*dt;P.m.rotation.y+=P.spin*dt;
+    P.m.scale.setScalar(Math.max(0.05,P.life));
+  }
+
+  /* chase camera */
+  var behind=new THREE.Vector3(Math.sin(heading),0,Math.cos(heading)).multiplyScalar(-(6.6+(boost?2.6:0)));
+  var desired=pos.clone().add(behind).add(new THREE.Vector3(0,3.6,0));
+  camPos.lerp(desired,1-Math.pow(0.0015,dt));
+  camera.position.copy(camPos);
+  if(weather.state==='storm'&&weather.kind==='typhoon'&&weather.intensity>0.4){
+    var sh=0.12*weather.intensity;
+    camera.position.x+=(Math.random()-0.5)*sh;
+    camera.position.y+=(Math.random()-0.5)*sh;
+  }
+  camera.lookAt(pos.x,1.3,pos.z);
+  camera.fov+=((boost?73:62)-camera.fov)*dt*4;
+  camera.updateProjectionMatrix();
+
+  renderer.render(scene,camera);
+}
+animate();
+
+/* ============ START / END ============ */
+var startZ=(function(){return -HALF+CHAN/2+Math.floor(CELLS/2)*(BLOCK+CHAN);})();
+function startGame(){
+  applyUpgrades();
+  coins=0;delivered=0;hearts=heartsStart;speed=0;heading=0;driftVel.set(0,0,0);
+  pos.set(0,0,startZ);
+  camPos.set(0,6,startZ+12);
+  boostMeter=1;
+  shiftTime=0;pressureStage=0;
+  spotted={};spotCount=0;$('spotval').textContent='0/10';
+  $('coinval').textContent='0';$('delval').textContent='0';updateHearts();
+  $('startpanel').style.display='none';
+  $('endpanel').style.display='none';
+  setOrder();
+  running=true;
+  engineStart();
+  toast('SHIFT STARTED!','#52d68a');
+}
+function endGame(){
+  running=false;
+  engineStop();
+  var rank,emo;
+  if(delivered>=15){rank='LEGEND OF THE AMAZON';emo='👑';}
+  else if(delivered>=10){rank='RAPIDS HERO';emo='🏆';}
+  else if(delivered>=6){rank='RIVER CAPTAIN';emo='⭐';}
+  else if(delivered>=3){rank='JUNGLE RUNNER';emo='🍉';}
+  else{rank='PADDLING PUP';emo='🌱';}
+  $('endemoji').textContent=emo;
+  $('endrank').textContent=rank;
+  $('endcoins').textContent=coins+' coins';
+  var badges=SPECIES.map(function(sp){
+    return '<span style="font-size:22px;opacity:'+(spotted[sp.key]?'1':'.25')+';margin:0 2px;" title="'+sp.name+'">'+sp.emoji+'</span>';
+  }).join('');
+  $('endstats').innerHTML=delivered+' deliveries completed &middot; '+spotCount+'/10 animals spotted<br>'+
+    '<div style="margin-top:6px;">'+badges+'</div>Can you beat it next shift?';
+  var s=loadSave();
+  s.coins+=coins;
+  storeSave(s);
+  $('walletEnd').textContent='🪙 +'+coins+' banked — '+s.coins+' coins to spend in the Boat Yard';
+  $('saveline').textContent='';$('topboard').innerHTML='';
+  saveScore(coins);
+  loadTop();
+  $('endpanel').style.display='flex';
+}
+$('startbtn').addEventListener('click',startGame);
+$('againbtn').addEventListener('click',startGame);
+$('yardbtn').addEventListener('click',function(){openYard('start');});
+$('yardbtn2').addEventListener('click',function(){openYard('end');});
+$('yardclose').addEventListener('click',closeYard);
+refreshWallets();
+cloudLoad();
+
+window.addEventListener('resize',function(){
+  W=wrap.clientWidth;H=wrap.clientHeight;
+  camera.aspect=W/H;camera.updateProjectionMatrix();
+  renderer.setSize(W,H);
+});
+})();
+</script>
+</body>
+</html>

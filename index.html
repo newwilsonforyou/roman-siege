@@ -158,6 +158,11 @@
   .jungle .card-art{background:radial-gradient(circle at 30% 25%,rgba(244,196,48,.3),transparent 55%),
     radial-gradient(circle at 75% 75%,rgba(91,217,127,.25),transparent 55%),#0E3B23;}
   .jungle .card-tag{color:#5BD97F;} .jungle .play{background:#5BD97F;color:#0A2818;}
+
+  .amazon .card-art{background:radial-gradient(circle at 30% 20%,rgba(82,214,138,.32),transparent 55%),
+    linear-gradient(165deg,#0d3524,#12513a 55%,#1c6a4d);}
+  .amazon .card-tag{color:#52D68A;} .amazon .play{background:#52D68A;color:#06301a;}
+  .amazon:hover{box-shadow:0 18px 50px rgba(82,214,138,.4);border-color:#52D68A;}
   .circuit{background:linear-gradient(160deg,#102a3d,#08161f);}
   .circuit:hover{box-shadow:0 18px 50px rgba(255,213,74,.32);border-color:var(--gold);}
   .circuit .card-art{background:radial-gradient(circle at 30% 30%,rgba(255,213,74,.28),transparent 55%),
@@ -261,10 +266,55 @@
     <div class="kicker">Choose your game</div>
     <h1 id="bigtitle" title="Psst… try clicking me!">Year 5 Arcade</h1>
     <p class="hello" id="hello">🎮 Ready to play?</p>
-    <p class="sub">Seventeen games in one place — spin the Earth to wake up real cities, orbit the Moon through all 8 phases, match all 48 real World Cup flags and win penalty shootouts, run a theme park stall by reading graphs, carve and print in the lino studio, spot the odd stage in life cycles, explore South America and save the rainforest, defend your Legion outpost, master Roman numerals from I to C, explore Victorian Britain and the British Empire, and classify and measure angles with a real protractor. Sign in, and every game you play is saved to your record.</p>
+    <p class="sub">Eighteen games in one place — pilot a capybara's 3D delivery boat through Amazon storms, spin the Earth to wake up real cities, orbit the Moon through all 8 phases, match all 48 real World Cup flags and win penalty shootouts, run a theme park stall by reading graphs, carve and print in the lino studio, spot the odd stage in life cycles, explore South America and save the rainforest, defend your Legion outpost, master Roman numerals from I to C, explore Victorian Britain and the British Empire, and classify and measure angles with a real protractor. Sign in, and every game you play is saved to your record.</p>
   </header>
 
   <main class="cards">
+    <a class="card amazon" id="card-amazon" href="amazon-river-courier.html">
+      <span class="newbadge">✦ NEW!</span>
+      <span class="badge3d" style="top:44px;">3D</span>
+      <div class="lockmsg">🔒 Sign in first</div>
+      <div class="card-art">
+        <svg class="art-svg pulse" viewBox="0 0 200 150" aria-hidden="true">
+          <!-- river -->
+          <rect x="0" y="92" width="200" height="58" fill="#2f7d6a"/>
+          <path d="M0 92 Q50 88 100 92 Q150 96 200 91 L200 150 L0 150 Z" fill="#3f977e" opacity=".5"/>
+          <!-- jungle banks -->
+          <path d="M0 96 L0 40 Q20 60 38 78 Q46 88 40 96 Z" fill="#1b5e3a"/>
+          <path d="M200 94 L200 34 Q178 58 164 76 Q156 88 162 94 Z" fill="#1b5e3a"/>
+          <circle cx="16" cy="42" r="16" fill="#2E8B57"/><circle cx="34" cy="56" r="13" fill="#3f8f3f"/>
+          <circle cx="184" cy="38" r="16" fill="#2E8B57"/><circle cx="168" cy="54" r="12" fill="#57a84e"/>
+          <!-- rain + wind -->
+          <g stroke="#bfe8ff" stroke-width="2.5" stroke-linecap="round" opacity=".75">
+            <line x1="70" y1="14" x2="64" y2="28"/><line x1="96" y1="8" x2="90" y2="22"/>
+            <line x1="122" y1="16" x2="116" y2="30"/><line x1="146" y1="10" x2="140" y2="24"/>
+          </g>
+          <!-- boat -->
+          <path d="M62 108 L138 108 L128 124 L72 124 Z" fill="#d8623a" stroke="#b14b2a" stroke-width="3"/>
+          <!-- capybara -->
+          <rect x="86" y="86" width="30" height="20" rx="8" fill="#b5854e"/>
+          <rect x="110" y="82" width="15" height="14" rx="5" fill="#b5854e"/>
+          <rect x="121" y="86" width="7" height="8" rx="2" fill="#8a6238"/>
+          <circle cx="117" cy="87" r="2" fill="#1c140c"/>
+          <!-- fruit crate -->
+          <rect x="70" y="92" width="15" height="14" rx="2" fill="#9a7248" stroke="#6f4e2e" stroke-width="2"/>
+          <circle cx="77" cy="90" r="5" fill="#3f8f3f"/>
+          <!-- wake -->
+          <path d="M66 128 Q56 132 46 130 M138 126 Q150 132 160 129" stroke="#dff5ec" stroke-width="3" fill="none" stroke-linecap="round" opacity=".8"/>
+          <!-- parrot -->
+          <circle cx="52" cy="24" r="6" fill="#ff3d3d"/>
+          <path d="M58 24 L66 22" stroke="#ffb340" stroke-width="4" stroke-linecap="round"/>
+          <path d="M48 20 Q42 14 38 18 M48 28 Q42 34 38 30" stroke="#3d7dff" stroke-width="3" fill="none" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="card-body">
+        <div class="card-tag">3D Boat Delivery &middot; Amazon</div>
+        <div class="card-title">Amazon River Courier</div>
+        <div class="card-desc">Pilot a capybara's delivery boat through jungle channels! Race timers that shrink as your shift goes on, dodge logs, survive storms and typhoons, and spot all 10 rainforest animals.</div>
+        <span class="play">PLAY ▶</span>
+      </div>
+    </a>
+
     <a class="card holes" id="card-holes" href="holes.html">
       <span class="newbadge">✦ NEW!</span>
       <div class="lockmsg">🔒 Sign in first</div>
@@ -857,6 +907,7 @@ function setCardsLocked(locked){
   $('card-jungle').classList.toggle('locked',locked);
   $('card-circuit').classList.toggle('locked',locked);
   $('card-angle').classList.toggle('locked',locked);
+  $('card-amazon').classList.toggle('locked',locked);
 }
 function escapeHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
@@ -1036,10 +1087,11 @@ async function loadRecords(p){
   var angles=rows.filter(function(x){return x.game==='angles';});
   var themepark=rows.filter(function(x){return x.game==='themeparkdatadash';});
   var worldcup=rows.filter(function(x){return x.game==='worldcup';});
+  var amazon=rows.filter(function(x){return x.game==='amazoncourier';});
   /* any game not in the known list (e.g. Solar Builder, Legion Outpost, future games)
      is picked up automatically so the record is never incomplete again */
   var knownIds=['siege','nebula','empiremap','vicmuseum','victorians','junglecatch',
-    'circuit','linolayers','lifecycles','rainforestrescue','angles','themeparkdatadash','worldcup'];
+    'circuit','linolayers','lifecycles','rainforestrescue','angles','themeparkdatadash','worldcup','amazoncourier'];
   var extraNames={solar:'🪐 SOLAR SYSTEM BUILDER',solarbuilder:'🪐 SOLAR SYSTEM BUILDER',
     solarsystem:'🪐 SOLAR SYSTEM BUILDER',builder:'🪐 SOLAR SYSTEM BUILDER',
     outpost:'🏰 LEGION OUTPOST',legionoutpost:'🏰 LEGION OUTPOST',legion:'🏰 LEGION OUTPOST',
@@ -1056,6 +1108,7 @@ async function loadRecords(p){
     '<div><div class="rec-name">'+escapeHtml(p.name)+'</div>'+
     '<div class="rec-sub">'+totalGames+' games played in total</div></div></div>';
   var stats='<div class="rec-stats">'+
+    '<div class="rec-stat"><div class="n">'+best(amazon)+'</div><div class="l">AMAZON BEST</div></div>'+
     '<div class="rec-stat"><div class="n">'+best(worldcup)+'</div><div class="l">WORLD CUP BEST</div></div>'+
     '<div class="rec-stat"><div class="n">'+best(themepark)+'</div><div class="l">DATA DASH BEST</div></div>'+
     '<div class="rec-stat"><div class="n">'+best(siege)+'</div><div class="l">SIEGE BEST</div></div>'+
@@ -1087,6 +1140,7 @@ async function loadRecords(p){
     return h+'</tbody></table>';
   }
   $('recBody').innerHTML=head+stats+
+    historyTable('🛶 AMAZON RIVER COURIER HISTORY',amazon)+
     historyTable('⚽ WORLD CUP FLAG MATCH HISTORY',worldcup)+
     historyTable('🎡 THEME PARK DATA DASH HISTORY',themepark)+
     historyTable('⚔️ SIEGE HISTORY',siege)+
