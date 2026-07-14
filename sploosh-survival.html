@@ -1,0 +1,1107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Sploosh &amp; Onion Survival — Holes (inspired by the book by Louis Sachar)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --void:#2A1E0C;--void2:#3a2c10;--sand:#E8C87A;--sand-dim:#8A6A2B;
+    --hot:#FF7A3D;--gold:#FFD23F;--danger:#FF3D6E;--ok:#5BFF9B;--water:#36B5FF;
+    --grass:#5CB84A;--text:#FFF3D6;--text-dim:#C4A06E;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{font-family:'Rajdhani',sans-serif;color:var(--text);user-select:none;-webkit-user-select:none;
+    display:flex;align-items:center;justify-content:center;min-height:100vh;overflow:hidden;touch-action:none;
+    /* warm desert-themed page background */
+    background:
+      radial-gradient(circle at 20% 15%, rgba(255,210,63,.18), transparent 40%),
+      radial-gradient(circle at 85% 85%, rgba(255,122,61,.14), transparent 45%),
+      linear-gradient(180deg,#3a2610 0%, #2A1E0C 55%, #1c1206 100%);}
+
+  /* game frame keeps the 800x500 canvas crisp and responsive */
+  #wrap{position:relative;width:min(96vw,800px);aspect-ratio:8/5;max-height:96vh;
+    border-radius:18px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.65),0 0 0 3px rgba(138,106,43,.55);}
+  canvas#game{position:absolute;inset:0;width:100%;height:100%;display:block;background:#3f6d2e;}
+
+  /* ---------- HUD OVERLAY ---------- */
+  #hud{position:absolute;top:0;left:0;right:0;z-index:5;pointer-events:none;
+    display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding:10px 12px;
+    background:linear-gradient(rgba(26,18,6,.85) 10%,rgba(26,18,6,0) 100%);}
+  .meter{min-width:150px;flex:0 1 210px;}
+  .meter .lbl{font-family:'Orbitron',sans-serif;font-size:9px;letter-spacing:.18em;font-weight:700;color:var(--text-dim);display:flex;justify-content:space-between;}
+  .meter .lbl b{color:var(--text);}
+  .barwrap{height:14px;margin-top:3px;border-radius:99px;border:1.5px solid var(--sand-dim);background:rgba(0,0,0,.45);overflow:hidden;}
+  .bar{height:100%;width:100%;border-radius:99px;transition:width .2s;}
+  #hydbar{background:linear-gradient(90deg,#1e78c8,var(--water));}
+  #hpbar{background:linear-gradient(90deg,#b81e3c,var(--danger));}
+  .bar.low{animation:blink .5s infinite alternate;}
+  @keyframes blink{from{filter:brightness(1);}to{filter:brightness(1.8);}}
+  #midhud{text-align:center;flex:1;}
+  #timer{font-family:'Orbitron',sans-serif;font-weight:900;font-size:clamp(14px,2.6vw,21px);color:var(--gold);text-shadow:0 0 12px rgba(255,210,63,.5);white-space:nowrap;}
+  #timer small{font-size:.55em;letter-spacing:.15em;color:var(--text-dim);display:block;font-weight:700;}
+  #inv{margin-top:4px;display:flex;gap:5px;justify-content:center;flex-wrap:wrap;}
+  .invchip{font-size:12px;font-weight:700;padding:2px 9px;border-radius:999px;border:1px solid var(--sand-dim);
+    background:rgba(42,30,12,.75);color:var(--text-dim);}
+  .invchip.on{color:#fff;border-color:var(--gold);background:rgba(90,64,18,.85);box-shadow:0 0 10px rgba(255,210,63,.35);}
+
+  /* toast for kid-friendly event messages */
+  #toast{position:absolute;left:50%;top:70px;transform:translate(-50%,-8px);z-index:8;opacity:0;max-width:86%;
+    text-align:center;font-weight:700;font-size:14px;color:var(--text);background:rgba(42,30,12,.94);
+    border:1.5px solid var(--sand-dim);border-radius:14px;padding:9px 16px;pointer-events:none;transition:all .3s;}
+  #toast.show{opacity:1;transform:translate(-50%,0);}
+  #toast b{color:var(--gold);}
+
+  /* on-screen D-pad (shows on touch devices; keyboard also works everywhere) */
+  #dpad{position:absolute;right:10px;bottom:10px;z-index:6;display:none;
+    grid-template-columns:48px 48px 48px;grid-template-rows:48px 48px 48px;gap:4px;opacity:.9;}
+  body.touch #dpad{display:grid;}
+  .dbtn{pointer-events:auto;font-size:19px;display:flex;align-items:center;justify-content:center;color:var(--text);
+    background:rgba(42,30,12,.75);border:1.5px solid var(--sand-dim);border-radius:12px;cursor:pointer;}
+  .dbtn:active{background:rgba(255,210,63,.35);}
+  .dbtn.blank{visibility:hidden;}
+
+  /* ---------- PANELS (start / end / leaderboard) ---------- */
+  .panel{position:absolute;inset:0;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:12px;padding:20px;text-align:center;overflow:auto;
+    background:radial-gradient(circle at 50% 25%,rgba(80,110,40,.55),rgba(26,18,6,.97));backdrop-filter:blur(3px);}
+  .title{font-family:'Orbitron',sans-serif;font-weight:900;font-size:clamp(24px,5.4vw,42px);line-height:1.05;
+    background:linear-gradient(180deg,#fff,var(--gold) 55%,var(--hot));-webkit-background-clip:text;background-clip:text;
+    -webkit-text-fill-color:transparent;filter:drop-shadow(0 0 22px rgba(255,210,63,.35));}
+  .tagline{font-size:14px;color:var(--text-dim);max-width:520px;line-height:1.45;font-weight:600;}
+  #legend{display:grid;grid-template-columns:1fr 1fr;gap:5px 18px;font-size:13px;font-weight:600;color:var(--text-dim);text-align:left;max-width:520px;}
+  .chip-row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
+  .chip{font-size:12px;font-weight:600;background:rgba(58,44,16,.7);border:1px solid var(--sand-dim);border-radius:999px;padding:5px 12px;}
+  .chip b{color:var(--gold);}
+  .cta{font-family:'Orbitron',sans-serif;font-weight:700;font-size:16px;letter-spacing:.1em;color:var(--void);
+    background:linear-gradient(120deg,var(--gold),#ffe9a0);border:0;border-radius:14px;padding:13px 38px;cursor:pointer;
+    box-shadow:0 0 26px rgba(255,210,63,.5);transition:transform .08s;}
+  .cta:active{transform:scale(.96);}
+  .cta.ghost{background:none;color:var(--gold);border:1.5px solid var(--sand-dim);box-shadow:none;font-size:13px;padding:9px 22px;}
+  .endbig{font-family:'Orbitron',sans-serif;font-size:38px;font-weight:900;color:var(--gold);text-shadow:0 0 20px rgba(255,210,63,.5);}
+  .rank{font-family:'Orbitron',sans-serif;font-weight:900;font-size:19px;color:var(--gold);letter-spacing:.06em;}
+  .endstat{font-size:14px;color:var(--text-dim);font-weight:700;line-height:1.5;max-width:460px;}
+  #endbadge{font-size:42px;width:84px;height:84px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    border:3px solid var(--gold);background:rgba(42,30,12,.7);box-shadow:0 0 28px rgba(255,210,63,.55);animation:badgepop .6s;}
+  @keyframes badgepop{0%{transform:scale(0) rotate(-40deg);}60%{transform:scale(1.15);}100%{transform:scale(1);}}
+
+  /* leaderboard bits — same structure as the digging game */
+  #nameform{display:flex;gap:8px;width:100%;max-width:300px;}
+  #nameinput{flex:1;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:16px;padding:8px 12px;border-radius:10px;
+    border:1.5px solid var(--sand-dim);background:rgba(26,18,6,.8);color:var(--text);min-width:0;}
+  .savebtn{font-family:'Orbitron',sans-serif;font-weight:700;font-size:14px;background:var(--gold);color:var(--void);
+    border:0;border-radius:10px;padding:8px 16px;cursor:pointer;}
+  .hsbadge{font-family:'Orbitron',sans-serif;font-weight:700;font-size:12px;color:var(--void);background:var(--gold);
+    border-radius:999px;padding:5px 16px;box-shadow:0 0 18px rgba(255,210,63,.5);}
+  .lb-wrap{width:100%;max-width:340px;}
+  table.lb{width:100%;border-collapse:collapse;font-size:14px;}
+  table.lb th{font-family:'Orbitron',sans-serif;font-size:9px;letter-spacing:.16em;color:var(--text-dim);text-align:left;
+    padding:4px 8px;border-bottom:1.5px solid var(--sand-dim);font-weight:700;}
+  table.lb th:last-child{text-align:right;}
+  table.lb td{padding:4px 8px;border-bottom:1px solid rgba(196,160,110,.2);font-weight:600;}
+  table.lb td:first-child{width:32px;font-family:'Orbitron',sans-serif;font-weight:900;color:var(--gold);}
+  table.lb td:last-child{text-align:right;font-family:'Orbitron',sans-serif;font-weight:900;color:var(--gold);}
+  table.lb tr.me td{background:rgba(255,210,63,.14);}
+  .lb-msg,.lb-loading{font-size:13px;color:var(--text-dim);font-weight:600;padding:12px;}
+  .lb-spin{width:16px;height:16px;border:2.5px solid var(--sand-dim);border-top-color:var(--gold);border-radius:50%;
+    display:inline-block;vertical-align:-3px;margin-right:8px;animation:spin .8s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="game"></canvas>
+
+  <!-- ============ HUD ============ -->
+  <div id="hud">
+    <div class="meter">
+      <div class="lbl"><span>💧 STANLEY'S HYDRATION</span><b id="hydval">100%</b></div>
+      <div class="barwrap"><div class="bar" id="hydbar"></div></div>
+    </div>
+    <div id="midhud">
+      <div id="timer"><small>TIME SURVIVED</small><span id="timeval">0</span>s</div>
+      <div id="inv">
+        <span class="invchip" id="chipwater">🏺 Water</span>
+        <span class="invchip" id="chiponion">🧅 0/3</span>
+        <span class="invchip" id="chipremedy">🍑 Sploosh</span>
+      </div>
+    </div>
+    <div class="meter">
+      <div class="lbl"><span>❤️ ZERO'S HEALTH</span><b id="hpval">100%</b></div>
+      <div class="barwrap"><div class="bar" id="hpbar"></div></div>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+
+  <div id="dpad">
+    <div class="dbtn blank"></div><div class="dbtn" data-d="up">⬆️</div><div class="dbtn blank"></div>
+    <div class="dbtn" data-d="left">⬅️</div><div class="dbtn blank"></div><div class="dbtn" data-d="right">➡️</div>
+    <div class="dbtn blank"></div><div class="dbtn" data-d="down">⬇️</div><div class="dbtn blank"></div>
+  </div>
+
+  <!-- ============ START / INSTRUCTIONS ============ -->
+  <div class="panel" id="startpanel">
+    <div class="title">SPLOOSH &amp; ONION<br>SURVIVAL</div>
+    <div class="tagline" style="font-size:11px;color:var(--gold);letter-spacing:.08em;font-weight:700;margin-top:-4px;">
+      INSPIRED BY THE BOOK "HOLES" BY LOUIS SACHAR</div>
+    <div class="tagline">Help Stanley and Zero survive on <b>God's Thumb</b>! Fetch spring water, harvest wild onions, and cook the famous Sploosh Remedy — while day turns to <b>pitch-dark night</b> and <b>dust storms</b> roll in. It starts calm, but the longer you last, the harsher it gets…</div>
+    <div id="legend">
+      <div>🕹️ Move with <b>Arrow keys / WASD</b></div>
+      <div>💧 Touch the <b>spring</b> → then give water to Zero</div>
+      <div>🧅 Grab <b>onions</b> (max 3) — lizards fear the smell!</div>
+      <div>🔥 3 onions at the <b>campfire</b> → cook Sploosh</div>
+      <div>🍑 Give the <b>Sploosh Remedy</b> to Zero → +health</div>
+      <div>🦎 <b>Lizards</b> bite unless you hold an onion</div>
+      <div>🐍 <b>Rattlesnakes</b> slither across — nothing stops them, so <b>dodge!</b></div>
+      <div>🌙 <b>Night</b> &amp; ⛈️ <b>storms</b> drain you faster over time</div>
+    </div>
+    <div class="chip-row">
+      <div class="chip">⏱️ Survive as <b>long</b> as you can</div>
+      <div class="chip">🐌 <b>Easy</b> at first, then it speeds up</div>
+      <div class="chip">💀 Either bar at <b>0%</b> = game over</div>
+    </div>
+    <button class="cta" id="launchbtn">CLIMB THE MOUNTAIN</button>
+    <button class="cta ghost" id="boardbtn">🏆 Leaderboard</button>
+  </div>
+
+  <!-- ============ GAME OVER ============ -->
+  <div class="panel" id="endpanel" style="display:none;">
+    <div id="endbadge">⛰️</div>
+    <div class="rank" id="endrank">CAMPER</div>
+    <div class="title" style="font-size:clamp(20px,4.5vw,32px);" id="endtitle">GAME OVER</div>
+    <div class="endbig"><span id="endscore">0</span>s</div>
+    <div class="endstat" id="endstats"></div>
+    <div class="hsbadge" id="hsbadge" style="display:none;">🏆 Top score! Log your name:</div>
+    <div id="nameform" style="display:none;">
+      <input id="nameinput" maxlength="14" placeholder="Your name" autocomplete="off">
+      <button class="savebtn" id="savescore">Save</button>
+    </div>
+    <div class="lb-wrap"><div id="endboard"></div></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;">
+      <button class="cta" id="againbtn">TRY AGAIN</button>
+      <button class="cta ghost" id="boardbtn2">🏆 Full board</button>
+    </div>
+  </div>
+
+  <!-- ============ LEADERBOARD ============ -->
+  <div class="panel" id="boardpanel" style="display:none;">
+    <div class="rank">HALL OF SURVIVORS</div>
+    <div class="title" style="font-size:clamp(22px,4.5vw,34px);">🌍 Leaderboard</div>
+    <div class="lb-wrap"><div id="mainboard"></div></div>
+    <div class="endstat" style="font-size:12px;">Top 15 survivors, worldwide — longest time in seconds</div>
+    <div style="display:flex;gap:10px;">
+      <button class="cta" id="closeboard">BACK</button>
+      <button class="cta ghost" id="refreshboard">↻ Refresh</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+var $=function(id){return document.getElementById(id);};
+
+/* =====================================================================
+   SUPABASE LEADERBOARD — same backend + table structure as the other
+   Holes arcade games. Only GAME_ID differs so scores stay separate.
+   ===================================================================== */
+var SB_URL='https://wpohvsjkrskhlrayaubp.supabase.co';
+var SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indwb2h2c2prcnNraGxyYXlhdWJwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzMDEzOTcsImV4cCI6MjA5Njg3NzM5N30.Xi07ayGB5CykR-_7QX-b8UsUmMmTbGIlYpctXYgW9JI';
+function sbH(){return {'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'};}
+var GAME_ID='holes-sploosh';                       // NEW id — never reuse another game's
+function currentPlayer(){try{return JSON.parse(localStorage.getItem('rna_player')||'null');}catch(e){return null;}}
+function playerName(){var p=currentPlayer();return p?p.name:null;}
+async function sbFetchTop(limit){limit=limit||15;try{var r=await fetch(SB_URL+'/rest/v1/scores?select=name%2Cscore&game=eq.'+GAME_ID+'&order=score.desc&limit='+limit,{headers:sbH()});if(!r.ok)return null;return await r.json();}catch(e){return null;}}
+async function sbInsert(name,score){try{var h=sbH();h['Prefer']='return=minimal';var body={name:name,score:score,game:GAME_ID};var pn=playerName();if(pn)body.player=pn;var r=await fetch(SB_URL+'/rest/v1/scores',{method:'POST',headers:h,body:JSON.stringify(body)});return r.ok;}catch(e){return false;}}
+async function sbQualifies(score){try{var r=await fetch(SB_URL+'/rest/v1/scores?select=score&game=eq.'+GAME_ID+'&order=score.desc&limit=15',{headers:sbH()});if(!r.ok)return true;var rows=await r.json();if(!rows||rows.length<15)return true;return score>rows[rows.length-1].score;}catch(e){return true;}}
+function lbEsc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function lbLoading(){return '<div class="lb-loading"><div class="lb-spin"></div>Loading…</div>';}
+function lbTable(rows,hiN,hiS){if(!rows||!rows.length)return '<div class="lb-msg">No survivors yet — be the first!</div>';var med=['🥇','🥈','🥉'],h='<table class="lb"><thead><tr><th>RANK</th><th>SURVIVOR</th><th>TIME (s)</th></tr></thead><tbody>',mk=false;rows.forEach(function(r,i){var me=(!mk&&hiN&&r.name===hiN&&r.score===hiS);if(me)mk=true;h+='<tr class="'+(me?'me':'')+'"><td>'+(i<3?med[i]:(i+1))+'</td><td>'+lbEsc(r.name)+'</td><td>'+r.score+'</td></tr>';});return h+'</tbody></table>';}
+async function loadMainBoard(){$('mainboard').innerHTML=lbLoading();$('mainboard').innerHTML=lbTable(await sbFetchTop(15),null,null);}
+async function loadEndBoard(n,s){$('endboard').innerHTML=lbLoading();$('endboard').innerHTML=lbTable(await sbFetchTop(10),n,s);}
+
+/* =====================================================================
+   AUDIO — tiny WebAudio blips, no external files
+   ===================================================================== */
+var actx=null;
+function tone(f,d,type,vol,delay){try{if(!actx)actx=new(window.AudioContext||window.webkitAudioContext)();var t0=actx.currentTime+(delay||0);var o=actx.createOscillator(),g=actx.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f,t0);g.gain.setValueAtTime(vol||0.06,t0);g.gain.exponentialRampToValueAtTime(0.001,t0+d);o.connect(g);g.connect(actx.destination);o.start(t0);o.stop(t0+d);}catch(e){}}
+var sfx={
+  pickup:function(){tone(660,.09,'triangle',.06);tone(880,.1,'triangle',.05,.06);},
+  water:function(){tone(320,.12,'sine',.06);tone(430,.14,'sine',.06,.08);tone(540,.16,'sine',.05,.16);},
+  deliver:function(){tone(523,.1,'triangle',.07);tone(659,.1,'triangle',.07,.09);tone(784,.16,'triangle',.07,.18);},
+  cookdone:function(){tone(392,.1,'square',.04);tone(523,.1,'square',.04,.08);tone(659,.2,'square',.05,.16);},
+  heal:function(){tone(523,.12,'sine',.07);tone(784,.14,'sine',.07,.1);tone(1046,.22,'sine',.06,.2);},
+  over:function(){tone(300,.25,'sawtooth',.05);tone(220,.3,'sawtooth',.05,.2);tone(150,.5,'sawtooth',.05,.4);}
+};
+
+/* =====================================================================
+   TWEAKABLE GAME SETTINGS — change numbers here to make it easier/harder
+   ===================================================================== */
+var CFG={
+  W:800, H:500,                 // logical canvas size
+  PLAYER_SPEED:190,             // Stanley's speed, pixels per second
+  HYD_DECAY:2.9,                // hydration lost per second (at the start) — harder now
+  HP_DECAY:2.3,                 // Zero's health lost per second (at the start) — harder now
+  HEAT_RAMP:80,                 // every this-many seconds, decay gets ~1x faster (faster ramp)
+  HEAT_MAX:2.8,                 // decay never gets faster than this multiplier
+  ONION_SPAWN:3.8,              // seconds between new onions sprouting
+  ONION_MAX_FIELD:6,            // max onions on the grass at once
+  ONION_CARRY:3,                // onions needed for a remedy (also carry limit)
+  COOK_TIME:2,                  // seconds at the campfire to cook the remedy
+  REMEDY_HEAL:38,               // % of Zero's health restored by one remedy
+  RADIUS:16,                    // Stanley's body radius (for collisions)
+
+  /* ---- difficulty ramp: EASY at the start, gets HARDER over time ----
+     Everything scales with "progress" = time/DIFF_RAMP (0 → 1).           */
+  DIFF_RAMP:150,                // seconds to reach full difficulty
+  HEAT_MIN:0.72,               // decay multiplier at the very start (gentle first day)
+  HEAT_MAX:2.6,                // decay multiplier once fully ramped up (harsh)
+  NIGHT_EXTRA_MIN:0.08,        // extra night decay early (small — first night is calm)
+  NIGHT_EXTRA_MAX:0.65,        // extra night decay late (nights get deadly)
+  STORM_EXTRA_MIN:0.22,        // extra storm decay early
+  STORM_EXTRA_MAX:0.60,        // extra storm decay late
+
+  /* ---- day / night cycle ---- */
+  DAY_LEN:26,                   // seconds of daylight before dusk
+  NIGHT_LEN:16,                 // seconds of full night
+  DUSK_LEN:4,                   // fade time between day and night
+
+  /* ---- desert storms ---- */
+  STORM_MIN:22, STORM_MAX:38,   // random gap (s) between storms
+  STORM_LEN:9,                  // how long a storm lasts (s)
+  STORM_PUSH:70,                // wind force nudging Stanley (px/s)
+
+  /* ---- yellow-spotted lizards (onions scare them off) ---- */
+  LIZ_SPEED:78,                 // how fast a lizard crawls toward Stanley
+  LIZ_BITE_HYD:9,               // hydration lost per bite
+  LIZ_BITE_HP:7,                // Zero health lost per bite
+  LIZ_SPAWN_DAY:9,              // seconds between lizard spawns in daylight
+  LIZ_SPAWN_NIGHT:3.4,          // MUCH more often at night / in storms
+  LIZ_MAX:5,                    // most lizards at once
+  LIZ_FLEE:120,                 // onion-scared lizards run this far then vanish
+  RADIUS_LIZ:12,
+
+  /* ---- rattlesnake (NOTHING scares it — but it never chases Stanley,
+          it just slithers straight across, so you can dodge it) ---- */
+  SNAKE_MIN:15, SNAKE_MAX:26,   // random gap (s) between snakes
+  SNAKE_SPEED:96,               // how fast it slides across the meadow
+  SNAKE_BITE_HYD:13,            // a snake bite hurts more than a lizard
+  SNAKE_BITE_HP:12,
+  SNAKE_SEGMENTS:9,             // body length for drawing
+  RADIUS_SNAKE:11
+};
+
+/* Fixed landmark positions (in the 800x500 logical space) */
+var SPRING ={x:150,y:150,r:46};                 // bubbling water pool
+var FIRE   ={x:400,y:390,r:34};                 // campfire crafting station
+var ZERO   ={x:672,y:210,r:38};                 // Zero under his shelter
+/* the grassy meadow — Stanley must stay inside this rectangle */
+var MEADOW ={x:64,y:78,w:CFG.W-128,h:CFG.H-140};
+
+/* =====================================================================
+   CANVAS SETUP — scales for high-DPI screens, keeps 800x500 logic coords
+   ===================================================================== */
+var cv=$('game'),ctx=cv.getContext('2d');
+function sizeCanvas(){
+  var r=cv.getBoundingClientRect(),dpr=Math.min(window.devicePixelRatio||1,2);
+  cv.width=Math.round(r.width*dpr);cv.height=Math.round(r.height*dpr);
+  ctx.setTransform(cv.width/CFG.W,0,0,cv.height/CFG.H,0,0);   // draw in logical units
+}
+window.addEventListener('resize',sizeCanvas);
+
+/* =====================================================================
+   GAME STATE
+   ===================================================================== */
+var st=null;                       // set by resetState()
+var running=false,lastT=0;
+function resetState(){
+  st={
+    t:0,                           // seconds survived
+    px:CFG.W/2, py:CFG.H/2,        // Stanley position
+    face:1, walk:0,                // facing (-1 left/1 right), walk-cycle phase
+    hyd:100, hp:100,               // the two meters
+    hasWater:false,                // carrying a full jar?
+    onions:0,                      // onions carried (0..3)
+    hasRemedy:false,               // carrying the sploosh remedy?
+    cook:0,                        // cooking progress 0..COOK_TIME (0 = not cooking)
+    field:[],                      // onions sprouting on the grass [{x,y,age}]
+    spawnT:0,                      // countdown to next onion sprout
+    fx:[],                         // little particles (sparkles, hearts, drops)
+    zeroBob:0,                     // Zero's gentle breathing animation
+    /* --- day/night cycle --- */
+    phase:'day',                   // 'day' | 'dusk' | 'night' | 'dawn'
+    phaseT:0,                      // time spent in current phase
+    dark:0,                        // 0 = bright day, 1 = full night (drives the overlay)
+    stars:makeStars(),             // fixed twinkle positions for the night sky
+    /* --- storms --- */
+    storm:false, stormT:0,         // storm active? and time left
+    nextStorm:CFG.STORM_MIN+Math.random()*(CFG.STORM_MAX-CFG.STORM_MIN),
+    flash:0,                       // lightning flash brightness 0..1
+    rain:[],                       // wind-blown streaks
+    windPhase:0,
+    /* --- lizards --- */
+    lizards:[],                    // [{x,y,fleeing,wig,bite}]
+    lizSpawnT:2,                   // countdown to next lizard
+    biteCd:0,                      // invulnerability window after a bite
+    shake:0,                       // screen shake on a bite
+    /* --- rattlesnakes --- */
+    snakes:[],                     // [{x,y,heading,phase,hist:[]}]
+    nextSnake:CFG.SNAKE_MIN+Math.random()*(CFG.SNAKE_MAX-CFG.SNAKE_MIN)
+  };
+}
+
+/* random point on the grass that isn't on top of a landmark */
+function onionSpot(){
+  for(var i=0;i<40;i++){
+    var x=MEADOW.x+30+Math.random()*(MEADOW.w-60);
+    var y=MEADOW.y+30+Math.random()*(MEADOW.h-60);
+    if(dist(x,y,SPRING.x,SPRING.y)>SPRING.r+34 &&
+       dist(x,y,FIRE.x,FIRE.y)>FIRE.r+34 &&
+       dist(x,y,ZERO.x,ZERO.y)>ZERO.r+40) return {x:x,y:y,age:0};
+  }
+  return {x:CFG.W/2,y:CFG.H-100,age:0};
+}
+function dist(ax,ay,bx,by){var dx=ax-bx,dy=ay-by;return Math.sqrt(dx*dx+dy*dy);}
+/* fixed star field so the night sky twinkles instead of flickering randomly */
+function makeStars(){var a=[];for(var i=0;i<60;i++)a.push({x:Math.random()*CFG.W,y:Math.random()*(CFG.H*.55),
+  s:0.6+Math.random()*1.4,ph:Math.random()*6});return a;}
+
+/* =====================================================================
+   INPUT — keyboard (arrows/WASD) + touch D-pad. Arrow/space scrolling
+   is prevented so the page never moves while playing.
+   ===================================================================== */
+var keys={};
+var KEYMAP={ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right',
+            w:'up',s:'down',a:'left',d:'right',W:'up',S:'down',A:'left',D:'right'};
+window.addEventListener('keydown',function(e){
+  if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].indexOf(e.key)>=0)e.preventDefault();
+  var k=KEYMAP[e.key];if(k)keys[k]=true;
+});
+window.addEventListener('keyup',function(e){var k=KEYMAP[e.key];if(k)keys[k]=false;});
+/* touch d-pad */
+if('ontouchstart' in window)document.body.classList.add('touch');
+Array.prototype.forEach.call(document.querySelectorAll('.dbtn[data-d]'),function(b){
+  var d=b.getAttribute('data-d');
+  var on=function(e){e.preventDefault();keys[d]=true;};
+  var off=function(e){e.preventDefault();keys[d]=false;};
+  b.addEventListener('touchstart',on);b.addEventListener('touchend',off);b.addEventListener('touchcancel',off);
+  b.addEventListener('mousedown',on);b.addEventListener('mouseup',off);b.addEventListener('mouseleave',off);
+});
+
+/* =====================================================================
+   TOAST — friendly popup messages
+   ===================================================================== */
+var toastTimer=null;
+function toast(html,ms){
+  var t=$('toast');t.innerHTML=html;t.classList.add('show');
+  clearTimeout(toastTimer);toastTimer=setTimeout(function(){t.classList.remove('show');},ms||2100);
+}
+
+/* =====================================================================
+   UPDATE LOOP — all the game rules live here
+   ===================================================================== */
+function update(dt){
+  st.t+=dt;
+  st.zeroBob+=dt;
+  if(st.biteCd>0)st.biteCd-=dt;
+  if(st.shake>0)st.shake=Math.max(0,st.shake-dt*4);
+
+  /* ---------- DAY / NIGHT CYCLE ---------- */
+  st.phaseT+=dt;
+  if(st.phase==='day'  && st.phaseT>=CFG.DAY_LEN){st.phase='dusk'; st.phaseT=0; toast('🌆 <b>Dusk falls…</b> lizards are waking up!');}
+  else if(st.phase==='dusk'  && st.phaseT>=CFG.DUSK_LEN){st.phase='night';st.phaseT=0; toast('🌙 <b>Night on God\'s Thumb.</b> Stay near light — keep an onion!');}
+  else if(st.phase==='night' && st.phaseT>=CFG.NIGHT_LEN){st.phase='dawn'; st.phaseT=0;}
+  else if(st.phase==='dawn'  && st.phaseT>=CFG.DUSK_LEN){st.phase='day';  st.phaseT=0; toast('🌅 <b>Dawn!</b> The lizards slink away… for now.');}
+  /* target darkness for the current phase, eased toward smoothly */
+  var target=st.phase==='night'?1 : st.phase==='dusk'?st.phaseT/CFG.DUSK_LEN :
+             st.phase==='dawn'?1-st.phaseT/CFG.DUSK_LEN : 0;
+  st.dark+=(target-st.dark)*Math.min(1,dt*3);
+  var isDark=st.dark>0.5;
+
+  /* ---------- STORMS ---------- */
+  st.windPhase+=dt;
+  if(st.flash>0)st.flash=Math.max(0,st.flash-dt*2.5);
+  if(!st.storm){
+    st.nextStorm-=dt;
+    if(st.nextStorm<=0){st.storm=true;st.stormT=CFG.STORM_LEN;
+      toast('⛈️ <b>Dust storm rolling in!</b> Wind and lizards — hurry!');
+      /* seed rain/dust streaks */
+      st.rain=[];for(var ri=0;ri<70;ri++)st.rain.push({x:Math.random()*CFG.W,y:Math.random()*CFG.H});
+    }
+  }else{
+    st.stormT-=dt;
+    if(Math.random()<dt*0.7){st.flash=1;tone(60,.4,'sawtooth',.05);}   // lightning
+    /* push Stanley with the wind */
+    var wx=Math.sin(st.windPhase*.7)*CFG.STORM_PUSH;
+    st.px+=wx*dt;
+    if(st.stormT<=0){st.storm=false;st.nextStorm=CFG.STORM_MIN+Math.random()*(CFG.STORM_MAX-CFG.STORM_MIN);
+      toast('🌤️ <b>The storm passes.</b> Catch your breath!');}
+  }
+
+  /* ---------- DECAY — gentle early, harsher later ----------
+     prog goes 0 → 1 over DIFF_RAMP seconds. The first day/night is calm;
+     as prog climbs, the base heat AND the night/storm penalties all grow. */
+  var prog=Math.min(1, st.t/CFG.DIFF_RAMP);
+  var heat=CFG.HEAT_MIN + (CFG.HEAT_MAX-CFG.HEAT_MIN)*prog;
+  var nightExtra=(isDark?st.dark:0)*(CFG.NIGHT_EXTRA_MIN+(CFG.NIGHT_EXTRA_MAX-CFG.NIGHT_EXTRA_MIN)*prog);
+  var stormExtra=st.storm?(CFG.STORM_EXTRA_MIN+(CFG.STORM_EXTRA_MAX-CFG.STORM_EXTRA_MIN)*prog):0;
+  var mult=heat*(1+nightExtra+stormExtra);
+  st.hyd-=CFG.HYD_DECAY*mult*dt;
+  st.hp -=CFG.HP_DECAY *mult*dt;
+
+  /* ---------- MOVEMENT ---------- */
+  var dx=(keys.right?1:0)-(keys.left?1:0);
+  var dy=(keys.down?1:0)-(keys.up?1:0);
+  if(dx||dy){
+    var len=Math.sqrt(dx*dx+dy*dy);
+    st.px+=dx/len*CFG.PLAYER_SPEED*dt;
+    st.py+=dy/len*CFG.PLAYER_SPEED*dt;
+    if(dx)st.face=dx>0?1:-1;
+    st.walk+=dt*10;
+  }else st.walk=0;
+  st.px=Math.max(MEADOW.x+CFG.RADIUS,Math.min(MEADOW.x+MEADOW.w-CFG.RADIUS,st.px));
+  st.py=Math.max(MEADOW.y+CFG.RADIUS,Math.min(MEADOW.y+MEADOW.h-CFG.RADIUS,st.py));
+
+  /* ---------- WATER SPRING ---------- */
+  if(!st.hasWater && dist(st.px,st.py,SPRING.x,SPRING.y)<SPRING.r+CFG.RADIUS){
+    st.hasWater=true;sfx.water();
+    toast('🏺 <b>Jar filled!</b> Take the water to Zero!');
+    spawnFx(st.px,st.py,'💧',6);
+  }
+
+  /* ---------- ONIONS: sprout + harvest ---------- */
+  st.spawnT-=dt;
+  if(st.spawnT<=0){
+    st.spawnT=CFG.ONION_SPAWN;
+    if(st.field.length<CFG.ONION_MAX_FIELD)st.field.push(onionSpot());
+  }
+  for(var i=st.field.length-1;i>=0;i--){
+    var o=st.field[i];o.age+=dt;
+    if(st.onions<CFG.ONION_CARRY && dist(st.px,st.py,o.x,o.y)<CFG.RADIUS+13){
+      st.field.splice(i,1);st.onions++;sfx.pickup();
+      spawnFx(o.x,o.y,'🧅',3);
+      if(st.onions===CFG.ONION_CARRY)toast('🧅 <b>3 onions!</b> Cook Sploosh — but you\'ll drop your lizard shield!');
+      else toast('🧅 An onion! Lizards fear its smell.');
+    }
+  }
+
+  /* ---------- CAMPFIRE CRAFTING ---------- */
+  var nearFire=dist(st.px,st.py,FIRE.x,FIRE.y)<FIRE.r+CFG.RADIUS+8;
+  if(nearFire && st.onions>=CFG.ONION_CARRY && !st.hasRemedy){
+    st.cook+=dt;
+    if(st.cook>=CFG.COOK_TIME){
+      st.cook=0;st.onions=0;st.hasRemedy=true;sfx.cookdone();
+      toast('🍑 <b>Sploosh Remedy cooked!</b> Rush it to Zero!');
+      spawnFx(FIRE.x,FIRE.y-30,'✨',8);
+    }
+  }else st.cook=0;
+
+  /* ---------- DELIVERIES TO ZERO ---------- */
+  if(dist(st.px,st.py,ZERO.x,ZERO.y)<ZERO.r+CFG.RADIUS){
+    if(st.hasWater){
+      st.hasWater=false;st.hyd=100;sfx.deliver();
+      toast('💧 <b>Zero drinks!</b> Stanley\'s hydration back to 100%');
+      spawnFx(ZERO.x,ZERO.y-30,'💧',5);
+    }
+    if(st.hasRemedy){
+      st.hasRemedy=false;st.hp=Math.min(100,st.hp+CFG.REMEDY_HEAL);sfx.heal();
+      toast('🍑 <b>Sploosh!</b> Zero\'s health +'+CFG.REMEDY_HEAL+'%');
+      spawnFx(ZERO.x,ZERO.y-34,'❤️',7);
+    }
+  }
+
+  /* ---------- YELLOW-SPOTTED LIZARDS ---------- */
+  st.lizSpawnT-=dt;
+  if(st.lizSpawnT<=0){
+    st.lizSpawnT=(isDark||st.storm)?CFG.LIZ_SPAWN_NIGHT:CFG.LIZ_SPAWN_DAY;
+    if(st.lizards.length<CFG.LIZ_MAX)st.lizards.push(spawnLizard());
+  }
+  var onionShield=st.onions>0;   // carrying ANY onion keeps lizards away (book-accurate!)
+  for(var li=st.lizards.length-1;li>=0;li--){
+    var lz=st.lizards[li];lz.wig+=dt*12;
+    var d=dist(lz.x,lz.y,st.px,st.py)||0.01;
+    if(onionShield && d<90)lz.fleeing=true;   // smells the onion, panics
+    var tx,ty,sp;
+    if(lz.fleeing){                            // run directly away, then vanish at the rim
+      tx=lz.x+(lz.x-st.px)/d; ty=lz.y+(lz.y-st.py)/d; sp=CFG.LIZ_SPEED*1.4;
+      lz.x+=(lz.x-st.px)/d*sp*dt; lz.y+=(lz.y-st.py)/d*sp*dt;
+      lz.flee+=sp*dt;
+      if(lz.flee>CFG.LIZ_FLEE){st.lizards.splice(li,1);continue;}
+    }else{                                     // hunt Stanley
+      lz.x+=(st.px-lz.x)/d*CFG.LIZ_SPEED*dt;
+      lz.y+=(st.py-lz.y)/d*CFG.LIZ_SPEED*dt;
+      if(d<CFG.RADIUS+CFG.RADIUS_LIZ && st.biteCd<=0){
+        /* BITE! costs hydration + health and shoves Stanley */
+        st.hyd=Math.max(0,st.hyd-CFG.LIZ_BITE_HYD);
+        st.hp =Math.max(0,st.hp -CFG.LIZ_BITE_HP);
+        st.biteCd=1.1; st.shake=1;
+        st.px+=(st.px-lz.x)/d*40; st.py+=(st.py-lz.y)/d*40;
+        lz.fleeing=true; lz.flee=0;
+        tone(180,.15,'square',.06);
+        toast('🦎 <b>Ow — a lizard bite!</b> Grab an onion to scare them off!');
+        spawnFx(st.px,st.py,'💢',4);
+      }
+    }
+  }
+
+  /* ---------- RATTLESNAKE ----------
+     It does NOT chase Stanley and NOTHING scares it off — it simply
+     slithers in a straight (wiggly) line across the meadow and leaves.
+     Fair because you can dodge it by staying out of its path. */
+  st.nextSnake-=dt;
+  if(st.nextSnake<=0){
+    st.nextSnake=CFG.SNAKE_MIN+Math.random()*(CFG.SNAKE_MAX-CFG.SNAKE_MIN);
+    st.snakes.push(spawnSnake());
+    toast('🐍 <b>Rattlesnake!</b> Onions won\'t stop it — stay out of its path!');
+    tone(90,.5,'sawtooth',.04);
+  }
+  for(var si=st.snakes.length-1;si>=0;si--){
+    var sn=st.snakes[si];sn.phase+=dt*6;
+    /* slither: overall heading + a side-to-side wobble */
+    var dir=sn.heading+Math.sin(sn.phase)*0.6;
+    sn.x+=Math.cos(dir)*CFG.SNAKE_SPEED*dt;
+    sn.y+=Math.sin(dir)*CFG.SNAKE_SPEED*dt;
+    sn.hist.unshift({x:sn.x,y:sn.y});
+    if(sn.hist.length>CFG.SNAKE_SEGMENTS*6)sn.hist.pop();
+    /* bite on contact with the head or the first few body segments */
+    if(st.biteCd<=0){
+      for(var seg=0;seg<sn.hist.length;seg+=6){
+        var hp=sn.hist[seg];
+        if(dist(hp.x,hp.y,st.px,st.py)<CFG.RADIUS+CFG.RADIUS_SNAKE){
+          st.hyd=Math.max(0,st.hyd-CFG.SNAKE_BITE_HYD);
+          st.hp =Math.max(0,st.hp -CFG.SNAKE_BITE_HP);
+          st.biteCd=1.3; st.shake=1.3;
+          var d2=dist(sn.x,sn.y,st.px,st.py)||0.01;
+          st.px+=(st.px-sn.x)/d2*46; st.py+=(st.py-sn.y)/d2*46;
+          tone(140,.2,'sawtooth',.07);
+          toast('🐍 <b>Snake bite!</b> Nothing scares a rattlesnake — just dodge it!');
+          spawnFx(st.px,st.py,'💢',5);
+          break;
+        }
+      }
+    }
+    /* remove once it has slithered well off the meadow */
+    var m=60;
+    if(sn.x<MEADOW.x-m||sn.x>MEADOW.x+MEADOW.w+m||sn.y<MEADOW.y-m||sn.y>MEADOW.y+MEADOW.h+m)
+      st.snakes.splice(si,1);
+  }
+
+  /* storm rain streaks */
+  if(st.storm){for(var rr=0;rr<st.rain.length;rr++){var p=st.rain[rr];
+    p.x-=(180+Math.sin(st.windPhase)*60)*dt; p.y+=260*dt;
+    if(p.y>CFG.H||p.x<0){p.x=Math.random()*CFG.W+80;p.y=-10;}}}
+
+  /* particles */
+  for(var j=st.fx.length-1;j>=0;j--){
+    var f=st.fx[j];f.t+=dt;f.x+=f.vx*dt;f.y+=f.vy*dt;f.vy-=30*dt;
+    if(f.t>f.life)st.fx.splice(j,1);
+  }
+
+  /* game over check */
+  if(st.hyd<=0||st.hp<=0){
+    st.hyd=Math.max(0,st.hyd);st.hp=Math.max(0,st.hp);
+    endGame(st.hyd<=0?'Stanley got too thirsty':'Zero was too weak');
+  }
+  updateHUD();
+}
+/* a lizard crawls in from a random screen edge inside the meadow */
+function spawnLizard(){
+  var side=Math.floor(Math.random()*4),x,y;
+  if(side===0){x=MEADOW.x+6;y=MEADOW.y+Math.random()*MEADOW.h;}
+  else if(side===1){x=MEADOW.x+MEADOW.w-6;y=MEADOW.y+Math.random()*MEADOW.h;}
+  else if(side===2){x=MEADOW.x+Math.random()*MEADOW.w;y=MEADOW.y+6;}
+  else{x=MEADOW.x+Math.random()*MEADOW.w;y=MEADOW.y+MEADOW.h-6;}
+  return {x:x,y:y,fleeing:false,flee:0,wig:Math.random()*6};
+}
+/* a snake enters from a random edge and heads roughly across to the far side */
+function spawnSnake(){
+  var side=Math.floor(Math.random()*4),x,y,heading;
+  if(side===0){x=MEADOW.x-30;y=MEADOW.y+Math.random()*MEADOW.h;heading=0;}                 // from left → right
+  else if(side===1){x=MEADOW.x+MEADOW.w+30;y=MEADOW.y+Math.random()*MEADOW.h;heading=Math.PI;} // right → left
+  else if(side===2){x=MEADOW.x+Math.random()*MEADOW.w;y=MEADOW.y-30;heading=Math.PI/2;}     // top → down
+  else{x=MEADOW.x+Math.random()*MEADOW.w;y=MEADOW.y+MEADOW.h+30;heading=-Math.PI/2;}         // bottom → up
+  heading+=(Math.random()-0.5)*0.7;   // slight diagonal so paths vary
+  return {x:x,y:y,heading:heading,phase:Math.random()*6,hist:[{x:x,y:y}]};
+}
+function spawnFx(x,y,emoji,n){
+  for(var i=0;i<n;i++)st.fx.push({x:x,y:y,vx:(Math.random()-.5)*90,vy:-40-Math.random()*60,
+    t:0,life:.8+Math.random()*.5,e:emoji});
+}
+
+/* =====================================================================
+   HUD refresh
+   ===================================================================== */
+function updateHUD(){
+  $('hydval').textContent=Math.ceil(st.hyd)+'%';
+  $('hpval').textContent=Math.ceil(st.hp)+'%';
+  $('hydbar').style.width=st.hyd+'%';
+  $('hpbar').style.width=st.hp+'%';
+  $('hydbar').classList.toggle('low',st.hyd<25);
+  $('hpbar').classList.toggle('low',st.hp<25);
+  $('timeval').textContent=Math.floor(st.t);
+  $('chipwater').classList.toggle('on',st.hasWater);
+  $('chipwater').textContent=st.hasWater?'🏺 Water ✓':'🏺 Water';
+  $('chiponion').classList.toggle('on',st.onions>0);
+  $('chiponion').textContent='🧅 '+st.onions+'/'+CFG.ONION_CARRY;
+  $('chipremedy').classList.toggle('on',st.hasRemedy);
+  $('chipremedy').textContent=st.hasRemedy?'🍑 Sploosh ✓':'🍑 Sploosh';
+}
+
+/* =====================================================================
+   DRAWING — everything rendered with canvas shapes, no image files
+   ===================================================================== */
+function draw(){
+  var t=st?st.t:0, dark=st?st.dark:0;
+  ctx.save();
+  /* screen shake on a lizard bite */
+  if(st&&st.shake>0){var s=st.shake*6;ctx.translate((Math.random()-.5)*s,(Math.random()-.5)*s);}
+
+  /* sky tint shifts from hot desert day → deep blue night */
+  var sky=ctx.createLinearGradient(0,0,0,CFG.H);
+  var top=mix('#f2b256','#141a3a',dark), midc=mix('#d98e3c','#1a2247',dark), bot=mix('#b06a28','#0f1430',dark);
+  sky.addColorStop(0,top);sky.addColorStop(.5,midc);sky.addColorStop(1,bot);
+  ctx.fillStyle=sky;ctx.fillRect(0,0,CFG.W,CFG.H);
+
+  /* stars fade in at night */
+  if(dark>0.15&&st){ctx.fillStyle='#fff';
+    st.stars.forEach(function(sr){var tw=(0.5+0.5*Math.sin(t*2+sr.ph))*Math.min(1,(dark-0.15)/0.6);
+      ctx.globalAlpha=tw;ctx.beginPath();ctx.arc(sr.x,sr.y,sr.s,0,Math.PI*2);ctx.fill();});
+    ctx.globalAlpha=1;
+    /* a pale moon */
+    ctx.globalAlpha=Math.min(1,(dark-0.2)/0.5);
+    ctx.beginPath();ctx.arc(690,86,20,0,Math.PI*2);ctx.fillStyle='#e9edff';ctx.fill();
+    ctx.beginPath();ctx.arc(698,80,17,0,Math.PI*2);ctx.fillStyle=mix('#d98e3c','#1a2247',dark);ctx.fill();
+    ctx.globalAlpha=1;
+  }
+
+  /* rocky drop-off border */
+  roundRect(MEADOW.x-46,MEADOW.y-46,MEADOW.w+92,MEADOW.h+92,60);
+  var rock=ctx.createLinearGradient(0,MEADOW.y-40,0,MEADOW.y+MEADOW.h+40);
+  rock.addColorStop(0,mix('#9a6a34','#3a2c4a',dark));rock.addColorStop(1,mix('#7a4d22','#241a33',dark));
+  ctx.fillStyle=rock;ctx.fill();
+  ctx.fillStyle='rgba(60,38,16,.4)';
+  for(var b=0;b<26;b++){
+    var a=b/26*Math.PI*2;
+    var bx=CFG.W/2+Math.cos(a)*(MEADOW.w/2+28);
+    var by=CFG.H/2+18+Math.sin(a)*(MEADOW.h/2+26);
+    ctx.beginPath();ctx.ellipse(bx,by,10+(b%3)*4,7+(b%2)*4,a,0,Math.PI*2);ctx.fill();
+  }
+
+  /* grassy meadow (darker at night) */
+  roundRect(MEADOW.x-14,MEADOW.y-14,MEADOW.w+28,MEADOW.h+28,44);
+  var g=ctx.createRadialGradient(CFG.W/2,CFG.H/2,60,CFG.W/2,CFG.H/2,420);
+  g.addColorStop(0,mix('#6cc456','#25502a',dark));g.addColorStop(1,mix('#3f8a30','#173820',dark));
+  ctx.fillStyle=g;ctx.fill();
+  ctx.strokeStyle='rgba(30,90,20,.35)';ctx.lineWidth=2;
+  for(var gi=0;gi<70;gi++){
+    var gx=MEADOW.x+((gi*97)%MEADOW.w),gy=MEADOW.y+((gi*61)%MEADOW.h);
+    ctx.beginPath();ctx.moveTo(gx,gy);ctx.lineTo(gx-3,gy-7);
+    ctx.moveTo(gx,gy);ctx.lineTo(gx+3,gy-8);ctx.stroke();
+  }
+
+  drawSpring(t);
+  drawFire(t);
+  if(st){st.field.forEach(function(o){drawOnion(o,t);});}
+  if(st)st.snakes.forEach(function(sn){drawSnake(sn);});
+  if(st)st.lizards.forEach(function(lz){drawLizard(lz);});
+  drawZero(t);
+  if(st)drawStanley(t);
+
+  /* particles */
+  if(st){ctx.font='16px sans-serif';ctx.textAlign='center';
+    st.fx.forEach(function(f){ctx.globalAlpha=1-f.t/f.life;ctx.fillText(f.e,f.x,f.y);});
+    ctx.globalAlpha=1;}
+
+  /* storm rain + wind streaks (drawn before darkness so they still show) */
+  if(st&&st.storm){ctx.strokeStyle='rgba(200,220,255,.4)';ctx.lineWidth=1.5;
+    st.rain.forEach(function(p){ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(p.x-10,p.y+16);ctx.stroke();});}
+
+  /* ---------- NIGHT / STORM DARKNESS with pools of light ---------- */
+  var murk=Math.max(dark, st&&st.storm?0.55:0);
+  if(murk>0.02){
+    var lights=[];
+    if(st){
+      lights.push({x:st.px,y:st.py-4,r:105,a:0.95});           // Stanley's lantern
+      lights.push({x:FIRE.x,y:FIRE.y-6,r:95,a:1});             // warm campfire glow
+      lights.push({x:SPRING.x,y:SPRING.y,r:60,a:0.6});         // faint shimmer off the water
+      lights.push({x:ZERO.x,y:ZERO.y-6,r:52,a:0.5});           // Zero's little camp
+    }
+    paintDarkness(murk*0.92, lights);
+  }
+
+  /* lightning flash washes the whole screen white for a beat */
+  if(st&&st.flash>0){ctx.fillStyle='rgba(230,240,255,'+(st.flash*0.5)+')';ctx.fillRect(0,0,CFG.W,CFG.H);}
+
+  ctx.restore();
+
+  /* phase badge (drawn un-shaken, top-left of the meadow) */
+  if(st){
+    var label=st.storm?'⛈️ STORM':st.phase==='night'?'🌙 NIGHT':st.phase==='dusk'?'🌆 DUSK':st.phase==='dawn'?'🌅 DAWN':'☀️ DAY';
+    ctx.font='bold 12px Rajdhani';ctx.textAlign='left';
+    var w=ctx.measureText(label).width+18;
+    ctx.fillStyle='rgba(26,18,6,.7)';roundRect(MEADOW.x-6,MEADOW.y-2,w,20,10);ctx.fill();
+    ctx.fillStyle=st.storm?'#9fd0ff':'#FFF3D6';ctx.fillText(label,MEADOW.x+4,MEADOW.y+12);
+  }
+}
+/* blend two #rrggbb colours; k=0 → a, k=1 → b */
+function mix(a,b,k){k=Math.max(0,Math.min(1,k));
+  var pa=parseInt(a.slice(1),16),pb=parseInt(b.slice(1),16);
+  var r=Math.round(((pa>>16)&255)*(1-k)+((pb>>16)&255)*k);
+  var g=Math.round(((pa>>8)&255)*(1-k)+((pb>>8)&255)*k);
+  var bl=Math.round((pa&255)*(1-k)+(pb&255)*k);
+  return 'rgb('+r+','+g+','+bl+')';
+}
+/* offscreen darkness layer with soft light holes punched out */
+var darkCv=null,darkCtx=null;
+function paintDarkness(amount,lights){
+  try{
+    if(!darkCv){darkCv=document.createElement('canvas');darkCv.width=CFG.W;darkCv.height=CFG.H;darkCtx=darkCv.getContext('2d');}
+    if(!darkCtx){ctx.fillStyle='rgba(8,12,34,'+amount+')';ctx.fillRect(0,0,CFG.W,CFG.H);return;}
+    var d=darkCtx;d.setTransform(1,0,0,1,0,0);d.clearRect(0,0,CFG.W,CFG.H);
+    d.globalCompositeOperation='source-over';
+    d.fillStyle='rgba(8,12,34,'+amount+')';d.fillRect(0,0,CFG.W,CFG.H);
+    d.globalCompositeOperation='destination-out';
+    lights.forEach(function(l){
+      var gr=d.createRadialGradient(l.x,l.y,0,l.x,l.y,l.r);
+      gr.addColorStop(0,'rgba(0,0,0,'+l.a+')');gr.addColorStop(0.7,'rgba(0,0,0,'+(l.a*0.35)+')');gr.addColorStop(1,'rgba(0,0,0,0)');
+      d.fillStyle=gr;d.beginPath();d.arc(l.x,l.y,l.r,0,Math.PI*2);d.fill();
+    });
+    d.globalCompositeOperation='source-over';
+    ctx.drawImage(darkCv,0,0,CFG.W,CFG.H);
+  }catch(e){ctx.fillStyle='rgba(8,12,34,'+amount+')';ctx.fillRect(0,0,CFG.W,CFG.H);}
+}
+/* yellow-spotted lizard: green body, yellow spots, wiggly tail & legs */
+function drawLizard(lz){
+  ctx.save();
+  var ang=Math.atan2((st.py-lz.y),(st.px-lz.x));
+  if(lz.fleeing)ang+=Math.PI;
+  ctx.translate(lz.x,lz.y);ctx.rotate(ang);
+  var wig=Math.sin(lz.wig)*0.5;
+  /* shadow */
+  ctx.beginPath();ctx.ellipse(0,4,13,4,0,0,Math.PI*2);ctx.fillStyle='rgba(0,0,0,.3)';ctx.fill();
+  /* legs */
+  ctx.strokeStyle='#3c6b2a';ctx.lineWidth=2.5;ctx.lineCap='round';
+  var lw=Math.sin(lz.wig)*3;
+  ctx.beginPath();ctx.moveTo(-2,-5);ctx.lineTo(-6,-9+lw);ctx.moveTo(-2,5);ctx.lineTo(-6,9-lw);
+  ctx.moveTo(5,-5);ctx.lineTo(9,-9-lw);ctx.moveTo(5,5);ctx.lineTo(9,9+lw);ctx.stroke();
+  /* tail */
+  ctx.beginPath();ctx.moveTo(-6,0);ctx.quadraticCurveTo(-14,wig*8,-20,wig*10);
+  ctx.strokeStyle='#4f8a30';ctx.lineWidth=4;ctx.stroke();
+  /* body */
+  ctx.beginPath();ctx.ellipse(1,0,10,6,0,0,Math.PI*2);
+  ctx.fillStyle='#5aa03a';ctx.fill();ctx.strokeStyle='#356020';ctx.lineWidth=1.5;ctx.stroke();
+  /* head */
+  ctx.beginPath();ctx.ellipse(10,0,5,4,0,0,Math.PI*2);ctx.fillStyle='#66b043';ctx.fill();
+  /* the tell-tale yellow spots */
+  ctx.fillStyle='#ffe14a';
+  [[-2,-2],[2,2],[5,-1],[-4,1]].forEach(function(p){ctx.beginPath();ctx.arc(p[0],p[1],1.6,0,Math.PI*2);ctx.fill();});
+  /* red eyes glow in the dark */
+  ctx.fillStyle='#ff3535';
+  ctx.beginPath();ctx.arc(11,-2,1.3,0,Math.PI*2);ctx.arc(11,2,1.3,0,Math.PI*2);ctx.fill();
+  ctx.restore();
+}
+/* rattlesnake: a wavy diamond-patterned body drawn along its trail,
+   with a triangular head, forked tongue, and a rattle on the tail */
+function drawSnake(sn){
+  var pts=sn.hist;if(!pts.length)return;
+  ctx.save();
+  /* body: circles from tail → head, tapering, sandy with dark diamonds */
+  for(var i=pts.length-1;i>=0;i-=2){
+    var p=pts[i], f=1-i/pts.length;           // f: 0 at tail, 1 at head
+    var r=3+f*6;
+    ctx.beginPath();ctx.arc(p.x,p.y,r,0,Math.PI*2);
+    ctx.fillStyle=(i%12<6)?'#c79a4e':'#a9772f';   // banding
+    ctx.fill();
+    if(i%12<3){ctx.fillStyle='#5a3d18';ctx.beginPath();ctx.arc(p.x,p.y,r*0.5,0,Math.PI*2);ctx.fill();} // diamond spots
+  }
+  /* rattle at the very tail */
+  var tail=pts[pts.length-1];
+  if(tail){ctx.fillStyle='#e8d18a';
+    for(var rt=0;rt<3;rt++){ctx.beginPath();
+      ctx.arc(tail.x-rt*3,tail.y-rt*2,3-rt*0.6,0,Math.PI*2);ctx.fill();}}
+  /* head */
+  var h=pts[0], h2=pts[2]||pts[0];
+  var ang=Math.atan2(h.y-h2.y,h.x-h2.x);
+  ctx.translate(h.x,h.y);ctx.rotate(ang);
+  ctx.beginPath();ctx.moveTo(9,0);ctx.lineTo(-4,-6);ctx.lineTo(-4,6);ctx.closePath();
+  ctx.fillStyle='#b98436';ctx.fill();ctx.strokeStyle='#6b4a1c';ctx.lineWidth=1;ctx.stroke();
+  /* eyes */
+  ctx.fillStyle='#1a1206';
+  ctx.beginPath();ctx.arc(1,-2.5,1.5,0,Math.PI*2);ctx.arc(1,2.5,1.5,0,Math.PI*2);ctx.fill();
+  /* flicking forked tongue */
+  if(Math.sin((st?st.t:0)*9)>0){ctx.strokeStyle='#e23b3b';ctx.lineWidth=1.4;ctx.lineCap='round';
+    ctx.beginPath();ctx.moveTo(9,0);ctx.lineTo(15,0);ctx.moveTo(15,0);ctx.lineTo(18,-2);ctx.moveTo(15,0);ctx.lineTo(18,2);ctx.stroke();}
+  ctx.restore();
+}
+function roundRect(x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();
+}
+
+/* --- the bubbling spring with animated concentric ripples --- */
+function drawSpring(t){
+  ctx.save();
+  ctx.beginPath();ctx.ellipse(SPRING.x,SPRING.y+SPRING.r*.55,SPRING.r*1.15,SPRING.r*.4,0,0,Math.PI*2);
+  ctx.fillStyle='rgba(40,70,25,.5)';ctx.fill();   // muddy edge shadow
+  var w=ctx.createRadialGradient(SPRING.x-8,SPRING.y-8,4,SPRING.x,SPRING.y,SPRING.r);
+  w.addColorStop(0,'#9fe3ff');w.addColorStop(.6,'#36B5FF');w.addColorStop(1,'#1565a8');
+  ctx.beginPath();ctx.arc(SPRING.x,SPRING.y,SPRING.r,0,Math.PI*2);ctx.fillStyle=w;ctx.fill();
+  ctx.lineWidth=4;ctx.strokeStyle='#7a5a2a';ctx.stroke();
+  /* three expanding ripples, phase-shifted */
+  for(var i=0;i<3;i++){
+    var p=((t*.6+i/3)%1);
+    ctx.beginPath();ctx.arc(SPRING.x,SPRING.y,6+p*(SPRING.r-10),0,Math.PI*2);
+    ctx.strokeStyle='rgba(255,255,255,'+(0.55*(1-p))+')';ctx.lineWidth=2;ctx.stroke();
+  }
+  /* bubbles */
+  for(var bi=0;bi<4;bi++){
+    var bp=((t*.9+bi*.27)%1);
+    ctx.beginPath();ctx.arc(SPRING.x-14+bi*9,SPRING.y+12-bp*26,2.4,0,Math.PI*2);
+    ctx.fillStyle='rgba(255,255,255,'+(0.6*(1-bp))+')';ctx.fill();
+  }
+  ctx.font='11px Rajdhani';ctx.textAlign='center';ctx.fillStyle='rgba(255,243,214,.9)';
+  ctx.fillText('SPRING',SPRING.x,SPRING.y+SPRING.r+16);
+  ctx.restore();
+}
+
+/* --- campfire crafting station with flickering flame particles --- */
+function drawFire(t){
+  ctx.save();
+  ctx.beginPath();ctx.ellipse(FIRE.x,FIRE.y+14,FIRE.r,12,0,0,Math.PI*2);
+  ctx.fillStyle='rgba(60,40,15,.55)';ctx.fill();
+  /* stone ring */
+  for(var s=0;s<8;s++){var a=s/8*Math.PI*2;
+    ctx.beginPath();ctx.arc(FIRE.x+Math.cos(a)*26,FIRE.y+10+Math.sin(a)*10,5,0,Math.PI*2);
+    ctx.fillStyle='#8d8d8d';ctx.fill();}
+  /* crossed logs */
+  ctx.strokeStyle='#6b4423';ctx.lineWidth=8;ctx.lineCap='round';
+  ctx.beginPath();ctx.moveTo(FIRE.x-16,FIRE.y+14);ctx.lineTo(FIRE.x+16,FIRE.y+2);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(FIRE.x+16,FIRE.y+14);ctx.lineTo(FIRE.x-16,FIRE.y+2);ctx.stroke();
+  /* flame — layered flickering blobs */
+  for(var f=0;f<6;f++){
+    var ph=t*7+f*1.7;
+    var fx=FIRE.x+Math.sin(ph)*3, fh=16+Math.sin(ph*1.3)*4+f*2;
+    var grd=ctx.createRadialGradient(fx,FIRE.y-fh/2,1,fx,FIRE.y-fh/2,fh);
+    grd.addColorStop(0,'rgba(255,240,150,.9)');grd.addColorStop(.5,'rgba(255,122,61,.7)');grd.addColorStop(1,'rgba(255,61,61,0)');
+    ctx.beginPath();ctx.ellipse(fx,FIRE.y-fh/2+2,7-f*.7,fh*.8,0,0,Math.PI*2);
+    ctx.fillStyle=grd;ctx.fill();
+  }
+  /* rising sparks */
+  for(var sp=0;sp<3;sp++){
+    var p=((t*.8+sp*.33)%1);
+    ctx.beginPath();ctx.arc(FIRE.x+Math.sin(p*9+sp)*8,FIRE.y-8-p*34,1.6,0,Math.PI*2);
+    ctx.fillStyle='rgba(255,200,80,'+(1-p)+')';ctx.fill();
+  }
+  ctx.font='11px Rajdhani';ctx.textAlign='center';ctx.fillStyle='rgba(255,243,214,.9)';
+  ctx.fillText('CAMPFIRE',FIRE.x,FIRE.y+34);
+  ctx.restore();
+}
+
+/* --- a wild onion sprout: white bulb + green leaves, pops when young --- */
+function drawOnion(o,t){
+  ctx.save();
+  var pop=Math.min(1,o.age*3);            // little grow-in animation
+  ctx.translate(o.x,o.y);ctx.scale(pop,pop);
+  ctx.beginPath();ctx.ellipse(0,6,9,4,0,0,Math.PI*2);ctx.fillStyle='rgba(40,80,25,.4)';ctx.fill();
+  /* bulb */
+  ctx.beginPath();ctx.arc(0,2,6.5,0,Math.PI*2);ctx.fillStyle='#f6f2e6';ctx.fill();
+  ctx.strokeStyle='#cfc4a2';ctx.lineWidth=1;ctx.stroke();
+  /* leafy stalks that sway */
+  var sway=Math.sin(t*3+o.x)*2;
+  ctx.strokeStyle='#2f8f2f';ctx.lineWidth=2.5;ctx.lineCap='round';
+  ctx.beginPath();ctx.moveTo(0,-2);ctx.quadraticCurveTo(-4+sway,-12,-6+sway,-18);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(0,-2);ctx.quadraticCurveTo(sway,-14,sway,-21);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(0,-2);ctx.quadraticCurveTo(4+sway,-12,7+sway,-17);ctx.stroke();
+  ctx.restore();
+}
+
+/* --- Zero resting under a stick-and-cloth shelter --- */
+function drawZero(t){
+  ctx.save();
+  var weak=st?st.hp/100:1;
+  /* shelter: two sticks + a sagging cloth */
+  ctx.strokeStyle='#6b4423';ctx.lineWidth=5;ctx.lineCap='round';
+  ctx.beginPath();ctx.moveTo(ZERO.x-34,ZERO.y+26);ctx.lineTo(ZERO.x-14,ZERO.y-34);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(ZERO.x+34,ZERO.y+26);ctx.lineTo(ZERO.x+14,ZERO.y-34);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(ZERO.x-16,ZERO.y-34);
+  ctx.quadraticCurveTo(ZERO.x,ZERO.y-24,ZERO.x+16,ZERO.y-34);
+  ctx.lineTo(ZERO.x+30,ZERO.y-2);ctx.quadraticCurveTo(ZERO.x,ZERO.y-14,ZERO.x-30,ZERO.y-2);ctx.closePath();
+  ctx.fillStyle='#c9a86a';ctx.fill();ctx.strokeStyle='#9a7a42';ctx.lineWidth=2;ctx.stroke();
+  /* Zero: small sitting figure, breathing slowly; paler when weak */
+  var bob=Math.sin((st?st.zeroBob:0)*2)*1.5;
+  ctx.beginPath();ctx.ellipse(ZERO.x,ZERO.y+26,26,7,0,0,Math.PI*2);ctx.fillStyle='rgba(40,80,25,.4)';ctx.fill();
+  /* body */
+  ctx.beginPath();ctx.ellipse(ZERO.x,ZERO.y+12+bob*.3,13,15,0,0,Math.PI*2);
+  ctx.fillStyle='#e07030';ctx.fill();ctx.strokeStyle='#a04e1c';ctx.lineWidth=2;ctx.stroke();
+  /* head */
+  ctx.beginPath();ctx.arc(ZERO.x,ZERO.y-6+bob,11,0,Math.PI*2);
+  ctx.fillStyle='#8a5a3b';ctx.fill();ctx.strokeStyle='#5f3c25';ctx.lineWidth=2;ctx.stroke();
+  /* curly hair */
+  ctx.beginPath();ctx.arc(ZERO.x,ZERO.y-12+bob,9,Math.PI,0);ctx.fillStyle='#241a12';ctx.fill();
+  /* tired eyes: closed lines when weak, dots when healthier */
+  ctx.strokeStyle='#241a12';ctx.lineWidth=1.8;ctx.lineCap='round';
+  if(weak<0.5){
+    ctx.beginPath();ctx.moveTo(ZERO.x-6,ZERO.y-6+bob);ctx.lineTo(ZERO.x-2,ZERO.y-6+bob);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(ZERO.x+2,ZERO.y-6+bob);ctx.lineTo(ZERO.x+6,ZERO.y-6+bob);ctx.stroke();
+  }else{
+    ctx.fillStyle='#241a12';
+    ctx.beginPath();ctx.arc(ZERO.x-4,ZERO.y-6+bob,1.6,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.arc(ZERO.x+4,ZERO.y-6+bob,1.6,0,Math.PI*2);ctx.fill();
+  }
+  /* mouth: smile when healthy-ish */
+  ctx.beginPath();
+  if(weak>0.6)ctx.arc(ZERO.x,ZERO.y-2+bob,3.5,0.15*Math.PI,0.85*Math.PI);
+  else{ctx.moveTo(ZERO.x-3,ZERO.y+bob);ctx.lineTo(ZERO.x+3,ZERO.y+bob);}
+  ctx.stroke();
+  ctx.font='11px Rajdhani';ctx.textAlign='center';ctx.fillStyle='rgba(255,243,214,.9)';
+  ctx.fillText('ZERO',ZERO.x,ZERO.y+46);
+  ctx.restore();
+}
+
+/* --- Stanley: cute round hero with cap, bobbing walk & carry icons --- */
+function drawStanley(t){
+  ctx.save();
+  var bob=Math.abs(Math.sin(st.walk))*3;
+  var x=st.px,y=st.py-bob;
+  /* warm lantern glow around Stanley — reads strongly once it's dark */
+  if(st.dark>0.15||st.storm){
+    var glow=ctx.createRadialGradient(x,y,4,x,y,60);
+    glow.addColorStop(0,'rgba(255,220,130,'+(0.5*Math.max(st.dark,st.storm?0.6:0))+')');
+    glow.addColorStop(1,'rgba(255,220,130,0)');
+    ctx.fillStyle=glow;ctx.beginPath();ctx.arc(x,y,60,0,Math.PI*2);ctx.fill();
+  }
+  ctx.beginPath();ctx.ellipse(st.px,st.py+CFG.RADIUS-2,CFG.RADIUS*.9,5,0,0,Math.PI*2);
+  ctx.fillStyle='rgba(40,80,25,.45)';ctx.fill();
+  /* legs scuttle while walking */
+  ctx.strokeStyle='#5a4632';ctx.lineWidth=4;ctx.lineCap='round';
+  var lg=Math.sin(st.walk)*5;
+  ctx.beginPath();ctx.moveTo(x-5,y+8);ctx.lineTo(x-5+lg,y+16);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(x+5,y+8);ctx.lineTo(x+5-lg,y+16);ctx.stroke();
+  /* orange camp jumpsuit body */
+  ctx.beginPath();ctx.arc(x,y,CFG.RADIUS-2,0,Math.PI*2);
+  var body=ctx.createRadialGradient(x-5,y-6,3,x,y,CFG.RADIUS);
+  body.addColorStop(0,'#ffab63');body.addColorStop(1,'#e07030');
+  ctx.fillStyle=body;ctx.fill();ctx.strokeStyle='#a04e1c';ctx.lineWidth=2;ctx.stroke();
+  /* face */
+  ctx.fillStyle='#f2c9a0';
+  ctx.beginPath();ctx.arc(x+st.face*2,y-3,8,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#241a12';
+  ctx.beginPath();ctx.arc(x+st.face*4.5,y-4,1.7,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.arc(x+st.face*0.5,y-4,1.7,0,Math.PI*2);ctx.fill();
+  ctx.strokeStyle='#241a12';ctx.lineWidth=1.6;
+  ctx.beginPath();ctx.arc(x+st.face*2,y,3,0.2*Math.PI,0.8*Math.PI);ctx.stroke();
+  /* cap */
+  ctx.beginPath();ctx.arc(x+st.face*1,y-8,9,Math.PI,0);ctx.fillStyle='#c9541e';ctx.fill();
+  ctx.fillRect(x+st.face*1-9,y-9,18,3);
+  ctx.beginPath();ctx.ellipse(x+st.face*9,y-8,6,2.5,0,0,Math.PI*2);ctx.fill();
+
+  /* carry indicators floating above his head */
+  ctx.font='14px sans-serif';ctx.textAlign='center';
+  var iy=y-CFG.RADIUS-12+Math.sin(t*4)*1.5, items=[];
+  if(st.hasWater)items.push('🏺');
+  for(var i=0;i<st.onions;i++)items.push('🧅');
+  if(st.hasRemedy)items.push('🍑');
+  items.forEach(function(e,i2){ctx.fillText(e,x+(i2-(items.length-1)/2)*16,iy);});
+  /* glowing peach nectar aura when carrying the remedy */
+  if(st.hasRemedy){
+    ctx.beginPath();ctx.arc(x,y,CFG.RADIUS+5+Math.sin(t*6)*2,0,Math.PI*2);
+    ctx.strokeStyle='rgba(255,190,120,.65)';ctx.lineWidth=3;ctx.stroke();
+  }
+  /* cooking progress bar above his head */
+  if(st.cook>0){
+    var pw=44,pp=st.cook/CFG.COOK_TIME;
+    ctx.fillStyle='rgba(26,18,6,.85)';ctx.fillRect(x-pw/2-2,iy-26,pw+4,10);
+    ctx.fillStyle='#FF7A3D';ctx.fillRect(x-pw/2,iy-24,pw*pp,6);
+    ctx.strokeStyle='#FFD23F';ctx.lineWidth=1;ctx.strokeRect(x-pw/2-2,iy-26,pw+4,10);
+    ctx.font='10px Rajdhani';ctx.fillStyle='#FFF3D6';ctx.fillText('COOKING…',x,iy-31);
+  }
+  ctx.restore();
+}
+
+/* =====================================================================
+   MAIN LOOP
+   ===================================================================== */
+function frame(ts){
+  if(!running)return;
+  var dt=Math.min(0.05,(ts-lastT)/1000)||0;lastT=ts;
+  update(dt);
+  draw();
+  if(running)requestAnimationFrame(frame);
+}
+
+/* =====================================================================
+   GAME FLOW — start, end, leaderboard save (same flow as the dig game)
+   ===================================================================== */
+var score=0;
+function startGame(){
+  resetState();
+  /* a couple of onions ready at the start so there's no dead time */
+  st.field.push(onionSpot());st.field.push(onionSpot());
+  $('startpanel').style.display='none';
+  $('endpanel').style.display='none';
+  $('boardpanel').style.display='none';
+  updateHUD();
+  running=true;lastT=performance.now();
+  requestAnimationFrame(frame);
+  toast('⛰️ <b>Survive on God\'s Thumb!</b> Water for Stanley, Sploosh for Zero!');
+}
+function rankFor(s){
+  if(s>=300)return['🏆','LEGEND OF GREEN LAKE'];
+  if(s>=210)return['⭐','CURSE BREAKER'];
+  if(s>=150)return['🧅','ONION MASTER'];
+  if(s>=90) return['🍑','SPLOOSH CHEF'];
+  if(s>=45) return['🥾','MOUNTAIN CLIMBER'];
+  return['⛰️','CAMPER'];
+}
+async function endGame(reason){
+  running=false;sfx.over();
+  score=Math.floor(st.t);
+  var r=rankFor(score);
+  $('endbadge').textContent=r[0];
+  $('endrank').textContent=r[1];
+  $('endtitle').textContent='GAME OVER';
+  $('endscore').textContent=score;
+  $('endstats').innerHTML=reason+'.<br>You kept Stanley and Zero alive for <b style="color:var(--gold)">'+score+' seconds</b>!'+
+    '<br>"If only, if only, the woodpecker sighs…"';
+  $('endpanel').style.display='flex';
+  try{window.parent.postMessage({holesArcade:true,game:GAME_ID,score:score},'*');}catch(e){}
+  /* leaderboard qualify + save flow */
+  $('hsbadge').style.display='none';$('nameform').style.display='none';
+  $('endboard').innerHTML=lbLoading();
+  var q=await sbQualifies(score);
+  if(q&&score>0){
+    $('hsbadge').style.display='inline-block';
+    $('nameform').style.display='flex';
+    var pn=playerName();if(pn)$('nameinput').value=pn;
+  }
+  loadEndBoard(null,null);
+}
+$('savescore').addEventListener('click',async function(){
+  var n=$('nameinput').value.trim().slice(0,14);
+  if(!n)return;
+  $('savescore').disabled=true;$('savescore').textContent='…';
+  await sbInsert(n,score);
+  $('nameform').style.display='none';$('hsbadge').style.display='none';
+  loadEndBoard(n,score);
+  $('savescore').disabled=false;$('savescore').textContent='Save';
+});
+$('launchbtn').addEventListener('click',startGame);
+$('againbtn').addEventListener('click',startGame);
+$('boardbtn').addEventListener('click',function(){$('boardpanel').style.display='flex';loadMainBoard();});
+$('boardbtn2').addEventListener('click',function(){$('boardpanel').style.display='flex';loadMainBoard();});
+$('closeboard').addEventListener('click',function(){$('boardpanel').style.display='none';});
+$('refreshboard').addEventListener('click',loadMainBoard);
+
+/* boot: size the canvas and draw a pretty still of the mountain behind the start panel */
+sizeCanvas();
+resetState();
+draw();
+})();
+</script>
+</body>
+</html>
