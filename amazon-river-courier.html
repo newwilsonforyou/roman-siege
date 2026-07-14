@@ -1198,13 +1198,18 @@ function sbH(){return {'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content
 function getPlayer(){try{return JSON.parse(localStorage.getItem('rna_player')||'null');}catch(e){return null;}}
 async function saveScore(score){
   var p=getPlayer();
-  if(!p){$('saveline').textContent='Sign in on the arcade page to save your record!';return;}
+  var name=p?p.name:'Guest';   /* guests still appear on the board */
   try{
     var h=sbH();h['Prefer']='return=minimal';
     var r=await fetch(SB_URL+'/rest/v1/scores',{method:'POST',headers:h,
-      body:JSON.stringify({player:p.name,game:GAME_ID,score:score})});
-    $('saveline').textContent=r.ok?('✓ Saved to '+p.name+"'s record"):'Could not save this time.';
-  }catch(e){$('saveline').textContent='Could not save this time.';}
+      body:JSON.stringify({player:name,game:GAME_ID,score:score})});
+    if(r.ok){
+      $('saveline').textContent=p?('\u2713 Saved to '+p.name+"'s record"):'\u2713 Saved as Guest \u2014 sign in on the arcade to use your name!';
+    }else{
+      var msg='';try{msg=await r.text();}catch(e){}
+      $('saveline').textContent='Could not save ('+r.status+'). '+(msg?msg.slice(0,80):'');
+    }
+  }catch(e){$('saveline').textContent='Could not save \u2014 no connection?';}
 }
 var boardFrom='start';
 function esc2(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
@@ -1216,7 +1221,16 @@ async function openBoard(from){
   try{
     var r=await fetch(SB_URL+'/rest/v1/scores?select=player,score,created_at&game=eq.'+GAME_ID+
       '&order=score.desc&limit=15',{headers:sbH()});
-    if(!r.ok)throw 0;
+    if(!r.ok){
+      /* maybe the created_at column isn't there — retry without it */
+      r=await fetch(SB_URL+'/rest/v1/scores?select=player,score&game=eq.'+GAME_ID+
+        '&order=score.desc&limit=15',{headers:sbH()});
+    }
+    if(!r.ok){
+      var em='';try{em=await r.text();}catch(e){}
+      $('boardlist').innerHTML='<div class="yard-row" style="justify-content:center;">Board error '+r.status+'. '+esc2(em.slice(0,80))+'</div>';
+      return;
+    }
     var rows=await r.json();
     if(!rows.length){
       $('boardlist').innerHTML='<div class="yard-row" style="justify-content:center;">No couriers logged yet — be the first!</div>';
