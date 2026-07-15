@@ -55,13 +55,15 @@
   #toast.show{opacity:1;transform:translate(-50%,0);}
   #toast b{color:var(--gold);}
 
-  /* on-screen D-pad (shows on touch devices; keyboard also works everywhere) */
-  #dpad{position:absolute;right:10px;bottom:10px;z-index:6;display:none;
-    grid-template-columns:48px 48px 48px;grid-template-rows:48px 48px 48px;gap:4px;opacity:.9;}
+  /* on-screen D-pad (shows on touch devices; keyboard also works everywhere)
+     Placed on the LEFT and raised up, with big buttons that are easy to press. */
+  #dpad{position:absolute;left:14px;bottom:22%;z-index:6;display:none;
+    grid-template-columns:62px 62px 62px;grid-template-rows:62px 62px 62px;gap:7px;opacity:.92;}
   body.touch #dpad{display:grid;}
-  .dbtn{pointer-events:auto;font-size:19px;display:flex;align-items:center;justify-content:center;color:var(--text);
-    background:rgba(42,30,12,.75);border:1.5px solid var(--sand-dim);border-radius:12px;cursor:pointer;}
-  .dbtn:active{background:rgba(255,210,63,.35);}
+  .dbtn{pointer-events:auto;font-size:30px;display:flex;align-items:center;justify-content:center;color:var(--text);
+    background:rgba(42,30,12,.8);border:2px solid var(--gold);border-radius:16px;cursor:pointer;
+    box-shadow:0 3px 10px rgba(0,0,0,.4);}
+  .dbtn:active{background:rgba(255,210,63,.45);transform:scale(.94);}
   .dbtn.blank{visibility:hidden;}
 
   /* ---------- PANELS (start / end / leaderboard) ---------- */
@@ -105,6 +107,8 @@
   table.lb td:first-child{width:32px;font-family:'Orbitron',sans-serif;font-weight:900;color:var(--gold);}
   table.lb td:last-child{text-align:right;font-family:'Orbitron',sans-serif;font-weight:900;color:var(--gold);}
   table.lb tr.me td{background:rgba(255,210,63,.14);}
+  .lb-av{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;margin-right:7px;
+    border-radius:50%;background:rgba(255,255,255,.08);font-size:13px;vertical-align:-5px;}
   .lb-msg,.lb-loading{font-size:13px;color:var(--text-dim);font-weight:600;padding:12px;}
   .lb-spin{width:16px;height:16px;border:2.5px solid var(--sand-dim);border-top-color:var(--gold);border-radius:50%;
     display:inline-block;vertical-align:-3px;margin-right:8px;animation:spin .8s linear infinite;}
@@ -216,13 +220,16 @@ var GAME_ID='holes-sploosh';                       // NEW id — never reuse ano
 function currentPlayer(){try{return JSON.parse(localStorage.getItem('rna_player')||'null');}catch(e){return null;}}
 function playerName(){var p=currentPlayer();return p?p.name:null;}
 async function sbFetchTop(limit){limit=limit||15;try{var r=await fetch(SB_URL+'/rest/v1/scores?select=name%2Cscore&game=eq.'+GAME_ID+'&order=score.desc&limit='+limit,{headers:sbH()});if(!r.ok)return null;return await r.json();}catch(e){return null;}}
+/* look up each player's chosen avatar (stored in the launcher's players table) */
+async function sbFetchAvatars(){try{var r=await fetch(SB_URL+'/rest/v1/players?select=name%2Cavatar&limit=1000',{headers:sbH()});if(!r.ok)return {};var rows=await r.json();var m={};rows.forEach(function(x){if(x&&x.name)m[String(x.name).trim().toLowerCase()]=x.avatar||'🎮';});return m;}catch(e){return {};}}
+function avatarFor(map,name){var k=String(name==null?'':name).trim().toLowerCase();return (map&&map[k])?map[k]:'🎮';}
 async function sbInsert(name,score){try{var h=sbH();h['Prefer']='return=minimal';var body={name:name,score:score,game:GAME_ID};var pn=playerName();if(pn)body.player=pn;var r=await fetch(SB_URL+'/rest/v1/scores',{method:'POST',headers:h,body:JSON.stringify(body)});return r.ok;}catch(e){return false;}}
 async function sbQualifies(score){try{var r=await fetch(SB_URL+'/rest/v1/scores?select=score&game=eq.'+GAME_ID+'&order=score.desc&limit=15',{headers:sbH()});if(!r.ok)return true;var rows=await r.json();if(!rows||rows.length<15)return true;return score>rows[rows.length-1].score;}catch(e){return true;}}
 function lbEsc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function lbLoading(){return '<div class="lb-loading"><div class="lb-spin"></div>Loading…</div>';}
-function lbTable(rows,hiN,hiS){if(!rows||!rows.length)return '<div class="lb-msg">No survivors yet — be the first!</div>';var med=['🥇','🥈','🥉'],h='<table class="lb"><thead><tr><th>RANK</th><th>SURVIVOR</th><th>TIME (s)</th></tr></thead><tbody>',mk=false;rows.forEach(function(r,i){var me=(!mk&&hiN&&r.name===hiN&&r.score===hiS);if(me)mk=true;h+='<tr class="'+(me?'me':'')+'"><td>'+(i<3?med[i]:(i+1))+'</td><td>'+lbEsc(r.name)+'</td><td>'+r.score+'</td></tr>';});return h+'</tbody></table>';}
-async function loadMainBoard(){$('mainboard').innerHTML=lbLoading();$('mainboard').innerHTML=lbTable(await sbFetchTop(15),null,null);}
-async function loadEndBoard(n,s){$('endboard').innerHTML=lbLoading();$('endboard').innerHTML=lbTable(await sbFetchTop(10),n,s);}
+function lbTable(rows,hiN,hiS,avatars){if(!rows||!rows.length)return '<div class="lb-msg">No survivors yet — be the first!</div>';var med=['🥇','🥈','🥉'],h='<table class="lb"><thead><tr><th>RANK</th><th>SURVIVOR</th><th>TIME (s)</th></tr></thead><tbody>',mk=false;rows.forEach(function(r,i){var me=(!mk&&hiN&&r.name===hiN&&r.score===hiS);if(me)mk=true;var av=avatarFor(avatars,r.name);h+='<tr class="'+(me?'me':'')+'"><td>'+(i<3?med[i]:(i+1))+'</td><td><span class="lb-av">'+av+'</span>'+lbEsc(r.name)+'</td><td>'+r.score+'</td></tr>';});return h+'</tbody></table>';}
+async function loadMainBoard(){$('mainboard').innerHTML=lbLoading();var res=await Promise.all([sbFetchTop(15),sbFetchAvatars()]);$('mainboard').innerHTML=lbTable(res[0],null,null,res[1]);}
+async function loadEndBoard(n,s){$('endboard').innerHTML=lbLoading();var res=await Promise.all([sbFetchTop(10),sbFetchAvatars()]);$('endboard').innerHTML=lbTable(res[0],n,s,res[1]);}
 
 /* =====================================================================
    AUDIO — tiny WebAudio blips, no external files
