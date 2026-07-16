@@ -251,21 +251,22 @@ var sfx={
 var CFG={
   W:800, H:500,                 // logical canvas size
   PLAYER_SPEED:190,             // Stanley's speed, pixels per second
-  HYD_DECAY:2.9,                // hydration lost per second (at the start) — harder now
-  HP_DECAY:2.3,                 // Zero's health lost per second (at the start) — harder now
+  HYD_DECAY:2.4,                // hydration lost per second (at the start) — gentler
+  HP_DECAY:1.7,                 // Zero's health lost per second (at the start) — gentler so Zero lasts longer
   HEAT_RAMP:80,                 // every this-many seconds, decay gets ~1x faster (faster ramp)
   HEAT_MAX:2.8,                 // decay never gets faster than this multiplier
   ONION_SPAWN:3.8,              // seconds between new onions sprouting
   ONION_MAX_FIELD:6,            // max onions on the grass at once
   ONION_CARRY:3,                // onions needed for a remedy (also carry limit)
   COOK_TIME:2,                  // seconds at the campfire to cook the remedy
-  REMEDY_HEAL:38,               // % of Zero's health restored by one remedy
+  REMEDY_HEAL:55,               // % of Zero's health restored by one remedy (big refill!)
+  WATER_ZERO_HEAL:12,           // giving Zero water also tops up his health a little
   RADIUS:16,                    // Stanley's body radius (for collisions)
 
   /* ---- difficulty ramp: EASY at the start, gets HARDER over time ----
      Everything scales with "progress" = time/DIFF_RAMP (0 → 1).           */
-  DIFF_RAMP:165,                // seconds to reach full difficulty (stays gentle a bit longer)
-  HEAT_MIN:0.58,               // decay multiplier at the very start (slower first day)
+  DIFF_RAMP:180,                // seconds to reach full difficulty (stays gentle longer)
+  HEAT_MIN:0.52,               // decay multiplier at the very start (slower first day)
   HEAT_MAX:2.6,                // decay multiplier once fully ramped up (harsh)
   NIGHT_EXTRA_MIN:0.06,        // extra night decay early (very small — first night is calm)
   NIGHT_EXTRA_MAX:0.65,        // extra night decay late (nights get deadly)
@@ -510,8 +511,10 @@ function update(dt){
   /* ---------- DELIVERIES TO ZERO ---------- */
   if(dist(st.px,st.py,ZERO.x,ZERO.y)<ZERO.r+CFG.RADIUS){
     if(st.hasWater){
-      st.hasWater=false;st.hyd=100;sfx.deliver();
-      toast('💧 <b>Zero drinks!</b> Stanley\'s hydration back to 100%');
+      st.hasWater=false;st.hyd=100;
+      st.hp=Math.min(100,st.hp+CFG.WATER_ZERO_HEAL);   // a drink helps Zero too
+      sfx.deliver();
+      toast('💧 <b>Zero drinks!</b> Hydration 100% and Zero +'+CFG.WATER_ZERO_HEAL+'% health');
       spawnFx(ZERO.x,ZERO.y-30,'💧',5);
     }
     if(st.hasRemedy){
@@ -928,43 +931,101 @@ function drawOnion(o,t){
 }
 
 /* --- Zero resting under a stick-and-cloth shelter --- */
+/* --- Zero (Hector Zeroni): small, thin boy with a big cloud of dark curly
+       hair, sitting hugging his knees under the shelter. His face has real
+       features — brows, nose, mouth — and grows more tired as health drops. --- */
 function drawZero(t){
   ctx.save();
   var weak=st?st.hp/100:1;
   /* shelter: two sticks + a sagging cloth */
   ctx.strokeStyle='#6b4423';ctx.lineWidth=5;ctx.lineCap='round';
-  ctx.beginPath();ctx.moveTo(ZERO.x-34,ZERO.y+26);ctx.lineTo(ZERO.x-14,ZERO.y-34);ctx.stroke();
-  ctx.beginPath();ctx.moveTo(ZERO.x+34,ZERO.y+26);ctx.lineTo(ZERO.x+14,ZERO.y-34);ctx.stroke();
-  ctx.beginPath();ctx.moveTo(ZERO.x-16,ZERO.y-34);
-  ctx.quadraticCurveTo(ZERO.x,ZERO.y-24,ZERO.x+16,ZERO.y-34);
-  ctx.lineTo(ZERO.x+30,ZERO.y-2);ctx.quadraticCurveTo(ZERO.x,ZERO.y-14,ZERO.x-30,ZERO.y-2);ctx.closePath();
+  ctx.beginPath();ctx.moveTo(ZERO.x-34,ZERO.y+26);ctx.lineTo(ZERO.x-14,ZERO.y-38);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(ZERO.x+34,ZERO.y+26);ctx.lineTo(ZERO.x+14,ZERO.y-38);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(ZERO.x-16,ZERO.y-38);
+  ctx.quadraticCurveTo(ZERO.x,ZERO.y-28,ZERO.x+16,ZERO.y-38);
+  ctx.lineTo(ZERO.x+30,ZERO.y-4);ctx.quadraticCurveTo(ZERO.x,ZERO.y-16,ZERO.x-30,ZERO.y-4);ctx.closePath();
   ctx.fillStyle='#c9a86a';ctx.fill();ctx.strokeStyle='#9a7a42';ctx.lineWidth=2;ctx.stroke();
-  /* Zero: small sitting figure, breathing slowly; paler when weak */
-  var bob=Math.sin((st?st.zeroBob:0)*2)*1.5;
-  ctx.beginPath();ctx.ellipse(ZERO.x,ZERO.y+26,26,7,0,0,Math.PI*2);ctx.fillStyle='rgba(40,80,25,.4)';ctx.fill();
-  /* body */
-  ctx.beginPath();ctx.ellipse(ZERO.x,ZERO.y+12+bob*.3,13,15,0,0,Math.PI*2);
-  ctx.fillStyle='#e07030';ctx.fill();ctx.strokeStyle='#a04e1c';ctx.lineWidth=2;ctx.stroke();
-  /* head */
-  ctx.beginPath();ctx.arc(ZERO.x,ZERO.y-6+bob,11,0,Math.PI*2);
-  ctx.fillStyle='#8a5a3b';ctx.fill();ctx.strokeStyle='#5f3c25';ctx.lineWidth=2;ctx.stroke();
-  /* curly hair */
-  ctx.beginPath();ctx.arc(ZERO.x,ZERO.y-12+bob,9,Math.PI,0);ctx.fillStyle='#241a12';ctx.fill();
-  /* tired eyes: closed lines when weak, dots when healthier */
-  ctx.strokeStyle='#241a12';ctx.lineWidth=1.8;ctx.lineCap='round';
-  if(weak<0.5){
-    ctx.beginPath();ctx.moveTo(ZERO.x-6,ZERO.y-6+bob);ctx.lineTo(ZERO.x-2,ZERO.y-6+bob);ctx.stroke();
-    ctx.beginPath();ctx.moveTo(ZERO.x+2,ZERO.y-6+bob);ctx.lineTo(ZERO.x+6,ZERO.y-6+bob);ctx.stroke();
+
+  var bob=Math.sin((st?st.zeroBob:0)*2)*1.2;   // slow breathing
+  var Y=ZERO.y+bob;
+  ctx.beginPath();ctx.ellipse(ZERO.x,ZERO.y+27,26,7,0,0,Math.PI*2);ctx.fillStyle='rgba(40,80,25,.4)';ctx.fill();
+
+  /* knees drawn up, arms wrapped round them (orange jumpsuit) */
+  ctx.fillStyle='#e07030';ctx.strokeStyle='#a04e1c';ctx.lineWidth=1.6;
+  /* torso: narrow — Zero is a small, skinny kid */
+  ctx.beginPath();ctx.ellipse(ZERO.x,Y+13,9,13,0,0,Math.PI*2);ctx.fill();ctx.stroke();
+  /* knees */
+  ctx.beginPath();ctx.ellipse(ZERO.x-1,Y+17,12,8,0,0,Math.PI*2);ctx.fill();ctx.stroke();
+  /* arms hugging the knees */
+  ctx.strokeStyle='#e07030';ctx.lineWidth=5;ctx.lineCap='round';
+  ctx.beginPath();ctx.moveTo(ZERO.x-8,Y+8);ctx.quadraticCurveTo(ZERO.x-13,Y+16,ZERO.x-2,Y+21);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(ZERO.x+8,Y+8);ctx.quadraticCurveTo(ZERO.x+13,Y+16,ZERO.x+3,Y+21);ctx.stroke();
+  /* small hands + trainers */
+  ctx.fillStyle='#6e4328';
+  ctx.beginPath();ctx.arc(ZERO.x-2,Y+21,2.6,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.arc(ZERO.x+3,Y+21,2.6,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#ddd';
+  ctx.beginPath();ctx.ellipse(ZERO.x-8,Y+25,5,3,0,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.ellipse(ZERO.x+7,Y+25,5,3,0,0,Math.PI*2);ctx.fill();
+
+  /* head: slightly oval, deep brown skin, sits low (he's slumped) */
+  var hy=Y-7;
+  ctx.beginPath();ctx.ellipse(ZERO.x,hy,8.5,9.5,0,0,Math.PI*2);
+  ctx.fillStyle='#7a4a2c';ctx.fill();ctx.strokeStyle='#553219';ctx.lineWidth=1.4;ctx.stroke();
+  /* ears */
+  ctx.fillStyle='#7a4a2c';
+  ctx.beginPath();ctx.arc(ZERO.x-8.5,hy,2.2,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.arc(ZERO.x+8.5,hy,2.2,0,Math.PI*2);ctx.fill();
+  /* the famous big curly afro: a cloud of overlapping dark curls */
+  ctx.fillStyle='#1b120a';
+  var curls=[[-8,-8],[-4,-11],[0,-12],[4,-11],[8,-8],[-10,-4],[10,-4],[-6,-10.5],[6,-10.5],[0,-9]];
+  curls.forEach(function(c){
+    ctx.beginPath();ctx.arc(ZERO.x+c[0],hy+c[1],5.2,0,Math.PI*2);ctx.fill();
+  });
+  /* a couple of highlight curls so it reads as texture */
+  ctx.fillStyle='#2e2013';
+  ctx.beginPath();ctx.arc(ZERO.x-4,hy-9,2.2,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.arc(ZERO.x+5,hy-8,2,0,Math.PI*2);ctx.fill();
+
+  /* face: brows, eyes, nose, mouth — tired when weak */
+  ctx.strokeStyle='#1b120a';ctx.lineWidth=1.3;ctx.lineCap='round';
+  /* brows: angled up in worry when weak, relaxed when okay */
+  var browTilt=weak<0.5?1.6:0.4;
+  ctx.beginPath();ctx.moveTo(ZERO.x-5.5,hy-3.2+browTilt);ctx.lineTo(ZERO.x-1.8,hy-3.8);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(ZERO.x+1.8,hy-3.8);ctx.lineTo(ZERO.x+5.5,hy-3.2+browTilt);ctx.stroke();
+  if(weak<0.45){
+    /* eyes closed with a hint of shadow underneath */
+    ctx.beginPath();ctx.moveTo(ZERO.x-5.2,hy-1);ctx.quadraticCurveTo(ZERO.x-3.5,hy+0.2,ZERO.x-1.8,hy-1);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(ZERO.x+1.8,hy-1);ctx.quadraticCurveTo(ZERO.x+3.5,hy+0.2,ZERO.x+5.2,hy-1);ctx.stroke();
+    ctx.strokeStyle='rgba(60,30,15,.5)';
+    ctx.beginPath();ctx.moveTo(ZERO.x-4.6,hy+1.4);ctx.lineTo(ZERO.x-2.4,hy+1.4);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(ZERO.x+2.4,hy+1.4);ctx.lineTo(ZERO.x+4.6,hy+1.4);ctx.stroke();
   }else{
-    ctx.fillStyle='#241a12';
-    ctx.beginPath();ctx.arc(ZERO.x-4,ZERO.y-6+bob,1.6,0,Math.PI*2);ctx.fill();
-    ctx.beginPath();ctx.arc(ZERO.x+4,ZERO.y-6+bob,1.6,0,Math.PI*2);ctx.fill();
+    /* open eyes: whites + dark iris, gentle and watchful */
+    ctx.fillStyle='#f3ead9';
+    ctx.beginPath();ctx.ellipse(ZERO.x-3.4,hy-1,2.1,1.6,0,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.ellipse(ZERO.x+3.4,hy-1,2.1,1.6,0,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#17100a';
+    ctx.beginPath();ctx.arc(ZERO.x-3.2,hy-1,1.1,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.arc(ZERO.x+3.6,hy-1,1.1,0,Math.PI*2);ctx.fill();
   }
-  /* mouth: smile when healthy-ish */
+  /* nose: small vertical stroke + nostril hint */
+  ctx.strokeStyle='#553219';ctx.lineWidth=1.2;
+  ctx.beginPath();ctx.moveTo(ZERO.x,hy+0.2);ctx.lineTo(ZERO.x-0.6,hy+2.6);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(ZERO.x-0.6,hy+2.6);ctx.lineTo(ZERO.x+0.8,hy+2.9);ctx.stroke();
+  /* mouth: faint smile when healthy, flat when tired, slight frown when very weak */
+  ctx.strokeStyle='#3a2313';ctx.lineWidth=1.4;
   ctx.beginPath();
-  if(weak>0.6)ctx.arc(ZERO.x,ZERO.y-2+bob,3.5,0.15*Math.PI,0.85*Math.PI);
-  else{ctx.moveTo(ZERO.x-3,ZERO.y+bob);ctx.lineTo(ZERO.x+3,ZERO.y+bob);}
+  if(weak>0.65)ctx.arc(ZERO.x,hy+3.6,2.6,0.2*Math.PI,0.8*Math.PI);
+  else if(weak>0.35){ctx.moveTo(ZERO.x-2.4,hy+5.2);ctx.lineTo(ZERO.x+2.4,hy+5.2);}
+  else ctx.arc(ZERO.x,hy+7.4,2.6,1.2*Math.PI,1.8*Math.PI);
   ctx.stroke();
+  /* sweat drop when he's struggling */
+  if(weak<0.5){
+    var sw=((st?st.zeroBob:0)*0.7)%1;
+    ctx.fillStyle='rgba(120,190,255,'+(0.8*(1-sw))+')';
+    ctx.beginPath();ctx.arc(ZERO.x+9,hy-3+sw*8,1.6,0,Math.PI*2);ctx.fill();
+  }
   ctx.font='11px Rajdhani';ctx.textAlign='center';ctx.fillStyle='rgba(255,243,214,.9)';
   ctx.fillText('ZERO',ZERO.x,ZERO.y+46);
   ctx.restore();
@@ -982,34 +1043,84 @@ function drawStanley(t){
     glow.addColorStop(1,'rgba(255,220,130,0)');
     ctx.fillStyle=glow;ctx.beginPath();ctx.arc(x,y,60,0,Math.PI*2);ctx.fill();
   }
-  ctx.beginPath();ctx.ellipse(st.px,st.py+CFG.RADIUS-2,CFG.RADIUS*.9,5,0,0,Math.PI*2);
+  ctx.beginPath();ctx.ellipse(st.px,st.py+CFG.RADIUS+2,CFG.RADIUS,5,0,0,Math.PI*2);
   ctx.fillStyle='rgba(40,80,25,.45)';ctx.fill();
-  /* legs scuttle while walking */
-  ctx.strokeStyle='#5a4632';ctx.lineWidth=4;ctx.lineCap='round';
+  var f=st.face;   // -1 facing left, +1 facing right
+
+  /* legs scuttle while walking (orange trousers + trainers) */
+  ctx.strokeStyle='#c9631f';ctx.lineWidth=5;ctx.lineCap='round';
   var lg=Math.sin(st.walk)*5;
-  ctx.beginPath();ctx.moveTo(x-5,y+8);ctx.lineTo(x-5+lg,y+16);ctx.stroke();
-  ctx.beginPath();ctx.moveTo(x+5,y+8);ctx.lineTo(x+5-lg,y+16);ctx.stroke();
-  /* orange camp jumpsuit body */
-  ctx.beginPath();ctx.arc(x,y,CFG.RADIUS-2,0,Math.PI*2);
-  var body=ctx.createRadialGradient(x-5,y-6,3,x,y,CFG.RADIUS);
-  body.addColorStop(0,'#ffab63');body.addColorStop(1,'#e07030');
+  ctx.beginPath();ctx.moveTo(x-5,y+10);ctx.lineTo(x-5+lg,y+19);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(x+5,y+10);ctx.lineTo(x+5-lg,y+19);ctx.stroke();
+  ctx.fillStyle='#e8e8e8';
+  ctx.beginPath();ctx.ellipse(x-5+lg,y+21,4.5,2.6,0,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.ellipse(x+5-lg,y+21,4.5,2.6,0,0,Math.PI*2);ctx.fill();
+
+  /* Stanley's build: broad, slightly heavyset torso — he's the big kid */
+  var body=ctx.createRadialGradient(x-5,y-2,3,x,y+4,CFG.RADIUS+4);
+  body.addColorStop(0,'#ff9c4f');body.addColorStop(1,'#dd6a26');
+  ctx.beginPath();ctx.ellipse(x,y+4,CFG.RADIUS-1,CFG.RADIUS+1,0,0,Math.PI*2);
   ctx.fillStyle=body;ctx.fill();ctx.strokeStyle='#a04e1c';ctx.lineWidth=2;ctx.stroke();
-  /* face */
-  ctx.fillStyle='#f2c9a0';
-  ctx.beginPath();ctx.arc(x+st.face*2,y-3,8,0,Math.PI*2);ctx.fill();
-  ctx.fillStyle='#241a12';
-  ctx.beginPath();ctx.arc(x+st.face*4.5,y-4,1.7,0,Math.PI*2);ctx.fill();
-  ctx.beginPath();ctx.arc(x+st.face*0.5,y-4,1.7,0,Math.PI*2);ctx.fill();
-  ctx.strokeStyle='#241a12';ctx.lineWidth=1.6;
-  ctx.beginPath();ctx.arc(x+st.face*2,y,3,0.2*Math.PI,0.8*Math.PI);ctx.stroke();
-  /* cap */
-  ctx.beginPath();ctx.arc(x+st.face*1,y-8,9,Math.PI,0);ctx.fillStyle='#c9541e';ctx.fill();
-  ctx.fillRect(x+st.face*1-9,y-9,18,3);
-  ctx.beginPath();ctx.ellipse(x+st.face*9,y-8,6,2.5,0,0,Math.PI*2);ctx.fill();
+  /* jumpsuit details: centre zip + chest pocket + collar */
+  ctx.strokeStyle='rgba(120,60,20,.7)';ctx.lineWidth=1.4;
+  ctx.beginPath();ctx.moveTo(x,y-4);ctx.lineTo(x,y+12);ctx.stroke();
+  ctx.strokeRect(x+f*4,y+2,5,4);
+  ctx.strokeStyle='#b8571f';ctx.lineWidth=2.4;
+  ctx.beginPath();ctx.moveTo(x-6,y-6);ctx.lineTo(x,y-3);ctx.lineTo(x+6,y-6);ctx.stroke();
+  /* arms swing while walking */
+  ctx.strokeStyle='#dd6a26';ctx.lineWidth=5;ctx.lineCap='round';
+  ctx.beginPath();ctx.moveTo(x-CFG.RADIUS+3,y+1);ctx.lineTo(x-CFG.RADIUS-1+lg*0.5,y+10);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(x+CFG.RADIUS-3,y+1);ctx.lineTo(x+CFG.RADIUS+1-lg*0.5,y+10);ctx.stroke();
+  ctx.fillStyle='#f0c39a';
+  ctx.beginPath();ctx.arc(x-CFG.RADIUS-1+lg*0.5,y+11,2.6,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.arc(x+CFG.RADIUS+1-lg*0.5,y+11,2.6,0,Math.PI*2);ctx.fill();
+
+  /* head: rounder and fuller (Stanley's a solid lad), fair skin */
+  var hy=y-13;
+  ctx.beginPath();ctx.ellipse(x+f*1,hy,10,10.5,0,0,Math.PI*2);
+  ctx.fillStyle='#f0c39a';ctx.fill();ctx.strokeStyle='#c6905e';ctx.lineWidth=1.5;ctx.stroke();
+  /* ears */
+  ctx.fillStyle='#f0c39a';
+  ctx.beginPath();ctx.arc(x+f*1-10,hy+1,2.4,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.arc(x+f*1+10,hy+1,2.4,0,Math.PI*2);ctx.fill();
+  /* curly brown hair puffing out from under the cap */
+  ctx.fillStyle='#6b4423';
+  var hpuffs=[[-9,-3],[-10,1],[9,-3],[10,1],[-7,-7],[7,-7]];
+  hpuffs.forEach(function(c){ctx.beginPath();ctx.arc(x+f*1+c[0],hy+c[1],3.4,0,Math.PI*2);ctx.fill();});
+  /* Camp Green Lake cap on top */
+  ctx.fillStyle='#c9541e';
+  ctx.beginPath();ctx.arc(x+f*1,hy-6,9.5,Math.PI,0);ctx.fill();
+  ctx.fillRect(x+f*1-9.5,hy-7,19,3.5);
+  ctx.beginPath();ctx.ellipse(x+f*1+f*10,hy-6,6.5,2.6,0,0,Math.PI*2);ctx.fill();
+  ctx.strokeStyle='#9a3f13';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(x+f*1,hy-15);ctx.lineTo(x+f*1,hy-7);ctx.stroke();
+
+  /* face: brows, proper eyes, nose, friendly determined mouth */
+  var fx=x+f*2;    // features shift toward facing side
+  ctx.strokeStyle='#5a3a1c';ctx.lineWidth=1.3;ctx.lineCap='round';
+  ctx.beginPath();ctx.moveTo(fx-5.5,hy-3.6);ctx.lineTo(fx-1.6,hy-4.2);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(fx+1.6,hy-4.2);ctx.lineTo(fx+5.5,hy-3.6);ctx.stroke();
+  /* eyes: whites + brown iris */
+  ctx.fillStyle='#fff';
+  ctx.beginPath();ctx.ellipse(fx-3.4,hy-1.4,2.3,1.8,0,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.ellipse(fx+3.4,hy-1.4,2.3,1.8,0,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#4a2f14';
+  ctx.beginPath();ctx.arc(fx-3.4+f*0.8,hy-1.3,1.2,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.arc(fx+3.4+f*0.8,hy-1.3,1.2,0,Math.PI*2);ctx.fill();
+  /* nose */
+  ctx.strokeStyle='#c6905e';ctx.lineWidth=1.3;
+  ctx.beginPath();ctx.moveTo(fx+f*0.4,hy-0.2);ctx.quadraticCurveTo(fx+f*1.6,hy+1.8,fx+f*0.2,hy+2.6);ctx.stroke();
+  /* freckles on the cheeks */
+  ctx.fillStyle='rgba(160,105,60,.55)';
+  [[-6,2.2],[-4.6,3.2],[5,2.2],[6.2,3.1]].forEach(function(p){
+    ctx.beginPath();ctx.arc(fx+p[0],hy+p[1],0.7,0,Math.PI*2);ctx.fill();});
+  /* mouth: a small determined smile */
+  ctx.strokeStyle='#7a4326';ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.arc(fx,hy+3.6,3,0.15*Math.PI,0.85*Math.PI);ctx.stroke();
 
   /* carry indicators floating above his head */
   ctx.font='14px sans-serif';ctx.textAlign='center';
-  var iy=y-CFG.RADIUS-12+Math.sin(t*4)*1.5, items=[];
+  var iy=y-CFG.RADIUS-22+Math.sin(t*4)*1.5, items=[];
   if(st.hasWater)items.push('🏺');
   for(var i=0;i<st.onions;i++)items.push('🧅');
   if(st.hasRemedy)items.push('🍑');
