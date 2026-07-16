@@ -175,8 +175,8 @@
     <div class="subtitle">🏴󠁧󠁢󠁥󠁮󠁧󠁿 8 MATCHES · 1 TROPHY · CHOOSE YOUR ENGLAND STAR 🏴󠁧󠁢󠁥󠁮󠁧󠁿</div>
     <div id="charGrid"></div>
     <button class="bigBtn" id="btnStart" disabled>Start Campaign</button>
-    <div class="hint">⬅️ ➡️ arrows to move · SPACE = special dash (Jude)<br>
-      📱 touch: hold left / right side · double-tap = dash<br>
+    <div class="hint">⬅️ ➡️ arrows to move · SPACE = special (Jude's dash / Rashford's shot)<br>
+      ↑↓ = Rice runs up &amp; down the pitch · 📱 touch: hold left / right, double-tap = special<br>
       Dodge defenders, grab ⚽ +50 &amp; 🛡️ shields, near-misses = combo bonus!</div>
     <div class="boardWrap"><div class="boardTitle">🌍 WORLD LEADERBOARD</div><div id="mainboard"></div></div>
   </div>
@@ -253,7 +253,7 @@ var CHARS=[
   desc:'Press SPACE (or double-tap) to teleport-dash out of danger. 4s cooldown bar.',
   lives:2,speed:6,dash:true,w:34,h:44},
  {id:'kane',name:'HARRY KANE',short:'KANE',ability:"Captain's Shield",
-  desc:'Starts with 3 lives AND a shield bubble at every kick-off.',
+  desc:'Starts the campaign with 3 lives and one Captain\'s shield bubble.',
   lives:3,speed:5,startShield:true,w:34,h:44},
  {id:'saka',name:'BUKAYO SAKA',short:'SAKA',ability:'Lightning Step',
   desc:'Super speed (8.5) and a smaller body — squeeze through tiny gaps!',
@@ -269,7 +269,19 @@ var CHARS=[
   lives:2,speed:7,momentum:true,w:34,h:44},
  {id:'konsa',name:'EZRI KONSA',short:'KONSA',ability:'Perfect Tackle',
   desc:'Every 8 seconds he auto-tackles the nearest defender clean off the pitch (+15 pts).',
-  lives:2,speed:5.5,tackle:true,w:34,h:44}
+  lives:2,speed:5.5,tackle:true,w:34,h:44},
+ {id:'stones',name:'JOHN STONES',short:'STONES',ability:'Cool Head',
+  desc:'Every 12 seconds he freezes ALL defenders solid for 1.5s. Ice in his veins. ❄️',
+  lives:2,speed:5,freeze:true,w:34,h:44},
+ {id:'quansah',name:'JARELL QUANSAH',short:'QUANSAH',ability:'Magnet Boots',
+  desc:'Golden footballs ⚽ and shield crests 🛡️ are pulled towards him from far away.',
+  lives:2,speed:5.5,magnet:true,w:34,h:44},
+ {id:'rice',name:'DECLAN RICE',short:'RICE',ability:'Box-to-Box',
+  desc:'The ONLY player who can also run up and down the pitch! Use ↑↓ keys or slide your finger.',
+  lives:2,speed:6,vertical:true,w:34,h:44},
+ {id:'rashford',name:'MARCUS RASHFORD',short:'RASHFORD',ability:'Rocket Shot',
+  desc:'Press SPACE (or double-tap) to blast a ball that knocks a defender out! 3s cooldown.',
+  lives:2,speed:6.5,shoot:true,w:34,h:44}
 ];
 
 /* ================= STAGES ================= */
@@ -295,7 +307,7 @@ var STAGES=[
  {flag:'🇦🇷',code:'ARG',label:'SEMI-FINAL',title:'England vs Argentina',dur:35,speed:6,spawn:750,pack:3,bonus:300,
   desc:'Time to rewrite the history books. Dodge the rapid, legendary Albiceleste!',
   kit:function(c,x,y,w,h){c.fillStyle='#fff';c.fillRect(x,y,w,h);c.fillStyle='#6fb6e8';for(var i=0;i<3;i++)c.fillRect(x+3+i*Math.floor(w/3),y,Math.floor(w/6),h);}},
- {flag:'🇪🇸',code:'ESP',label:'THE GRAND FINAL',title:'England vs Spain',dur:40,speed:7,spawn:650,pack:3,bonus:500,
+ {flag:'🇪🇸',code:'ESP',label:'THE GRAND FINAL',title:'England vs Spain',dur:40,speed:7,spawn:650,pack:4,bonus:500,
   desc:'The ultimate test against La Roja! Survive their elite defensive press to win the cup!',
   kit:function(c,x,y,w,h){c.fillStyle='#c60b1e';c.fillRect(x,y,w,h);c.fillStyle='#ffc400';c.fillRect(x,y+h/2-2,w,4);c.fillRect(x+2,y+2,3,h-4);c.fillRect(x+w-5,y+2,3,h-4);}},
  {flag:'🏆',code:'WIN',label:'CHAMPIONS!',title:"Winner's Celebration",dur:0,speed:0,spawn:0,bonus:1000,
@@ -314,6 +326,7 @@ var G={
   score:0, secAcc:0,
   enemies:[], pickups:[], parts:[], floats:[], ghosts:[],
   spawnT:0, pickT:0, regenT:0, turbo:0, tackleT:0,
+  py:H-90, pointerY:null, shots:[], shotCd:0, frozen:0, freezeT:0,
   dashCd:0, lastDir:1,
   combo:0, comboT:0,
   shake:0,
@@ -325,30 +338,55 @@ var G={
 document.addEventListener('keydown',function(e){
   if(e.code==='ArrowLeft'||e.code==='ArrowRight'||e.code==='Space')e.preventDefault();
   G.keys[e.code]=true;
-  if(e.code==='Space')tryDash(G.keys['ArrowLeft']?-1:(G.keys['ArrowRight']?1:G.lastDir));
+  if(e.code==='ArrowUp'||e.code==='ArrowDown')e.preventDefault();
+  if(e.code==='Space')trySpecial(G.keys['ArrowLeft']?-1:(G.keys['ArrowRight']?1:G.lastDir));
 });
 document.addEventListener('keyup',function(e){G.keys[e.code]=false;});
 
 var lastTap={t:0,side:0};
 function pointerPos(e){var r=cv.getBoundingClientRect();var x=(e.touches?e.touches[0].clientX:e.clientX)-r.left;return x/r.width*W;}
+function pointerPosY(e){var r=cv.getBoundingClientRect();var y=(e.touches?e.touches[0].clientY:e.clientY)-r.top;return y/r.height*H;}
 function pDown(e){
   audio();
   if(G.mode!=='play'&&G.mode!=='trophy')return;
   e.preventDefault();
   var x=pointerPos(e), side=x<W/2?-1:1;
   if(side<0){G.touchL=true;showZone('tl');}else{G.touchR=true;showZone('tr');}
+  G.pointerY=pointerPosY(e);
   var now=performance.now();
-  if(now-lastTap.t<300&&lastTap.side===side)tryDash(side);
+  if(now-lastTap.t<300&&lastTap.side===side)trySpecial(side);
   lastTap={t:now,side:side};
+}
+function pMove(e){
+  if(!G.touchL&&!G.touchR)return;
+  if(e.touches)e.preventDefault();
+  var x=pointerPos(e);
+  G.touchL=x<W/2;G.touchR=x>=W/2;
+  G.pointerY=pointerPosY(e);
 }
 function pUp(){G.touchL=false;G.touchR=false;hideZones();}
 cv.addEventListener('touchstart',pDown,{passive:false});
+cv.addEventListener('touchmove',pMove,{passive:false});
 cv.addEventListener('touchend',pUp);
+cv.addEventListener('mousemove',pMove);
 cv.addEventListener('mousedown',pDown);
 document.addEventListener('mouseup',pUp);
 function showZone(cls){$('touchHint').style.display='block';var d=document.querySelector('#touchHint .'+cls);d.style.opacity=1;setTimeout(function(){d.style.opacity=0;},150);}
 function hideZones(){}
 
+function trySpecial(dir){
+  if(!G.char)return;
+  if(G.char.dash){tryDash(dir);return;}
+  if(G.char.shoot)tryShoot();
+}
+function tryShoot(){
+  if(G.mode!=='play'&&G.mode!=='trophy')return;
+  if(G.shotCd>0)return;
+  G.shotCd=3;
+  G.shots.push({x:G.px,y:playerY()-6});
+  beep(700,.07,'square',.08);beep(1100,.08,'square',.06,.06);
+  addFloat(G.px,playerY()-30,'ROCKET SHOT! 🚀','#ffd94d');
+}
 function tryDash(dir){
   if(!G.char||!G.char.dash||G.mode!=='play'&&G.mode!=='trophy')return;
   if(G.dashCd>0)return;
@@ -362,7 +400,8 @@ function tryDash(dir){
 
 /* ================= HELPERS ================= */
 function clampX(x){var hw=G.char?G.char.w/2:17;return Math.max(hw+6,Math.min(W-hw-6,x));}
-function playerY(){return H-90;}
+function playerY(){return G.py;}
+function clampY(y){return Math.max(H-230,Math.min(H-90,y));}
 function addFloat(x,y,txt,col){G.floats.push({x:x,y:y,txt:txt,col:col||'#fff',a:1});}
 function burst(x,y,col,n){for(var i=0;i<(n||14);i++){var a=Math.random()*Math.PI*2,s=1+Math.random()*3;G.parts.push({x:x,y:y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,a:1,col:col});}}
 var tickTO=null;
@@ -423,6 +462,10 @@ function drawShield(c,x,y,r,col){
     if(ch.aura){mc.strokeStyle='rgba(255,140,0,.8)';mc.lineWidth=3;mc.beginPath();mc.arc(32,38,29,0,Math.PI*2);mc.stroke();}
     if(ch.momentum){mc.fillStyle='#7CFC9A';mc.font='bold 14px Verdana';mc.textAlign='center';mc.fillText('⚡',54,16);}
     if(ch.tackle){mc.fillStyle='#ffd94d';mc.font='bold 14px Verdana';mc.textAlign='center';mc.fillText('★',54,16);}
+    if(ch.freeze){mc.font='14px Verdana';mc.textAlign='center';mc.fillText('❄️',54,16);}
+    if(ch.magnet){mc.font='14px Verdana';mc.textAlign='center';mc.fillText('🧲',54,16);}
+    if(ch.vertical){mc.fillStyle='#7CFC9A';mc.font='bold 14px Verdana';mc.textAlign='center';mc.fillText('↕',54,16);}
+    if(ch.shoot){mc.font='14px Verdana';mc.textAlign='center';mc.fillText('🚀',54,16);}
     card.addEventListener('click',function(){
       audio();
       document.querySelectorAll('.charCard').forEach(function(x){x.classList.remove('picked');});
@@ -468,8 +511,9 @@ function startStage(i){
   G.enemies=[];G.pickups=[];G.parts=[];G.floats=[];G.ghosts=[];
   G.px=W/2;G.invuln=0;G.spawnT=0;G.pickT=0;G.regenT=0;G.dashCd=0;
   G.combo=0;G.comboT=0;G.secAcc=0;G.turbo=0;G.tackleT=0;
+  G.py=H-90;G.pointerY=null;G.shots=[];G.shotCd=0;G.frozen=0;G.freezeT=0;
   G.timeLeft=s.dur;
-  if(G.char.startShield)G.shield=true;               /* Kane: shield each kick-off */
+  if(G.char.startShield&&i===0)G.shield=true;        /* Kane: one shield, first match only */
   if(s.code==='WIN'){
     G.mode='trophy';
     G.trophy={x:60+Math.random()*(W-120),y:-60,sway:Math.random()*6,caught:false};
@@ -574,8 +618,32 @@ function update(dt){
   var spd=ch.speed+(G.turbo>0?2.5:0);
   if(dir!==0){G.px=clampX(G.px+dir*spd*(dt/16.7));G.lastDir=dir;}
 
+  /* Rice: Box-to-Box vertical running */
+  if(ch.vertical){
+    var vdir=0;
+    if(G.keys['ArrowUp'])vdir-=1;
+    if(G.keys['ArrowDown'])vdir+=1;
+    if(vdir!==0)G.py=clampY(G.py+vdir*spd*(dt/16.7));
+    else if((G.touchL||G.touchR)&&G.pointerY!=null){
+      var vt=clampY(G.pointerY-ch.h/2)-G.py;
+      G.py=clampY(G.py+Math.max(-spd,Math.min(spd,vt))*(dt/16.7));
+    }
+  }
+
   if(G.turbo>0)G.turbo=Math.max(0,G.turbo-dt/1000);
   if(G.dashCd>0)G.dashCd=Math.max(0,G.dashCd-dt/1000);
+  if(G.shotCd>0)G.shotCd=Math.max(0,G.shotCd-dt/1000);
+  if(G.frozen>0)G.frozen=Math.max(0,G.frozen-dt/1000);
+  /* Stones: Cool Head freeze every 12s */
+  if(ch.freeze&&G.mode==='play'){
+    G.freezeT+=dt/1000;
+    if(G.freezeT>=12){
+      G.freezeT=0;G.frozen=1.5;
+      addFloat(G.px,playerY()-34,'COOL HEAD! ❄️','#9fdcff');
+      beep(1500,.18,'sine',.07);beep(1900,.2,'sine',.05,.1);
+      say('Stones calms it all down — the whole defence freezes!');
+    }
+  }
   if(G.invuln>0)G.invuln-=dt/1000;
   if(G.comboT>0){G.comboT-=dt/1000;if(G.comboT<=0)G.combo=0;}
   if(G.shake>0)G.shake--;
@@ -619,7 +687,7 @@ function update(dt){
       G.spawnT=0;
       var pack=s.pack||1;
       var count=1+Math.floor(Math.random()*pack);      /* 1..pack defenders this wave */
-      count=Math.min(count,3);                          /* never a full wall */
+      count=Math.min(count,G.stage===FINAL_IDX?4:3);    /* the final can drop 4 — never a full wall */
       var lanes=[45,125,200,275,355];                   /* 5 lanes, at least 2 stay open */
       for(var li=lanes.length-1;li>0;li--){var lj=Math.floor(Math.random()*(li+1));var tmp=lanes[li];lanes[li]=lanes[lj];lanes[lj]=tmp;}
       for(var ci=0;ci<count;ci++){
@@ -642,7 +710,7 @@ function update(dt){
       var e=G.enemies[i];
       var slow=1;
       if(ch.aura){var dx0=e.x-G.px,dy0=(e.y+e.h/2)-(py+phh/2);if(dx0*dx0+dy0*dy0<75*75)slow=0.65;}
-      e.y+=e.v*slow*(dt/16.7);
+      if(G.frozen<=0)e.y+=e.v*slow*(dt/16.7);
       /* near miss */
       if(!e.counted&&e.y>py+phh){
         e.counted=true;
@@ -667,6 +735,26 @@ function update(dt){
     }
   }
 
+  /* Rashford rocket shots */
+  if(G.mode==='play'){
+    for(var si=G.shots.length-1;si>=0;si--){
+      var sh=G.shots[si];sh.y-=9*(dt/16.7);
+      var shot_hit=false;
+      for(var ei=G.enemies.length-1;ei>=0;ei--){
+        var en=G.enemies[ei];
+        if(Math.abs(en.x-sh.x)<en.w/2+8&&sh.y>en.y&&sh.y<en.y+en.h){
+          G.enemies.splice(ei,1);G.shots.splice(si,1);shot_hit=true;
+          G.score+=20;
+          burst(en.x,en.y+20,'#ffd94d',16);
+          addFloat(en.x,en.y,'GOLAZO! +20','#ffd94d');
+          sndPickup();
+          break;
+        }
+      }
+      if(!shot_hit&&sh.y<-20)G.shots.splice(si,1);
+    }
+  }
+
   /* trophy stage */
   if(G.mode==='trophy'&&G.trophy&&!G.trophy.caught){
     var t=G.trophy;
@@ -688,6 +776,10 @@ function update(dt){
   for(var j=G.pickups.length-1;j>=0;j--){
     var p=G.pickups[j];
     p.y+=p.v*(dt/16.7);p.spin+=dt/200;
+    if(ch.magnet){
+      var mdx=G.px-p.x,mdy=(py+phh/2)-p.y,md=Math.sqrt(mdx*mdx+mdy*mdy);
+      if(md<150&&md>1){p.x+=mdx/md*3.2*(dt/16.7);p.y+=mdy/md*2.2*(dt/16.7);}
+    }
     if(p.y>H+40){G.pickups.splice(j,1);continue;}
     if(Math.abs(p.x-G.px)<pw/2+16 && p.y+14>py && p.y<py+phh){
       G.pickups.splice(j,1);
@@ -796,6 +888,20 @@ function render(){
     ctx.restore();
   }
 
+  /* frozen defenders: icy tint + snowflakes */
+  if(G.frozen>0){
+    ctx.fillStyle='rgba(150,220,255,.14)';ctx.fillRect(0,0,W,H);
+    ctx.font='14px Verdana';ctx.textAlign='center';ctx.fillStyle='#dff4ff';
+    G.enemies.forEach(function(e){ctx.fillText('❄',e.x,e.y-4);});
+  }
+
+  /* rocket shots */
+  G.shots.forEach(function(sh){
+    ctx.beginPath();ctx.arc(sh.x,sh.y,6,0,Math.PI*2);ctx.fillStyle='#fff';ctx.fill();
+    ctx.strokeStyle='#333';ctx.lineWidth=1.5;ctx.stroke();
+    ctx.beginPath();ctx.arc(sh.x,sh.y,2.4,0,Math.PI*2);ctx.fillStyle='#333';ctx.fill();
+  });
+
   /* dash ghosts */
   G.ghosts.forEach(function(g){
     ctx.save();ctx.globalAlpha=g.a;
@@ -821,12 +927,12 @@ function render(){
       drawFootballer(ctx,G.px,py,ch.w,ch.h,englandKit,ch.short);
     }
     if(G.shield)drawShield(ctx,G.px,py+ch.h/2,ch.w+14);
-    /* dash cooldown bar under player */
-    if(ch.dash){
-      var bw=40;
+    /* ability cooldown bar under player (dash or rocket shot) */
+    if(ch.dash||ch.shoot){
+      var bw=40, cd=ch.dash?G.dashCd:G.shotCd, cdMax=ch.dash?4:3;
       ctx.fillStyle='rgba(0,0,0,.5)';ctx.fillRect(G.px-bw/2,py+ch.h+8,bw,5);
-      ctx.fillStyle=G.dashCd<=0?'#7CFC9A':'#ffd94d';
-      ctx.fillRect(G.px-bw/2,py+ch.h+8,bw*(1-G.dashCd/4),5);
+      ctx.fillStyle=cd<=0?'#7CFC9A':'#ffd94d';
+      ctx.fillRect(G.px-bw/2,py+ch.h+8,bw*(1-cd/cdMax),5);
     }
   }
 
