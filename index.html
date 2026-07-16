@@ -159,6 +159,11 @@
     radial-gradient(circle at 75% 75%,rgba(91,217,127,.25),transparent 55%),#0E3B23;}
   .jungle .card-tag{color:#5BD97F;} .jungle .play{background:#5BD97F;color:#0A2818;}
 
+  .goinghome{background:linear-gradient(160deg,#123a6b,#0a1a33);}
+  .goinghome .card-art{background:radial-gradient(circle at 70% 20%,rgba(255,210,63,.3),transparent 55%),
+    linear-gradient(180deg,#0c5c2a,#083d1c);}
+  .goinghome .card-tag{color:#ff8a8a;} .goinghome .play{background:#FFD23F;color:#2a1e0c;}
+  .goinghome:hover{box-shadow:0 18px 50px rgba(255,210,63,.45);border-color:#FFD23F;}
   .sploosh{background:linear-gradient(160deg,#264a1c,#12250c);}
   .sploosh .card-art{background:radial-gradient(circle at 30% 20%,rgba(255,210,63,.28),transparent 55%),
     linear-gradient(165deg,#1a2247,#25502a 55%,#3f8a44);}
@@ -267,10 +272,63 @@
     <div class="kicker">Choose your game</div>
     <h1 id="bigtitle" title="Psst… try clicking me!">Year 5 Arcade</h1>
     <p class="hello" id="hello">🎮 Ready to play?</p>
-    <p class="sub">Eighteen games in one place — survive on God's Thumb in Sploosh &amp; Onion Survival, spin the Earth to wake up real cities, orbit the Moon through all 8 phases, match all 48 real World Cup flags and win penalty shootouts, run a theme park stall by reading graphs, carve and print in the lino studio, spot the odd stage in life cycles, explore South America and save the rainforest, defend your Legion outpost, master Roman numerals from I to C, explore Victorian Britain and the British Empire, and classify and measure angles with a real protractor. Sign in, and every game you play is saved to your record.</p>
+    <p class="sub">Nineteen games in one place — dodge eight nations and bring football home in the World Cup dodger, survive on God's Thumb in Sploosh &amp; Onion Survival, spin the Earth to wake up real cities, orbit the Moon through all 8 phases, match all 48 real World Cup flags and win penalty shootouts, run a theme park stall by reading graphs, carve and print in the lino studio, spot the odd stage in life cycles, explore South America and save the rainforest, defend your Legion outpost, master Roman numerals from I to C, explore Victorian Britain and the British Empire, and classify and measure angles with a real protractor. Sign in, and every game you play is saved to your record.</p>
   </header>
 
   <main class="cards">
+    <a class="card goinghome" id="card-goinghome" href="football-is-going-home.html">
+      <span class="newbadge">✦ NEW!</span>
+      <div class="lockmsg">🔒 Sign in first</div>
+      <div class="card-art">
+        <svg class="art-svg pulse" viewBox="0 0 200 150" aria-hidden="true">
+          <!-- floodlit pitch -->
+          <rect x="0" y="0" width="200" height="150" fill="#0c5c2a"/>
+          <rect x="0" y="0" width="200" height="30" fill="#083d1c"/>
+          <g fill="#ffe680" opacity=".9">
+            <circle cx="30" cy="12" r="3"/><circle cx="70" cy="8" r="3"/><circle cx="130" cy="8" r="3"/><circle cx="170" cy="12" r="3"/>
+          </g>
+          <!-- pitch markings -->
+          <rect x="12" y="34" width="176" height="108" fill="none" stroke="#fff" stroke-width="3" opacity=".85"/>
+          <line x1="12" y1="88" x2="188" y2="88" stroke="#fff" stroke-width="3" opacity=".85"/>
+          <circle cx="100" cy="88" r="20" fill="none" stroke="#fff" stroke-width="3" opacity=".85"/>
+          <!-- golden trophy falling -->
+          <g transform="translate(100,52)">
+            <path d="M-11 -10 a11 11 0 0 0 22 0 Z" fill="#FFD23F" stroke="#b8860b" stroke-width="1.5"/>
+            <rect x="-3" y="1" width="6" height="9" fill="#FFD23F"/>
+            <rect x="-9" y="10" width="18" height="5" rx="2" fill="#FFD23F" stroke="#b8860b" stroke-width="1"/>
+            <path d="M-11 -8 q-8 2 -2 9 M11 -8 q8 2 2 9" fill="none" stroke="#FFD23F" stroke-width="3"/>
+            <circle cx="-3" cy="-7" r="2" fill="#fff8d0"/>
+          </g>
+          <!-- opposing defenders (checkerboard + red kits) -->
+          <g transform="translate(46,100)">
+            <circle cx="0" cy="-10" r="5" fill="#f2c9a0"/>
+            <rect x="-7" y="-6" width="14" height="14" fill="#fff"/>
+            <rect x="-7" y="-6" width="7" height="7" fill="#e03a3e"/><rect x="0" y="1" width="7" height="7" fill="#e03a3e"/>
+          </g>
+          <g transform="translate(154,100)">
+            <circle cx="0" cy="-10" r="5" fill="#8a5a34"/>
+            <rect x="-7" y="-6" width="14" height="14" fill="#c60b1e"/>
+            <rect x="-7" y="0" width="14" height="3" fill="#ffc400"/>
+          </g>
+          <!-- England hero, white shirt with St George's Cross -->
+          <g transform="translate(100,122)">
+            <circle cx="0" cy="-13" r="6" fill="#e8b98a"/>
+            <path d="M-6 -16 a6 6 0 0 1 12 0Z" fill="#3a2416"/>
+            <rect x="-9" y="-7" width="18" height="17" fill="#fff" stroke="#c9c9c9"/>
+            <rect x="-1.5" y="-7" width="3" height="17" fill="#d31f2b"/>
+            <rect x="-9" y="0" width="18" height="3" fill="#d31f2b"/>
+            <rect x="-8" y="10" width="16" height="6" fill="#0b2c6b"/>
+          </g>
+        </svg>
+      </div>
+      <div class="card-body">
+        <div class="card-tag">World Cup &middot; Dodger</div>
+        <div class="card-title">Football Is Going Home</div>
+        <div class="card-desc">Pick your England star — Kane, Saka, Bellingham, Rogers, Konsa and more — then dodge 8 nations from Panama to the Spain final, pull off skill-move combos, and catch the golden trophy to bring football home!</div>
+        <span class="play">PLAY ▶</span>
+      </div>
+    </a>
+
     <a class="card sploosh" id="card-sploosh" href="sploosh-survival.html">
       <span class="newbadge">✦ NEW!</span>
       <div class="lockmsg">🔒 Sign in first</div>
@@ -892,6 +950,7 @@ function renderUserBar(){
   }
 }
 function setCardsLocked(locked){
+  $('card-goinghome').classList.toggle('locked',locked);
   $('card-worldcup').classList.toggle('locked',locked);
   $('card-themepark').classList.toggle('locked',locked);
   $('card-lino').classList.toggle('locked',locked);
@@ -1092,11 +1151,12 @@ async function loadRecords(p){
   var worldcup=rows.filter(function(x){return x.game==='worldcup';});
   var sploosh=rows.filter(function(x){return x.game==='holes-sploosh';});
   var holesdig=rows.filter(function(x){return x.game==='holes-dig';});
+  var goinghome=rows.filter(function(x){return x.game==='roadtoglory';});
   /* any game not in the known list (e.g. Solar Builder, Legion Outpost, future games)
      is picked up automatically so the record is never incomplete again */
   var knownIds=['siege','nebula','empiremap','vicmuseum','victorians','junglecatch',
     'circuit','linolayers','lifecycles','rainforestrescue','angles','themeparkdatadash','worldcup',
-    'holes-sploosh','holes-dig'];
+    'holes-sploosh','holes-dig','roadtoglory'];
   var extraNames={solar:'🪐 SOLAR SYSTEM BUILDER',solarbuilder:'🪐 SOLAR SYSTEM BUILDER',
     solarsystem:'🪐 SOLAR SYSTEM BUILDER',builder:'🪐 SOLAR SYSTEM BUILDER',
     outpost:'🏰 LEGION OUTPOST',legionoutpost:'🏰 LEGION OUTPOST',legion:'🏰 LEGION OUTPOST',
@@ -1113,6 +1173,7 @@ async function loadRecords(p){
     '<div><div class="rec-name">'+escapeHtml(p.name)+'</div>'+
     '<div class="rec-sub">'+totalGames+' games played in total</div></div></div>';
   var stats='<div class="rec-stats">'+
+    '<div class="rec-stat"><div class="n">'+best(goinghome)+'</div><div class="l">GOING HOME BEST</div></div>'+
     '<div class="rec-stat"><div class="n">'+best(sploosh)+'</div><div class="l">SPLOOSH BEST</div></div>'+
     '<div class="rec-stat"><div class="n">'+best(holesdig)+'</div><div class="l">HOLES DIG BEST</div></div>'+
     '<div class="rec-stat"><div class="n">'+best(worldcup)+'</div><div class="l">WORLD CUP BEST</div></div>'+
@@ -1146,6 +1207,7 @@ async function loadRecords(p){
     return h+'</tbody></table>';
   }
   $('recBody').innerHTML=head+stats+
+    historyTable('🏆 FOOTBALL IS GOING HOME HISTORY',goinghome)+
     historyTable('🍑 SPLOOSH & ONION SURVIVAL HISTORY',sploosh)+
     historyTable('⛏️ HOLES — DIGGING HISTORY',holesdig)+
     historyTable('⚽ WORLD CUP FLAG MATCH HISTORY',worldcup)+
@@ -1199,6 +1261,7 @@ function renderHello(){
     '🎮 Ready to play?',
     '⚡ Fifteen games. One champion. You?',
     '🏆 Sign in and chase the high scores!',
+    '⚽ New! Football Is Going Home — dodge 8 nations and lift the World Cup!',
     '🍑 New! Survive on God\'s Thumb in Sploosh & Onion Survival…'
   ];
   $('hello').textContent=msgs[Math.floor(Math.random()*msgs.length)];
