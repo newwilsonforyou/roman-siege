@@ -202,7 +202,7 @@
       <input id="nameinput" maxlength="14" placeholder="Your name">
       <button id="savescore">Save</button>
     </div>
-    <div class="boardWrap"><div class="boardTitle">🌍 TOP 10</div><div id="endboard"></div></div>
+    <div class="boardWrap"><div class="boardTitle">🌍 TOP 30</div><div id="endboard"></div></div>
     <button class="bigBtn" id="btnAgain">Play Again</button>
   </div>
 </div>
@@ -227,13 +227,13 @@ async function sbFetchTop(limit){limit=limit||15;try{var r=await fetch(SB_URL+'/
 async function sbFetchAvatars(){try{var r=await fetch(SB_URL+'/rest/v1/players?select=name%2Cavatar&limit=1000',{headers:sbH()});if(!r.ok)return {};var rows=await r.json();var m={};rows.forEach(function(x){if(x&&x.name)m[String(x.name).trim().toLowerCase()]=x.avatar||'🎮';});return m;}catch(e){return {};}}
 function avatarFor(map,name){var k=String(name==null?'':name).trim().toLowerCase();return (map&&map[k])?map[k]:'🎮';}
 async function sbInsert(name,score,details){try{var h=sbH();h['Prefer']='return=minimal';var body={name:name,score:score,game:GAME_ID};var pn=playerName();if(pn)body.player=pn;if(details)body.details=details;var r=await fetch(SB_URL+'/rest/v1/scores',{method:'POST',headers:h,body:JSON.stringify(body)});if(!r.ok&&details){delete body.details;r=await fetch(SB_URL+'/rest/v1/scores',{method:'POST',headers:h,body:JSON.stringify(body)});}return r.ok;}catch(e){return false;}}
-async function sbQualifies(score){try{var r=await fetch(SB_URL+'/rest/v1/scores?select=score&game=eq.'+GAME_ID+'&order=score.desc&limit=15',{headers:sbH()});if(!r.ok)return true;var rows=await r.json();if(!rows||rows.length<15)return true;return score>rows[rows.length-1].score;}catch(e){return true;}}
+async function sbQualifies(score){try{var r=await fetch(SB_URL+'/rest/v1/scores?select=score&game=eq.'+GAME_ID+'&order=score.desc&limit=30',{headers:sbH()});if(!r.ok)return true;var rows=await r.json();if(!rows||rows.length<30)return true;return score>rows[rows.length-1].score;}catch(e){return true;}}
 function lbEsc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function lbLoading(){return '<div class="lb-loading"><div class="lb-spin"></div>Loading…</div>';}
 /* rows come back as {name,score}; avatars is the map from sbFetchAvatars() */
 function lbTable(rows,hiN,hiS,avatars){if(!rows||!rows.length)return '<div class="lb-msg">No champions yet — lift the trophy first!</div>';var med=['🥇','🥈','🥉'],h='<table class="lb"><thead><tr><th>RANK</th><th>PLAYER</th><th>POINTS</th></tr></thead><tbody>',mk=false;rows.forEach(function(r,i){var me=(!mk&&hiN&&r.name===hiN&&r.score===hiS);if(me)mk=true;var av=avatarFor(avatars,r.name);h+='<tr class="'+(me?'me':'')+'"><td>'+(i<3?med[i]:(i+1))+'</td><td><span class="lb-av">'+av+'</span>'+lbEsc(r.name)+'</td><td>'+r.score+'</td></tr>';});return h+'</tbody></table>';}
-async function loadMainBoard(){$('mainboard').innerHTML=lbLoading();var res=await Promise.all([sbFetchTop(15),sbFetchAvatars()]);$('mainboard').innerHTML=lbTable(res[0],null,null,res[1]);}
-async function loadEndBoard(n,s){$('endboard').innerHTML=lbLoading();var res=await Promise.all([sbFetchTop(10),sbFetchAvatars()]);$('endboard').innerHTML=lbTable(res[0],n,s,res[1]);}
+async function loadMainBoard(){$('mainboard').innerHTML=lbLoading();var res=await Promise.all([sbFetchTop(30),sbFetchAvatars()]);$('mainboard').innerHTML=lbTable(res[0],null,null,res[1]);}
+async function loadEndBoard(n,s){$('endboard').innerHTML=lbLoading();var res=await Promise.all([sbFetchTop(30),sbFetchAvatars()]);$('endboard').innerHTML=lbTable(res[0],n,s,res[1]);}
 
 /* ================= AUDIO (Web Audio, no files) ================= */
 var AC=null;
@@ -318,7 +318,13 @@ var CHARS=[
   lives:2,speed:6.5,shoot:true,w:34,h:44},
  {id:'watkins',name:'OLLIE WATKINS',short:'WATKINS',ability:'Super Sub',
   desc:'He ALWAYS scores late! In the last 5 seconds of every match he turns golden and unstoppable — defenders bounce off him for +10 each.',
-  lives:2,speed:6.5,supersub:true,w:34,h:44}
+  lives:2,speed:6.5,supersub:true,w:34,h:44},
+ {id:'reece',name:'REECE JAMES',short:'REECE',ability:'Wing Wizard',
+  desc:'Owns the flanks! Run off one side of the pitch and he sprints round to appear on the other side. No corner can trap him.',
+  lives:2,speed:6.5,wrap:true,w:34,h:44},
+ {id:'burn',name:'DAN BURN',short:'BURN',ability:'Man Mountain',
+  desc:'A 6ft 7in giant! Bigger body and slower, but 3 lives — and when he IS tackled, the shockwave knocks every nearby defender flying (+5 each).',
+  lives:3,speed:4.5,shock:true,w:42,h:54}
 ];
 
 /* ================= STAGES ================= */
@@ -485,6 +491,11 @@ function tryDash(dir){
 
 /* ================= HELPERS ================= */
 function clampX(x){var hw=G.char?G.char.w/2:17;return Math.max(hw+32,Math.min(W-hw-32,x));}
+function wrapX(x){
+  if(x<24){burst(30,playerY()+20,'#7CFC9A',8);burst(W-30,playerY()+20,'#7CFC9A',8);return W-40;}
+  if(x>W-24){burst(W-30,playerY()+20,'#7CFC9A',8);burst(30,playerY()+20,'#7CFC9A',8);return 40;}
+  return x;
+}
 function playerY(){return G.py;}
 function clampY(y){return Math.max(H-230,Math.min(H-90,y));}
 function addFloat(x,y,txt,col){G.floats.push({x:x,y:y,txt:txt,col:col||'#fff',a:1});}
@@ -561,6 +572,8 @@ function drawShield(c,x,y,r,col){
     if(ch.vertical){mc.fillStyle='#7CFC9A';mc.font='bold 14px Verdana';mc.textAlign='center';mc.fillText('↕',54,16);}
     if(ch.shoot){mc.font='14px Verdana';mc.textAlign='center';mc.fillText('🚀',54,16);}
     if(ch.supersub){mc.font='14px Verdana';mc.textAlign='center';mc.fillText('⏱️',54,16);}
+    if(ch.wrap){mc.font='14px Verdana';mc.textAlign='center';mc.fillText('🌀',54,16);}
+    if(ch.shock){mc.font='14px Verdana';mc.textAlign='center';mc.fillText('⛰️',54,16);}
     card.addEventListener('click',function(){
       audio();
       document.querySelectorAll('.charCard').forEach(function(x){x.classList.remove('picked');});
@@ -737,7 +750,7 @@ function update(dt){
   if(G.keys['ArrowLeft']||G.touchL)dir-=1;
   if(G.keys['ArrowRight']||G.touchR)dir+=1;
   var spd=ch.speed+(G.turbo>0?2.5:0);
-  if(dir!==0){G.px=clampX(G.px+dir*spd*(dt/16.7));G.lastDir=dir;}
+  if(dir!==0){G.px=(ch.wrap?wrapX:clampX)(G.px+dir*spd*(dt/16.7));G.lastDir=dir;}
 
   /* Rice: Box-to-Box vertical running */
   if(ch.vertical){
@@ -960,6 +973,24 @@ function hitPlayer(x,y){
   G.lives--;G.invuln=1.5;G.shake=14;
   burst(G.px,playerY()+20,'#ff5252',20);
   sndHit();
+  /* Dan Burn: the tackle sends everyone nearby flying */
+  if(G.char.shock){
+    var cleared=0;
+    for(var bi=G.enemies.length-1;bi>=0;bi--){
+      var be=G.enemies[bi];
+      var bdx=be.x-G.px,bdy=(be.y+be.h/2)-(playerY()+G.char.h/2);
+      if(bdx*bdx+bdy*bdy<95*95){
+        burst(be.x,be.y+20,'#ffd94d',14);
+        G.enemies.splice(bi,1);cleared++;
+      }
+    }
+    if(cleared>0){
+      G.score+=cleared*5;G.shake=18;
+      addFloat(G.px,playerY()-46,'BIG DAN CLEARS IT! +'+(cleared*5),'#ffd94d');
+      sndShieldPop();hypeUp(0.3);
+      say('The Man Mountain shrugs them ALL off!');
+    }
+  }
   if(G.lives<=0){
     say('And that is the end of the road...',3000);
     setTimeout(function(){finalize(false);},700);
