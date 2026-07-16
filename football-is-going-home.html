@@ -172,7 +172,7 @@
   <!-- START / CHARACTER SELECT -->
   <div class="screen on" id="screen-start">
     <h1 class="title">⚽ Football Is<br>Going Home</h1>
-    <div class="subtitle">🏴󠁧󠁢󠁥󠁮󠁧󠁿 8 MATCHES · 1 TROPHY · CHOOSE YOUR ENGLAND STAR 🏴󠁧󠁢󠁥󠁮󠁧󠁿</div>
+    <div class="subtitle">🏴󠁧󠁢󠁥󠁮󠁧󠁿 8 MATCHES · 1 TROPHY · 1 BONUS ROUND · CHOOSE YOUR STAR 🏴󠁧󠁢󠁥󠁮󠁧󠁿</div>
     <div id="charGrid"></div>
     <button class="bigBtn" id="btnStart" disabled>Start Campaign</button>
     <div class="hint">⬅️ ➡️ arrows to move · SPACE = special (Jude's dash / Rashford's shot)<br>
@@ -281,7 +281,10 @@ var CHARS=[
   lives:2,speed:6,vertical:true,w:34,h:44},
  {id:'rashford',name:'MARCUS RASHFORD',short:'RASHFORD',ability:'Rocket Shot',
   desc:'Press SPACE (or double-tap) to blast a ball that knocks a defender out! 3s cooldown.',
-  lives:2,speed:6.5,shoot:true,w:34,h:44}
+  lives:2,speed:6.5,shoot:true,w:34,h:44},
+ {id:'watkins',name:'OLLIE WATKINS',short:'WATKINS',ability:'Super Sub',
+  desc:'He ALWAYS scores late! In the last 5 seconds of every match he turns golden and unstoppable — defenders bounce off him for +10 each.',
+  lives:2,speed:6.5,supersub:true,w:34,h:44}
 ];
 
 /* ================= STAGES ================= */
@@ -311,9 +314,14 @@ var STAGES=[
   desc:'The ultimate test against La Roja! Survive their elite defensive press to win the cup!',
   kit:function(c,x,y,w,h){c.fillStyle='#c60b1e';c.fillRect(x,y,w,h);c.fillStyle='#ffc400';c.fillRect(x,y+h/2-2,w,4);c.fillRect(x+2,y+2,3,h-4);c.fillRect(x+w-5,y+2,3,h-4);}},
  {flag:'🏆',code:'WIN',label:'CHAMPIONS!',title:"Winner's Celebration",dur:0,speed:0,spawn:0,bonus:1000,
-  desc:'The whistle has gone — ENGLAND ARE CHAMPIONS! Move under the golden trophy and catch it to lift the World Cup!'}
+  desc:'The whistle has gone — ENGLAND ARE CHAMPIONS! Move under the golden trophy and catch it to lift the World Cup!'},
+ {flag:'🇫🇷',code:'FRA',label:'⭐ BONUS ROUND ⭐',title:'England vs France',dur:20,speed:7.5,spawn:500,pack:3,bonus:800,bonusRound:true,
+  desc:'CHAMPIONS BONUS! Les Bleus demand a friendly rematch. The trophy is already yours — a tackle just ends the round. Survive 20 seconds of French flair for a huge +800!',
+  kit:function(c,x,y,w,h){c.fillStyle='#0055a4';c.fillRect(x,y,w,h);c.fillStyle='#fff';c.fillRect(x,y+h/2-2,w,4);c.fillStyle='#ef4135';c.fillRect(x+2,y+2,3,h-4);c.fillRect(x+w-5,y+2,3,h-4);}}
 ];
-var FINAL_IDX=STAGES.length-2; /* index of the Spain final (hunting press) */
+var CODES=STAGES.map(function(s){return s.code;});
+var FINAL_IDX=CODES.indexOf('ESP');   /* Spain final: hunting press + 4-drops */
+var BONUS_IDX=CODES.indexOf('FRA');   /* France bonus round */
 
 /* ================= STATE ================= */
 var cv=$('pitch'), ctx=cv.getContext('2d');
@@ -326,7 +334,7 @@ var G={
   score:0, secAcc:0,
   enemies:[], pickups:[], parts:[], floats:[], ghosts:[],
   spawnT:0, pickT:0, regenT:0, turbo:0, tackleT:0,
-  py:H-90, pointerY:null, shots:[], shotCd:0, frozen:0, freezeT:0,
+  py:H-90, pointerY:null, shots:[], shotCd:0, frozen:0, freezeT:0, walkT:0, subLatch:false,
   dashCd:0, lastDir:1,
   combo:0, comboT:0,
   shake:0,
@@ -459,6 +467,15 @@ function drawShield(c,x,y,r,col){
     var mc=mini.getContext('2d');
     drawFootballer(mc,32,18,ch.w,ch.h,englandKit,ch.short);
     if(ch.startShield||ch.regen)drawShield(mc,32,38,30);
+    if(ch.supersub&&G.mode==='play'&&G.timeLeft>0&&G.timeLeft<=5){
+      ctx.save();var gp=0.6+Math.sin(performance.now()/90)*0.25;
+      var gg=ctx.createRadialGradient(G.px,py+ch.h/2,8,G.px,py+ch.h/2,60);
+      gg.addColorStop(0,'rgba(255,224,102,0)');gg.addColorStop(0.7,'rgba(255,210,63,'+(0.25*gp)+')');gg.addColorStop(1,'rgba(255,180,0,'+(0.55*gp)+')');
+      ctx.fillStyle=gg;ctx.beginPath();ctx.arc(G.px,py+ch.h/2,60,0,Math.PI*2);ctx.fill();
+      ctx.strokeStyle='rgba(255,224,102,'+gp+')';ctx.lineWidth=3;
+      ctx.beginPath();ctx.arc(G.px,py+ch.h/2,ch.w+12,0,Math.PI*2);ctx.stroke();
+      ctx.restore();
+    }
     if(ch.aura){mc.strokeStyle='rgba(255,140,0,.8)';mc.lineWidth=3;mc.beginPath();mc.arc(32,38,29,0,Math.PI*2);mc.stroke();}
     if(ch.momentum){mc.fillStyle='#7CFC9A';mc.font='bold 14px Verdana';mc.textAlign='center';mc.fillText('⚡',54,16);}
     if(ch.tackle){mc.fillStyle='#ffd94d';mc.font='bold 14px Verdana';mc.textAlign='center';mc.fillText('★',54,16);}
@@ -466,6 +483,7 @@ function drawShield(c,x,y,r,col){
     if(ch.magnet){mc.font='14px Verdana';mc.textAlign='center';mc.fillText('🧲',54,16);}
     if(ch.vertical){mc.fillStyle='#7CFC9A';mc.font='bold 14px Verdana';mc.textAlign='center';mc.fillText('↕',54,16);}
     if(ch.shoot){mc.font='14px Verdana';mc.textAlign='center';mc.fillText('🚀',54,16);}
+    if(ch.supersub){mc.font='14px Verdana';mc.textAlign='center';mc.fillText('⏱️',54,16);}
     card.addEventListener('click',function(){
       audio();
       document.querySelectorAll('.charCard').forEach(function(x){x.classList.remove('picked');});
@@ -491,15 +509,16 @@ $('btnAgain').addEventListener('click',function(){
 });
 
 function showMatch(i){
-  var s=STAGES[i], isWin=(s.code==='WIN');
+  var s=STAGES[i], isWin=(s.code==='WIN'), isBonus=!!s.bonusRound;
   G.mode='frozen';
-  $('matchFlags').textContent = isWin ? '🏆🏴󠁧󠁢󠁥󠁮󠁧󠁿🏆' : '🏴󠁧󠁢󠁥󠁮󠁧󠁿 ⚡ '+s.flag;
+  $('matchFlags').textContent = isWin ? '🏆🏴󠁧󠁢󠁥󠁮󠁧󠁿🏆' : (isBonus?'🏴󠁧󠁢󠁥󠁮󠁧󠁿 ⭐ '+s.flag:'🏴󠁧󠁢󠁥󠁮󠁧󠁿 ⚡ '+s.flag);
   $('matchStage').textContent=s.label;
   $('matchTitle').textContent=s.title;
   $('matchDesc').textContent=s.desc;
   $('matchMeta').textContent = isWin ? 'Catch the falling trophy to finish!' :
-    '⏱ Survive '+s.dur+'s · Defender speed: '+s.speed+((s.pack||1)>1?' · ⚠️ Drops up to '+s.pack+' defenders at once!':'')+' · Clear bonus: +'+s.bonus;
-  $('btnKickoff').textContent = isWin ? 'Lift The Trophy 🏆' : 'Kick Off ▶';
+    (isBonus ? '⭐ No hearts at risk — one tackle ends the round, survive '+s.dur+'s for +'+s.bonus+'!' :
+    '⏱ Survive '+s.dur+'s · Defender speed: '+s.speed+((s.pack||1)>1?' · ⚠️ Drops up to '+s.pack+' defenders at once!':'')+' · Clear bonus: +'+s.bonus);
+  $('btnKickoff').textContent = isWin ? 'Lift The Trophy 🏆' : (isBonus?'Bonus Kick Off ⭐':'Kick Off ▶');
   show('screen-match');
   sndWhistle();
 }
@@ -511,7 +530,7 @@ function startStage(i){
   G.enemies=[];G.pickups=[];G.parts=[];G.floats=[];G.ghosts=[];
   G.px=W/2;G.invuln=0;G.spawnT=0;G.pickT=0;G.regenT=0;G.dashCd=0;
   G.combo=0;G.comboT=0;G.secAcc=0;G.turbo=0;G.tackleT=0;
-  G.py=H-90;G.pointerY=null;G.shots=[];G.shotCd=0;G.frozen=0;G.freezeT=0;
+  G.py=H-90;G.pointerY=null;G.shots=[];G.shotCd=0;G.frozen=0;G.freezeT=0;G.subLatch=false;
   G.timeLeft=s.dur;
   if(G.char.startShield&&i===0)G.shield=true;        /* Kane: one shield, first match only */
   if(s.code==='WIN'){
@@ -519,9 +538,14 @@ function startStage(i){
     G.trophy={x:60+Math.random()*(W-120),y:-60,sway:Math.random()*6,caught:false};
     say('Here it comes... the golden World Cup trophy!');
   }else{
-    G.mode='play';
-    var lines=['And we are underway at the World Cup!','The Black Stars line up — this will be quick!','Win this and England top the group!','Knockout football begins — no second chances!','A Round of 16 classic in the making!','A quarter-final under the lights!','A semi-final for the ages!','The Grand Final. Everything on the line!'];
-    say(lines[Math.min(i,lines.length-1)]);
+    /* the teams walk out first */
+    G.mode='walkin';G.walkT=0;G.px=-50;
+    beep(523,.18,'triangle',.07);beep(659,.18,'triangle',.07,.18);beep(784,.25,'triangle',.08,.36);
+    if(s.bonusRound)say('The champions walk out one more time — Les Bleus await!');
+    else{
+      var lines=['And we are underway at the World Cup!','The Black Stars line up — this will be quick!','Win this and England top the group!','Knockout football begins — no second chances!','A Round of 16 classic in the making!','A quarter-final under the lights!','A semi-final for the ages!','The Grand Final. Everything on the line!'];
+      say(lines[Math.min(i,lines.length-1)]);
+    }
   }
   updateHUD();
   G.lastT=performance.now();
@@ -535,6 +559,12 @@ function stageClear(){
   addFloat(W/2,H/2,'FULL TIME! +'+s.bonus,'#ffd94d');
   sndWhistle();sndFanfare();
   updateHUD();
+  if(s.bonusRound){
+    say('YOU EVEN BEAT FRANCE! A perfect tournament!',3500);
+    addFloat(W/2,H/2+30,'PERFECT CHAMPIONS!','#ffe066');
+    setTimeout(function(){finalize(true);},1400);
+    return;
+  }
   var next=G.stage+1;
   setTimeout(function(){G.stage=next;showMatch(next);},1100);
 }
@@ -612,6 +642,16 @@ function updateHUD(){
 /* ================= UPDATE ================= */
 function update(dt){
   var ch=G.char;
+  /* ---- walk-out sequence: teams enter, then the whistle goes ---- */
+  if(G.mode==='walkin'){
+    G.walkT+=dt;
+    var wp=Math.min(1,G.walkT/2300);
+    var ease=1-Math.pow(1-wp,3);
+    G.px=-50+(W/2+50)*ease;
+    if(wp>=1){G.mode='play';sndWhistle();addFloat(W/2,H/2-40,'KICK OFF!','#ffd94d');}
+    updateHUD();
+    return;
+  }
   /* movement */
   var dir=0;
   if(G.keys['ArrowLeft']||G.touchL)dir-=1;
@@ -674,6 +714,13 @@ function update(dt){
 
   var s=STAGES[G.stage];
   var py=playerY(), pw=ch.w, phh=ch.h;
+  var subOn=!!(ch.supersub&&G.mode==='play'&&G.timeLeft>0&&G.timeLeft<=5);
+  if(subOn&&!G.subLatch){
+    G.subLatch=true;
+    addFloat(G.px,py-34,'SUPER SUB TIME! ⏱️','#ffe066');
+    sndFanfare();
+    say('It\'s Watkins time — he ALWAYS scores late!');
+  }
 
   if(G.mode==='play'){
     /* timer + survival points */
@@ -731,7 +778,14 @@ function update(dt){
          Math.abs(e.x-G.px)<(pw+e.w)/2-8 &&
          e.y+e.h-8>py && e.y+8<py+phh){
         G.enemies.splice(i,1);
-        hitPlayer(e.x,e.y);
+        if(subOn){
+          G.score+=10;
+          burst(e.x,e.y+20,'#ffe066',18);
+          addFloat(e.x,e.y,'LATE WINNER! +10','#ffe066');
+          sndPickup();
+        }else{
+          hitPlayer(e.x,e.y);
+        }
       }
     }
   }
@@ -769,7 +823,7 @@ function update(dt){
       burst(t.x,t.y,'#ffd94d',40);burst(t.x,t.y,'#ffffff',30);
       addFloat(W/2,H/2,'+1000 CHAMPIONS!','#ffe066');
       say('FOOTBALL IS GOING HOME! ENGLAND ARE WORLD CHAMPIONS!!!',4000);
-      setTimeout(function(){finalize(true);},1400);
+      setTimeout(function(){G.stage=BONUS_IDX;showMatch(BONUS_IDX);},1600);
     }
   }
 
@@ -809,6 +863,15 @@ function hitPlayer(x,y){
     sndShieldPop();G.shake=8;
     if(G.char.regen)G.regenT=0;
     say('The shield takes the tackle! Great defending!');
+    return;
+  }
+  if(STAGES[G.stage].bonusRound){
+    G.mode='frozen';G.shake=14;
+    burst(G.px,playerY()+20,'#7aa2ff',24);
+    sndHit();
+    addFloat(G.px,playerY()-30,'CAUGHT!','#7aa2ff');
+    say('France catch you — but England are still CHAMPIONS!',3500);
+    setTimeout(function(){finalize(true);},1200);
     return;
   }
   G.lives--;G.invuln=1.5;G.shake=14;
@@ -903,6 +966,25 @@ function render(){
     ctx.beginPath();ctx.arc(sh.x,sh.y,2.4,0,Math.PI*2);ctx.fillStyle='#333';ctx.fill();
   });
 
+  /* walk-out: opposition line up + matchup banner */
+  if(G.mode==='walkin'&&s.kit){
+    var wp2=Math.min(1,G.walkT/2300), we=1-Math.pow(1-wp2,3);
+    var oy=-60+130*we;
+    [W/2-70,W/2,W/2+70].forEach(function(ox,oi){
+      drawFootballer(ctx,ox,oy+oi*6,34,44,s.kit,null,{shorts:'#222',hair:'#1c1c1c'});
+    });
+    var ba=wp2<0.85?1:Math.max(0,1-(wp2-0.85)/0.15);
+    ctx.save();ctx.globalAlpha=ba;
+    ctx.fillStyle='rgba(0,0,0,.65)';ctx.fillRect(0,H/2-46,W,74);
+    ctx.fillStyle='#ffd94d';ctx.font='bold 12px Verdana';ctx.textAlign='center';
+    ctx.fillText(s.label,W/2,H/2-24);
+    ctx.fillStyle='#fff';ctx.font='bold 20px Verdana';
+    ctx.fillText(s.title.toUpperCase(),W/2,H/2+2);
+    ctx.fillStyle='#bfe8c9';ctx.font='10px Verdana';
+    ctx.fillText('🏟️ The teams are walking out...',W/2,H/2+20);
+    ctx.restore();
+  }
+
   /* dash ghosts */
   G.ghosts.forEach(function(g){
     ctx.save();ctx.globalAlpha=g.a;
@@ -911,7 +993,7 @@ function render(){
   });
 
   /* player */
-  if(ch&&(G.mode==='play'||G.mode==='trophy')){
+  if(ch&&(G.mode==='play'||G.mode==='trophy'||G.mode==='walkin')){
     if(ch.aura){
       ctx.save();var pul=0.5+Math.sin(performance.now()/150)*0.15;
       var ag=ctx.createRadialGradient(G.px,py+ch.h/2,10,G.px,py+ch.h/2,75);
@@ -955,7 +1037,7 @@ function render(){
 /* ================= MAIN LOOP ================= */
 function loop(t){
   var dt=Math.min(50,t-G.lastT);G.lastT=t;
-  if(G.mode==='play'||G.mode==='trophy')update(dt);
+  if(G.mode==='play'||G.mode==='trophy'||G.mode==='walkin')update(dt);
   render();
   requestAnimationFrame(loop);
 }
