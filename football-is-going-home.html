@@ -369,12 +369,55 @@ var G={
   enemies:[], pickups:[], parts:[], floats:[], ghosts:[],
   spawnT:0, pickT:0, regenT:0, turbo:0, tackleT:0,
   py:H-90, pointerY:null, shots:[], shotCd:0, frozen:0, freezeT:0, walkT:0, subLatch:false,
+  hype:0, gasp:0,
   dashCd:0, lastDir:1,
   combo:0, comboT:0,
   shake:0,
   trophy:null,
   keys:{}, touchL:false, touchR:false
 };
+
+/* ================= CROWD (stands on three sides) ================= */
+var FANS=[];
+(function buildCrowd(){
+  var shirts=['#ffffff','#d31f2b','#ffd94d','#e8e8e8','#c8102e','#f4f4f4'];
+  var skins=['#e8b98a','#c68642','#8d5524','#f1c27d'];
+  function add(x,y){FANS.push({x:x,y:y,c:shirts[(Math.random()*shirts.length)|0],
+    sk:skins[(Math.random()*skins.length)|0],ph:Math.random()*6.28,flag:Math.random()<0.07});}
+  for(var y=42;y<H-8;y+=13){add(6+Math.random()*2,y);add(13+Math.random()*2,y+4);add(20+Math.random()*2,y);}
+  for(var y2=42;y2<H-8;y2+=13){add(W-22+Math.random()*2,y2);add(W-15+Math.random()*2,y2+4);add(W-8+Math.random()*2,y2);}
+  for(var x2=8;x2<W-8;x2+=11){add(x2,9+Math.random()*3);add(x2+5,20+Math.random()*3);}
+})();
+function hypeUp(v){G.hype=Math.min(1,G.hype+v);}
+function drawCrowd(){
+  var t=performance.now();
+  /* Mexican wave sweeps the stands — faster when the crowd is hyped */
+  var wavePer=2800-1400*G.hype;
+  var wp=((t/wavePer)%1.25)*(H+100)-50;
+  for(var i=0;i<FANS.length;i++){
+    var f=FANS[i];
+    var bob=Math.sin(t/(260-120*G.hype)+f.ph)*(1+3.2*G.hype);
+    var d=Math.abs(f.y-wp), waveJump=d<42?(1-d/42)*6:0;
+    if(G.gasp>0){bob=0;waveJump=0;}
+    var yy=f.y-Math.max(0,bob)-waveJump+(G.gasp>0?2:0);
+    ctx.fillStyle=f.c;ctx.fillRect(f.x-2,yy+2,5,6);
+    ctx.beginPath();ctx.arc(f.x,yy,3,0,Math.PI*2);ctx.fillStyle=f.sk;ctx.fill();
+    if(f.flag){
+      var fx=f.x+3, fy=yy-8+Math.sin(t/190+f.ph)*1.6;
+      ctx.strokeStyle='#777';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(fx,fy);ctx.lineTo(fx,fy+10);ctx.stroke();
+      ctx.fillStyle='#fff';ctx.fillRect(fx,fy,7,5);
+      ctx.fillStyle='#d31f2b';ctx.fillRect(fx+2.7,fy,1.6,5);ctx.fillRect(fx,fy+1.7,7,1.6);
+    }
+  }
+  /* camera flashes when the crowd goes wild */
+  if(G.hype>0.8){
+    for(var s2=0;s2<6;s2++){
+      ctx.fillStyle='rgba(255,240,180,'+(Math.random()*0.9)+')';
+      var left=Math.random()<0.5;
+      ctx.fillRect(left?Math.random()*24:W-26+Math.random()*24,32+Math.random()*(H-44),2,2);
+    }
+  }
+}
 
 /* ================= INPUT ================= */
 document.addEventListener('keydown',function(e){
@@ -441,7 +484,7 @@ function tryDash(dir){
 }
 
 /* ================= HELPERS ================= */
-function clampX(x){var hw=G.char?G.char.w/2:17;return Math.max(hw+6,Math.min(W-hw-6,x));}
+function clampX(x){var hw=G.char?G.char.w/2:17;return Math.max(hw+32,Math.min(W-hw-32,x));}
 function playerY(){return G.py;}
 function clampY(y){return Math.max(H-230,Math.min(H-90,y));}
 function addFloat(x,y,txt,col){G.floats.push({x:x,y:y,txt:txt,col:col||'#fff',a:1});}
@@ -569,7 +612,7 @@ function startStage(i){
   if(G.char.startShield&&i===0)G.shield=true;        /* Kane: one shield, first match only */
   if(s.code==='WIN'){
     G.mode='trophy';
-    G.trophy={x:60+Math.random()*(W-120),y:-60,sway:Math.random()*6,caught:false};
+    G.trophy={x:70+Math.random()*(W-140),y:-60,sway:Math.random()*6,caught:false};
     say('Here it comes... the golden World Cup trophy!');
   }else{
     /* the teams walk out first */
@@ -591,6 +634,7 @@ function stageClear(){
   G.enemies=[];G.pickups=[];
   G.score+=s.bonus;
   addFloat(W/2,H/2,'FULL TIME! +'+s.bonus,'#ffd94d');
+  G.hype=1;
   sndWhistle();sndFanfare();crowdCelebrate();
   updateHUD();
   if(s.bonusRound){
@@ -676,6 +720,8 @@ function updateHUD(){
 /* ================= UPDATE ================= */
 function update(dt){
   var ch=G.char;
+  G.hype=Math.max(0,G.hype-dt/5000);
+  if(G.gasp>0)G.gasp=Math.max(0,G.gasp-dt/1000);
   /* ---- walk-out sequence: teams enter, then the whistle goes ---- */
   if(G.mode==='walkin'){
     G.walkT+=dt;
@@ -739,7 +785,7 @@ function update(dt){
         var te=G.enemies.splice(bi,1)[0];
         G.score+=15;
         burst(te.x,te.y+20,'#ffd94d',18);
-        addFloat(te.x,te.y,'PERFECT TACKLE! +15','#ffd94d');
+        addFloat(te.x,te.y,'PERFECT TACKLE! +15','#ffd94d');hypeUp(0.25);
         sndShieldPop();
         say('Konsa wins it clean! Textbook defending!');
       }
@@ -770,12 +816,12 @@ function update(dt){
       var pack=s.pack||1;
       var count=1+Math.floor(Math.random()*pack);      /* 1..pack defenders this wave */
       count=Math.min(count,G.stage===FINAL_IDX?4:3);    /* the final can drop 4 — never a full wall */
-      var lanes=[45,125,200,275,355];                   /* 5 lanes, at least 2 stay open */
+      var lanes=[55,128,200,272,345];                   /* 5 lanes, at least 2 stay open */
       for(var li=lanes.length-1;li>0;li--){var lj=Math.floor(Math.random()*(li+1));var tmp=lanes[li];lanes[li]=lanes[lj];lanes[lj]=tmp;}
       for(var ci=0;ci<count;ci++){
         var ex=lanes[ci]+(Math.random()*30-15);
         if(ci===0&&G.stage===FINAL_IDX&&Math.random()<0.35)ex=clampX(G.px+(Math.random()*120-60)); /* Spain press hunts you */
-        G.enemies.push({x:Math.max(28,Math.min(W-28,ex)),y:-50-ci*18,v:s.speed*(0.9+Math.random()*0.3),counted:false,w:34,h:44});
+        G.enemies.push({x:Math.max(48,Math.min(W-48,ex)),y:-50-ci*18,v:s.speed*(0.9+Math.random()*0.3),counted:false,w:34,h:44});
       }
       if(count===3&&Math.random()<0.4)say('They\'re throwing everyone forward — three defenders drop!');
     }
@@ -784,7 +830,7 @@ function update(dt){
     if(G.pickT>=4200){
       G.pickT=0;
       var kind=Math.random()<0.78?'ball':'crest';
-      G.pickups.push({x:30+Math.random()*(W-60),y:-30,v:2.6,kind:kind,spin:0});
+      G.pickups.push({x:48+Math.random()*(W-96),y:-30,v:2.6,kind:kind,spin:0});
     }
 
     /* enemies move + collide */
@@ -798,7 +844,7 @@ function update(dt){
         e.counted=true;
         if(Math.abs(e.x-G.px)<pw/2+28){
           G.combo=Math.min(5,G.combo+1);G.comboT=2.5;
-          var pts=25*G.combo;G.score+=pts;
+          var pts=25*G.combo;G.score+=pts;hypeUp(0.35);
           addFloat(G.px,py-30,(G.combo>1?'COMBO x'+G.combo+'! ':'SKILL MOVE! ')+'+'+pts,'#ffd94d');
           if(ch.momentum){G.turbo=2;addFloat(G.px,py-48,'TURBO! ⚡','#7CFC9A');}
           sndNear();
@@ -815,7 +861,7 @@ function update(dt){
         if(subOn){
           G.score+=10;
           burst(e.x,e.y+20,'#ffe066',18);
-          addFloat(e.x,e.y,'LATE WINNER! +10','#ffe066');
+          addFloat(e.x,e.y,'LATE WINNER! +10','#ffe066');hypeUp(0.3);
           sndPickup();
         }else{
           hitPlayer(e.x,e.y);
@@ -835,7 +881,7 @@ function update(dt){
           G.enemies.splice(ei,1);G.shots.splice(si,1);shot_hit=true;
           G.score+=20;
           burst(en.x,en.y+20,'#ffd94d',16);
-          addFloat(en.x,en.y,'GOLAZO! +20','#ffd94d');
+          addFloat(en.x,en.y,'GOLAZO! +20','#ffd94d');hypeUp(0.3);
           sndPickup();
           break;
         }
@@ -850,13 +896,13 @@ function update(dt){
     t.sway+=dt/1000;
     t.y+=1.15*(dt/16.7);
     t.x+=Math.sin(t.sway*1.6)*0.8;
-    t.x=Math.max(35,Math.min(W-35,t.x));
+    t.x=Math.max(48,Math.min(W-48,t.x));
     if(t.y>H+60){t.y=-60;t.x=60+Math.random()*(W-120);say('It slipped past! Here it comes again...');}
     if(Math.abs(t.x-G.px)<pw/2+22 && t.y+34>py && t.y<py+phh){
       t.caught=true;G.score+=STAGES[G.stage].bonus;
       burst(t.x,t.y,'#ffd94d',40);burst(t.x,t.y,'#ffffff',30);
       addFloat(W/2,H/2,'+1000 CHAMPIONS!','#ffe066');
-      crowdCelebrate();
+      G.hype=1;crowdCelebrate();
       say('FOOTBALL IS GOING HOME! ENGLAND ARE WORLD CHAMPIONS!!!',4000);
       setTimeout(function(){G.stage=BONUS_IDX;showMatch(BONUS_IDX);},1600);
     }
@@ -873,6 +919,7 @@ function update(dt){
     if(p.y>H+40){G.pickups.splice(j,1);continue;}
     if(Math.abs(p.x-G.px)<pw/2+16 && p.y+14>py && p.y<py+phh){
       G.pickups.splice(j,1);
+      hypeUp(0.2);
       if(p.kind==='ball'){G.score+=50;addFloat(p.x,p.y,'+50 ⚽','#7CFC9A');}
       else{
         if(G.shield){G.score+=100;addFloat(p.x,p.y,'+100 BONUS','#7ce8ff');}
@@ -894,7 +941,7 @@ function hitPlayer(x,y){
   if(G.shield){
     G.shield=false;
     burst(G.px,playerY()+20,'#7ce8ff',22);
-    addFloat(G.px,playerY()-30,'SHIELD POP!','#7ce8ff');
+    addFloat(G.px,playerY()-30,'SHIELD POP!','#7ce8ff');hypeUp(0.15);
     sndShieldPop();G.shake=8;
     if(G.char.regen)G.regenT=0;
     say('The shield takes the tackle! Great defending!');
@@ -909,6 +956,7 @@ function hitPlayer(x,y){
     setTimeout(function(){finalize(true);},1200);
     return;
   }
+  G.gasp=1;G.hype*=0.2;
   G.lives--;G.invuln=1.5;G.shake=14;
   burst(G.px,playerY()+20,'#ff5252',20);
   sndHit();
@@ -931,15 +979,20 @@ function drawPitch(){
       : (i%2? '#1c7a3c':'#22904a');
     ctx.fillRect(0,i*75,W,75);
   }
+  /* terraces around three sides */
+  ctx.fillStyle=gold?'#4a3a10':'#1b1f27';
+  ctx.fillRect(0,0,26,H);ctx.fillRect(W-26,0,26,H);ctx.fillRect(0,0,W,32);
+  ctx.fillStyle='rgba(255,255,255,.05)';
+  for(var st=42;st<H;st+=13){ctx.fillRect(0,st,26,1);ctx.fillRect(W-26,st,26,1);}
   /* markings */
   ctx.strokeStyle='rgba(255,255,255,.85)';ctx.lineWidth=3;
-  ctx.strokeRect(14,14,W-28,H-28);
-  ctx.beginPath();ctx.moveTo(14,H/2);ctx.lineTo(W-14,H/2);ctx.stroke();
-  ctx.beginPath();ctx.arc(W/2,H/2,55,0,Math.PI*2);ctx.stroke();
+  ctx.strokeRect(32,38,W-64,H-52);
+  ctx.beginPath();ctx.moveTo(32,H/2);ctx.lineTo(W-32,H/2);ctx.stroke();
+  ctx.beginPath();ctx.arc(W/2,H/2,52,0,Math.PI*2);ctx.stroke();
   ctx.beginPath();ctx.arc(W/2,H/2,4,0,Math.PI*2);ctx.fillStyle='#fff';ctx.fill();
   /* penalty boxes */
-  ctx.strokeRect(W/2-80,14,160,55);
-  ctx.strokeRect(W/2-80,H-69,160,55);
+  ctx.strokeRect(W/2-78,38,156,52);
+  ctx.strokeRect(W/2-78,H-66,156,52);
   if(gold){ctx.fillStyle='rgba(255,230,120,.15)';ctx.fillRect(0,0,W,H);}
 }
 
@@ -947,6 +1000,7 @@ function render(){
   ctx.save();
   if(G.shake>0)ctx.translate((Math.random()-0.5)*G.shake,(Math.random()-0.5)*G.shake);
   drawPitch();
+  drawCrowd();
   var s=STAGES[G.stage], ch=G.char, py=playerY();
 
   /* pickups */
