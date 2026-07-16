@@ -247,6 +247,40 @@ function sndNear(){beep(1200,.05,'triangle',.05);}
 function sndWhistle(){beep(2200,.15,'square',.07);beep(2200,.25,'square',.07,.2);}
 function sndFanfare(){[523,659,784,1046].forEach(function(f,i){beep(f,.22,'triangle',.09,i*0.14);});}
 
+/* ============ CROWD: clapping + happy cheers (Web Audio, no files) ============ */
+var noiseBuf=null;
+function crowdNoise(t,d,v){
+  if(!AC)return;
+  if(!noiseBuf){noiseBuf=AC.createBuffer(1,AC.sampleRate*0.1,AC.sampleRate);
+    var ch=noiseBuf.getChannelData(0);for(var i=0;i<ch.length;i++)ch[i]=Math.random()*2-1;}
+  var src=AC.createBufferSource(),g=AC.createGain();src.buffer=noiseBuf;src.loop=true;
+  g.gain.setValueAtTime(0.0001,t);
+  g.gain.linearRampToValueAtTime(v,t+Math.min(0.06,d/3));
+  g.gain.exponentialRampToValueAtTime(0.001,t+d);
+  src.connect(g);g.connect(AC.destination);src.start(t);src.stop(t+d+0.02);
+}
+/* applause: lots of tiny random noise bursts, like many hands clapping */
+function sndClaps(dur){
+  var a=audio();if(!a)return;dur=dur||2.2;
+  var t0=a.currentTime+0.05;
+  var n=Math.floor(dur*26);
+  for(var i=0;i<n;i++){
+    var frac=i/n;
+    var t=t0+frac*dur+Math.random()*0.05;
+    var v=0.028*(1-frac*0.6)*(0.6+Math.random()*0.6);
+    crowdNoise(t,0.03+Math.random()*0.02,v);
+  }
+}
+/* cheer: a big happy crowd swell */
+function sndCheer(){
+  var a=audio();if(!a)return;
+  var t=a.currentTime+0.05;
+  crowdNoise(t,1.6,0.05);
+  crowdNoise(t+0.15,1.2,0.04);
+  [659,784,988].forEach(function(f,i){beep(f,.3,'triangle',.05,0.1+i*0.12);}) /* happy rising whoop */
+}
+function crowdCelebrate(){sndCheer();sndClaps(2.4);}
+
 /* ================= CHARACTERS ================= */
 var CHARS=[
  {id:'bellingham',name:'JUDE BELLINGHAM',short:'JUDE',ability:'Midfield Dash',
@@ -289,26 +323,26 @@ var CHARS=[
 
 /* ================= STAGES ================= */
 var STAGES=[
- {flag:'🇵🇦',code:'PAN',label:'GROUP MATCH 1',title:'England vs Panama',dur:18,speed:3,spawn:1100,pack:1,bonus:100,
-  desc:'Kick off the group stage! Skip past Panama\'s red wall to get England\'s campaign going.',
-  kit:function(c,x,y,w,h){c.fillStyle='#d21034';c.fillRect(x,y,w,h);c.fillStyle='#fff';c.fillRect(x,y,w,4);c.fillStyle='#005293';c.fillRect(x,y+h-5,w,4);c.fillStyle='#fff';c.beginPath();c.arc(x+w/2,y+h/2,3,0,Math.PI*2);c.fill();}},
- {flag:'🇬🇭',code:'GHA',label:'GROUP MATCH 2',title:'England vs Ghana',dur:20,speed:3.5,spawn:1000,pack:1,bonus:120,
-  desc:'The Black Stars are quick! Dance around Ghana to top of the group.',
-  kit:function(c,x,y,w,h){c.fillStyle='#fff';c.fillRect(x,y,w,h);c.fillStyle='#ce1126';c.fillRect(x,y,w,4);c.fillStyle='#fcd116';c.fillRect(x,y+4,w,3);c.fillStyle='#006b3f';c.fillRect(x,y+h-4,w,4);c.fillStyle='#000';c.beginPath();var cx=x+w/2,cy=y+h/2;c.moveTo(cx,cy-5);c.lineTo(cx+2,cy-1);c.lineTo(cx+5,cy-1);c.lineTo(cx+2,cy+2);c.lineTo(cx+3,cy+5);c.lineTo(cx,cy+3);c.lineTo(cx-3,cy+5);c.lineTo(cx-2,cy+2);c.lineTo(cx-5,cy-1);c.lineTo(cx-2,cy-1);c.closePath();c.fill();}},
- {flag:'🇲🇽',code:'MEX',label:'GROUP MATCH 3',title:'England vs Mexico',dur:22,speed:4,spawn:950,pack:1,bonus:150,
-  desc:'El Tri press high in green! Dodge Mexico to finish the group in style.',
-  kit:function(c,x,y,w,h){c.fillStyle='#006847';c.fillRect(x,y,w,h);c.fillStyle='#fff';c.fillRect(x,y+2,3,h-4);c.fillRect(x+w-3,y+2,3,h-4);c.fillStyle='#ce1126';c.fillRect(x,y+h/2-2,w,3);}},
- {flag:'🇨🇩',code:'COD',label:'ROUND OF 32',title:'England vs DR Congo',dur:25,speed:4.5,spawn:900,pack:2,bonus:180,
-  desc:'The Leopards of DR Congo pounce fast — stay sharp in the knockouts!',
-  kit:function(c,x,y,w,h){c.fillStyle='#007fff';c.fillRect(x,y,w,h);c.fillStyle='#f7d618';c.save();c.beginPath();c.rect(x,y,w,h);c.clip();c.translate(x,y);c.rotate(-0.5);c.fillRect(-6,h/2,w*2,5);c.restore();c.fillStyle='#ce1021';c.fillRect(x,y,w,3);}},
- {flag:'🇭🇷',code:'CRO',label:'ROUND OF 16',title:'England vs Croatia',dur:28,speed:5,spawn:850,pack:2,bonus:220,
-  desc:'The checkerboard kings! Out-think Croatia\'s midfield masters to reach the Quarters.',
+ {flag:'🇭🇷',code:'CRO',label:'GROUP MATCH 1',title:'England vs Croatia',dur:18,speed:3,spawn:1100,pack:1,bonus:100,
+  desc:'England smashed Croatia 4-2 in the real group stage! Dodge the checkerboard kings to get the campaign going.',
   kit:function(c,x,y,w,h){c.fillStyle='#fff';c.fillRect(x,y,w,h);c.fillStyle='#e03a3e';var s=6;for(var r=0;r<Math.ceil(h/s);r++)for(var q=0;q<Math.ceil(w/s);q++)if((r+q)%2===0)c.fillRect(x+q*s,y+r*s,Math.min(s,w-q*s),Math.min(s,h-r*s));}},
+ {flag:'🇬🇭',code:'GHA',label:'GROUP MATCH 2',title:'England vs Ghana',dur:20,speed:3.5,spawn:1000,pack:1,bonus:120,
+  desc:'It finished 0-0 against Ghana in real life — this time, dance around the Black Stars and win it!',
+  kit:function(c,x,y,w,h){c.fillStyle='#fff';c.fillRect(x,y,w,h);c.fillStyle='#ce1126';c.fillRect(x,y,w,4);c.fillStyle='#fcd116';c.fillRect(x,y+4,w,3);c.fillStyle='#006b3f';c.fillRect(x,y+h-4,w,4);c.fillStyle='#000';c.beginPath();var cx=x+w/2,cy=y+h/2;c.moveTo(cx,cy-5);c.lineTo(cx+2,cy-1);c.lineTo(cx+5,cy-1);c.lineTo(cx+2,cy+2);c.lineTo(cx+3,cy+5);c.lineTo(cx,cy+3);c.lineTo(cx-3,cy+5);c.lineTo(cx-2,cy+2);c.lineTo(cx-5,cy-1);c.lineTo(cx-2,cy-1);c.closePath();c.fill();}},
+ {flag:'🇵🇦',code:'PAN',label:'GROUP MATCH 3',title:'England vs Panama',dur:22,speed:4,spawn:950,pack:1,bonus:150,
+  desc:'England beat Panama 2-0 for real! Skip past the red wall to finish top of Group L.',
+  kit:function(c,x,y,w,h){c.fillStyle='#d21034';c.fillRect(x,y,w,h);c.fillStyle='#fff';c.fillRect(x,y,w,4);c.fillStyle='#005293';c.fillRect(x,y+h-5,w,4);c.fillStyle='#fff';c.beginPath();c.arc(x+w/2,y+h/2,3,0,Math.PI*2);c.fill();}},
+ {flag:'🇨🇩',code:'COD',label:'ROUND OF 32',title:'England vs DR Congo',dur:25,speed:4.5,spawn:900,pack:2,bonus:180,
+  desc:'England edged DR Congo 2-1 in the real Round of 32 — the Leopards pounce fast, stay sharp!',
+  kit:function(c,x,y,w,h){c.fillStyle='#007fff';c.fillRect(x,y,w,h);c.fillStyle='#f7d618';c.save();c.beginPath();c.rect(x,y,w,h);c.clip();c.translate(x,y);c.rotate(-0.5);c.fillRect(-6,h/2,w*2,5);c.restore();c.fillStyle='#ce1021';c.fillRect(x,y,w,3);}},
+ {flag:'🇲🇽',code:'MEX',label:'ROUND OF 16',title:'England vs Mexico',dur:28,speed:5,spawn:850,pack:2,bonus:220,
+  desc:'A real 3-2 thriller against Mexico! Dodge El Tri\'s high press to reach the Quarters.',
+  kit:function(c,x,y,w,h){c.fillStyle='#006847';c.fillRect(x,y,w,h);c.fillStyle='#fff';c.fillRect(x,y+2,3,h-4);c.fillRect(x+w-3,y+2,3,h-4);c.fillStyle='#ce1126';c.fillRect(x,y+h/2-2,w,3);}},
  {flag:'🇳🇴',code:'NOR',label:'QUARTER-FINAL',title:'England vs Norway',dur:30,speed:5.5,spawn:800,pack:2,bonus:250,
-  desc:'England beat Norway 2-1 in real life! Avoid their solid defense to reach the Semis.',
+  desc:'England beat Norway 2-1 after extra time in real life! Avoid their solid defense to reach the Semis.',
   kit:function(c,x,y,w,h){c.fillStyle='#d31f2b';c.fillRect(x,y,w,h);c.fillStyle='#0b2c6b';c.fillRect(x,y,w,4);c.fillRect(x,y+h-5,w,4);c.fillRect(x+w/2-2,y,4,h);}},
  {flag:'🇦🇷',code:'ARG',label:'SEMI-FINAL',title:'England vs Argentina',dur:35,speed:6,spawn:750,pack:3,bonus:300,
-  desc:'Time to rewrite the history books. Dodge the rapid, legendary Albiceleste!',
+  desc:'Argentina knocked England out for real — time to rewrite the history books and dodge the Albiceleste!',
   kit:function(c,x,y,w,h){c.fillStyle='#fff';c.fillRect(x,y,w,h);c.fillStyle='#6fb6e8';for(var i=0;i<3;i++)c.fillRect(x+3+i*Math.floor(w/3),y,Math.floor(w/6),h);}},
  {flag:'🇪🇸',code:'ESP',label:'THE GRAND FINAL',title:'England vs Spain',dur:40,speed:7,spawn:650,pack:4,bonus:500,
   desc:'The ultimate test against La Roja! Survive their elite defensive press to win the cup!',
@@ -316,7 +350,7 @@ var STAGES=[
  {flag:'🏆',code:'WIN',label:'CHAMPIONS!',title:"Winner's Celebration",dur:0,speed:0,spawn:0,bonus:1000,
   desc:'The whistle has gone — ENGLAND ARE CHAMPIONS! Move under the golden trophy and catch it to lift the World Cup!'},
  {flag:'🇫🇷',code:'FRA',label:'⭐ BONUS ROUND ⭐',title:'England vs France',dur:20,speed:7.5,spawn:500,pack:3,bonus:800,bonusRound:true,
-  desc:'CHAMPIONS BONUS! Les Bleus demand a friendly rematch. The trophy is already yours — a tackle just ends the round. Survive 20 seconds of French flair for a huge +800!',
+  desc:'In real life England play France in the third-place play-off — but here the champions play it just for fun! A tackle only ends the round. Survive 20 seconds of French flair for a huge +800!',
   kit:function(c,x,y,w,h){c.fillStyle='#0055a4';c.fillRect(x,y,w,h);c.fillStyle='#fff';c.fillRect(x,y+h/2-2,w,4);c.fillStyle='#ef4135';c.fillRect(x+2,y+2,3,h-4);c.fillRect(x+w-5,y+2,3,h-4);}}
 ];
 var CODES=STAGES.map(function(s){return s.code;});
@@ -543,7 +577,7 @@ function startStage(i){
     beep(523,.18,'triangle',.07);beep(659,.18,'triangle',.07,.18);beep(784,.25,'triangle',.08,.36);
     if(s.bonusRound)say('The champions walk out one more time — Les Bleus await!');
     else{
-      var lines=['And we are underway at the World Cup!','The Black Stars line up — this will be quick!','Win this and England top the group!','Knockout football begins — no second chances!','A Round of 16 classic in the making!','A quarter-final under the lights!','A semi-final for the ages!','The Grand Final. Everything on the line!'];
+      var lines=['And we are underway — a 4-2 classic to repeat!','The Black Stars line up — can England do better than 0-0?','Win this and England top Group L!','Knockout football begins — no second chances!','Remember that 3-2 thriller? Here we go again!','A quarter-final under the lights — extra time last time!','The revenge match. Rewrite history!','The Grand Final. Everything on the line!'];
       say(lines[Math.min(i,lines.length-1)]);
     }
   }
@@ -557,7 +591,7 @@ function stageClear(){
   G.enemies=[];G.pickups=[];
   G.score+=s.bonus;
   addFloat(W/2,H/2,'FULL TIME! +'+s.bonus,'#ffd94d');
-  sndWhistle();sndFanfare();
+  sndWhistle();sndFanfare();crowdCelebrate();
   updateHUD();
   if(s.bonusRound){
     say('YOU EVEN BEAT FRANCE! A perfect tournament!',3500);
@@ -581,7 +615,7 @@ async function finalize(victory){
   $('resultTitle').textContent=victory?'Football Is Going Home!':'Knocked Out! Try Again';
   $('finalScore').textContent=score;
   show('screen-result');
-  if(victory){spawnConfetti();sndFanfare();setTimeout(sndFanfare,700);}
+  if(victory){spawnConfetti();sndFanfare();crowdCelebrate();setTimeout(sndFanfare,700);setTimeout(function(){sndClaps(2.5);},1500);}
   else sndHit();
 
   $('hsbadge').style.display='none'; $('nameform').style.display='none';
@@ -822,6 +856,7 @@ function update(dt){
       t.caught=true;G.score+=STAGES[G.stage].bonus;
       burst(t.x,t.y,'#ffd94d',40);burst(t.x,t.y,'#ffffff',30);
       addFloat(W/2,H/2,'+1000 CHAMPIONS!','#ffe066');
+      crowdCelebrate();
       say('FOOTBALL IS GOING HOME! ENGLAND ARE WORLD CHAMPIONS!!!',4000);
       setTimeout(function(){G.stage=BONUS_IDX;showMatch(BONUS_IDX);},1600);
     }
