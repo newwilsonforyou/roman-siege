@@ -41,6 +41,11 @@
   table.students td{padding:9px 8px;border-bottom:1px solid #eef1f8;font-weight:600;white-space:nowrap;}
   table.students tbody tr{cursor:pointer;}
   table.students tbody tr:hover{background:#f4f7ff;}
+  table.picks tbody tr{cursor:default;}
+  table.picks tbody tr:hover{background:transparent;}
+  .pickbar{display:inline-block;height:9px;border-radius:5px;background:#e7ecf6;width:110px;position:relative;overflow:hidden;vertical-align:middle;}
+  .pickbar i{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,#3556c9,#7aa2ff);border-radius:5px;}
+  .picksub{font-size:11px;color:#8b96ab;font-weight:700;margin-left:6px;}
   .avspan{font-size:18px;margin-right:6px;}
   .accgood{color:#1f9d55;font-weight:800;}
   .accmid{color:#c98a06;font-weight:800;}
@@ -109,8 +114,14 @@
   </div>
 
   <div class="panel">
-    <h2>Activity — rounds per day (last 14 days)</h2>
+    <h2 id="actTitle">Activity — rounds per day (last 14 days)</h2>
     <div id="activityChart" class="loading"><div class="spin"></div>Loading…</div>
+  </div>
+
+  <div class="panel" id="charPanel" style="display:none">
+    <h2>⚽ Football Is Going Home — England star picks</h2>
+    <div class="hint">Which England player the class chooses most. Follows the date range and only counts rounds that recorded a star (older rounds show as unrecorded).</div>
+    <div id="charTable"></div>
   </div>
 
   <div class="panel">
@@ -150,7 +161,11 @@ function sbH(){return {'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
 var GAMES={
+  'amazoncourier':'🛶 Amazon River Courier',
+  'holes-dig':'⛏️ Holes: Camp Green Lake',
+  'holes-sploosh':'🍑 Sploosh & Onion Survival',
   'worldcup':'⚽ World Cup Flag Match',
+  'roadtoglory':'🏆 Football Is Going Home',
   'themeparkdatadash':'🎡 Theme Park Data Dash',
   'daynight':'🌍 Day & Night Spinner',
   'angles':'📐 Angle Academy',
@@ -197,14 +212,30 @@ function parseDet(r){
   try{var d=JSON.parse(r.details);return (d&&typeof d==='object')?d:null;}catch(e){return null;}
 }
 
+/* Supabase caps each request at ~1000 rows, so page through until we have them all.
+   Without this the dashboard only ever saw the newest 1000 rounds — undercounting
+   totals, dropping older days from the activity chart, and mis-counting per-game plays. */
+async function fetchAllScores(){
+  var all=[],PAGE=1000,page=0;
+  while(true){
+    var url=SB_URL+'/rest/v1/scores?select=*&order=created_at.desc&limit='+PAGE+'&offset='+(page*PAGE);
+    var r=await fetch(url,{headers:sbH()});
+    if(!r.ok)throw new Error('scores '+r.status);
+    var chunk=await r.json();
+    all=all.concat(chunk);
+    if(chunk.length<PAGE)break;          // last page reached
+    page++;
+    if(page>200)break;                   // safety cap (~200k rows)
+  }
+  return all;
+}
+
 async function loadData(){
   $('errBox').style.display='none';
   $('studentTable').innerHTML='<div class="loading"><div class="spin"></div>Loading student data…</div>';
   $('activityChart').innerHTML='<div class="loading"><div class="spin"></div>Loading…</div>';
   try{
-    var r=await fetch(SB_URL+'/rest/v1/scores?select=*&order=created_at.desc&limit=1000',{headers:sbH()});
-    if(!r.ok)throw new Error('scores '+r.status);
-    allRows=await r.json();
+    allRows=await fetchAllScores();
     try{
       var pr=await fetch(SB_URL+'/rest/v1/players?select=name,avatar,created_at&order=name.asc&limit=1000',{headers:sbH()});
       if(pr.ok){
@@ -278,35 +309,105 @@ function sparkline(scores){
 
 function render(){
   var rows=filtered(),students=aggStudents(rows);
-  /* KPIs */
+  /* KPIs (respect both game + range filters) */
   $('kStudents').textContent=students.length;
   $('kRounds').textContent=rows.length;
   $('kAvg').textContent=rows.length?Math.round(rows.reduce(function(a,r){return a+r.score;},0)/rows.length):'–';
   var accs=[];rows.forEach(function(r){var d=parseDet(r);if(d&&typeof d.acc==='number')accs.push(d.acc);});
   $('kAcc').textContent=accs.length?Math.round(accs.reduce(function(a,b){return a+b;},0)/accs.length)+'%':'–';
-  renderActivity(rows);
+  /* the activity chart windows itself by the selected range, so give it
+     rows filtered by GAME only (not clipped by range). */
+  var g=$('gameSel').value;
+  var gameRows=allRows.filter(function(r){return g==='__all'||r.game===g;});
+  renderActivity(gameRows);
   renderTable(students);
+  renderChars(rows,g);
+}
+
+/* ---- England star picks for Football Is Going Home ---- */
+function renderChars(rows,gameFilter){
+  var panel=$('charPanel');
+  if(gameFilter!=='__all'&&gameFilter!=='roadtoglory'){panel.style.display='none';return;}
+  var fRows=rows.filter(function(r){return r.game==='roadtoglory';});
+  if(!fRows.length){panel.style.display='none';return;}
+  var by={},unrecorded=0;
+  fRows.forEach(function(r){
+    var d=parseDet(r);
+    if(!d||!d.character){unrecorded++;return;}
+    var c=String(d.character);
+    if(!by[c])by[c]={picks:0,best:0,sum:0,fans:{}};
+    var b=by[c];
+    b.picks++;b.sum+=r.score;if(r.score>b.best)b.best=r.score;
+    b.fans[r.name]=(b.fans[r.name]||0)+1;
+  });
+  var chars=Object.keys(by);
+  if(!chars.length){
+    panel.style.display='';
+    $('charTable').innerHTML='<div class="empty">No star picks recorded yet in this range — rounds saved before this update don\'t include the chosen player.</div>';
+    return;
+  }
+  var recorded=fRows.length-unrecorded;
+  chars.sort(function(a,b){return by[b].picks-by[a].picks||by[b].best-by[a].best;});
+  var med=['🥇','🥈','🥉'];
+  var hh='<table class="students picks"><thead><tr><th></th><th>England star</th><th>Picks</th><th>Share</th><th>Best</th><th>Average</th><th>Biggest fan</th></tr></thead><tbody>';
+  chars.forEach(function(c,i){
+    var b=by[c],pct=Math.round(b.picks/recorded*100);
+    var fan='–',fmax=0;
+    Object.keys(b.fans).forEach(function(n){if(b.fans[n]>fmax){fmax=b.fans[n];fan=n;}});
+    hh+='<tr><td>'+(i<3?med[i]:(i+1))+'</td><td><b>'+esc(c)+'</b></td><td>'+b.picks+'</td>'+
+      '<td><span class="pickbar"><i style="width:'+pct+'%"></i></span><span class="picksub">'+pct+'%</span></td>'+
+      '<td>'+b.best+'</td><td>'+Math.round(b.sum/b.picks)+'</td><td>'+esc(fan)+(fmax>1?' <span class="picksub">×'+fmax+'</span>':'')+'</td></tr>';
+  });
+  hh+='</tbody></table>';
+  if(unrecorded>0)hh+='<div class="picksub" style="margin-top:8px;display:block;">+ '+unrecorded+' round'+(unrecorded===1?'':'s')+' from before star-tracking was added.</div>';
+  panel.style.display='';
+  $('charTable').innerHTML=hh;
 }
 
 function renderActivity(rows){
-  var days=[],counts=[];
-  for(var i=13;i>=0;i--){
-    var d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()-i);
-    days.push(d);counts.push(0);
+  /* choose how many day-columns to show, based on the range buttons */
+  var todayMid=new Date();todayMid.setHours(0,0,0,0);
+  var windowDays,titleSuffix;
+  if(rangeDays===1){windowDays=1;titleSuffix='today';}
+  else if(rangeDays===7){windowDays=7;titleSuffix='last 7 days';}
+  else if(rangeDays===30){windowDays=30;titleSuffix='last 30 days';}
+  else{
+    /* All time: span from the first recorded round up to today */
+    var earliest=todayMid.getTime();
+    rows.forEach(function(r){var t=new Date(r.created_at);t.setHours(0,0,0,0);
+      if(t.getTime()<earliest)earliest=t.getTime();});
+    windowDays=Math.round((todayMid.getTime()-earliest)/86400000)+1;
+    if(!isFinite(windowDays)||windowDays<1)windowDays=1;
+    titleSuffix='all time';
   }
+  var MAXBARS=45,capped=false;
+  if(windowDays>MAXBARS){windowDays=MAXBARS;capped=true;titleSuffix='last '+MAXBARS+' days';}
+  if($('actTitle'))$('actTitle').textContent='Activity — rounds per day ('+titleSuffix+')';
+
+  var days=[],counts=[];
+  for(var i=windowDays-1;i>=0;i--){var d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()-i);days.push(d);counts.push(0);}
+  var firstT=days[0].getTime();
   rows.forEach(function(r){
-    var t=new Date(r.created_at);t.setHours(0,0,0,0);
-    for(var i=0;i<14;i++)if(days[i].getTime()===t.getTime()){counts[i]++;break;}
+    var t=new Date(r.created_at);t.setHours(0,0,0,0);var tt=t.getTime();
+    if(tt<firstT)return;
+    for(var i=0;i<days.length;i++){if(days[i].getTime()===tt){counts[i]++;break;}}
   });
   var max=Math.max(1,Math.max.apply(null,counts));
-  var W=980,H=150,bw=W/14;
+  var W=980,H=150;
+  /* bar width: fill the width for many days, but keep bars sensible when there are few */
+  var bw=Math.min(W/windowDays,120);
+  var offX=(W-bw*windowDays)/2;
+  /* thin out date labels when there are lots of columns so they don't collide */
+  var labelEvery=windowDays<=16?1:Math.ceil(windowDays/12);
+  var showNums=windowDays<=31;
   var svg='<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto;">';
   counts.forEach(function(c,i){
-    var bh=(H-40)*c/max,x=i*bw+8,y=H-26-bh;
-    svg+='<rect x="'+x+'" y="'+y+'" width="'+(bw-16)+'" height="'+Math.max(bh,2)+'" rx="5" fill="'+(c?'#4a6cf7':'#e4e9f4')+'"/>';
-    if(c)svg+='<text x="'+(x+(bw-16)/2)+'" y="'+(y-6)+'" text-anchor="middle" font-size="12" font-weight="800" fill="#5b6b85">'+c+'</text>';
-    svg+='<text x="'+(x+(bw-16)/2)+'" y="'+(H-8)+'" text-anchor="middle" font-size="11" font-weight="700" fill="#8b96ab">'+
-      days[i].toLocaleDateString(undefined,{day:'numeric',month:'short'}).replace(' ','\u00a0')+'</text>';
+    var bh=(H-40)*c/max,x=offX+i*bw+6,y=H-26-bh,w=Math.max(bw-12,4);
+    svg+='<rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+Math.max(bh,2)+'" rx="5" fill="'+(c?'#4a6cf7':'#e4e9f4')+'"/>';
+    if(c&&showNums)svg+='<text x="'+(x+w/2)+'" y="'+(y-6)+'" text-anchor="middle" font-size="12" font-weight="800" fill="#5b6b85">'+c+'</text>';
+    if(i%labelEvery===0||i===counts.length-1)
+      svg+='<text x="'+(x+w/2)+'" y="'+(H-8)+'" text-anchor="middle" font-size="11" font-weight="700" fill="#8b96ab">'+
+        days[i].toLocaleDateString(undefined,{day:'numeric',month:'short'}).replace(' ','\u00a0')+'</text>';
   });
   $('activityChart').innerHTML=svg+'</svg>';
 }
