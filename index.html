@@ -159,6 +159,11 @@
     radial-gradient(circle at 75% 75%,rgba(91,217,127,.25),transparent 55%),#0E3B23;}
   .jungle .card-tag{color:#5BD97F;} .jungle .play{background:#5BD97F;color:#0A2818;}
 
+  .bolognese{background:linear-gradient(160deg,#8c2f3a,#4a1220);}
+  .bolognese .card-art{background:radial-gradient(circle at 70% 25%,rgba(255,211,77,.35),transparent 55%),
+    linear-gradient(160deg,#fdeff0,#f6d9db);}
+  .bolognese .card-tag{color:#ffb3a0;} .bolognese .play{background:#ffd34d;color:#3a2411;}
+  .bolognese:hover{box-shadow:0 18px 50px rgba(226,80,76,.5);border-color:#ffd34d;}
   .goinghome{background:linear-gradient(160deg,#123a6b,#0a1a33);}
   .goinghome .card-art{background:radial-gradient(circle at 70% 20%,rgba(255,210,63,.3),transparent 55%),
     linear-gradient(180deg,#0c5c2a,#083d1c);}
@@ -272,10 +277,63 @@
     <div class="kicker">Choose your game</div>
     <h1 id="bigtitle" title="Psst… try clicking me!">Year 5 Arcade</h1>
     <p class="hello" id="hello">🎮 Ready to play?</p>
-    <p class="sub">Nineteen games in one place — dodge nine nations — France bonus round included — and bring football home in the World Cup dodger, survive on God's Thumb in Sploosh &amp; Onion Survival, spin the Earth to wake up real cities, orbit the Moon through all 8 phases, match all 48 real World Cup flags and win penalty shootouts, run a theme park stall by reading graphs, carve and print in the lino studio, spot the odd stage in life cycles, explore South America and save the rainforest, defend your Legion outpost, master Roman numerals from I to C, explore Victorian Britain and the British Empire, and classify and measure angles with a real protractor. Sign in, and every game you play is saved to your record.</p>
+    <p class="sub">Twenty games in one place — cook a real spaghetti bolognese and earn your chef certificate in Bolognese Master, dodge nine nations — France bonus round included — and bring football home in the World Cup dodger, survive on God's Thumb in Sploosh &amp; Onion Survival, spin the Earth to wake up real cities, orbit the Moon through all 8 phases, match all 48 real World Cup flags and win penalty shootouts, run a theme park stall by reading graphs, carve and print in the lino studio, spot the odd stage in life cycles, explore South America and save the rainforest, defend your Legion outpost, master Roman numerals from I to C, explore Victorian Britain and the British Empire, and classify and measure angles with a real protractor. Sign in, and every game you play is saved to your record.</p>
   </header>
 
   <main class="cards">
+    <a class="card bolognese" id="card-bolognese" href="bolognese-master.html">
+      <span class="newbadge">✦ NEW!</span>
+      <div class="lockmsg">🔒 Sign in first</div>
+      <div class="card-art">
+        <svg class="art-svg pulse" viewBox="0 0 200 150" aria-hidden="true">
+          <!-- warm kitchen backdrop -->
+          <rect x="0" y="0" width="200" height="150" fill="#fdeff0"/>
+          <rect x="0" y="98" width="200" height="52" fill="#e8b84b" opacity=".35"/>
+          <!-- red check tablecloth hint -->
+          <g opacity=".18" fill="#e2504c">
+            <rect x="0" y="98" width="20" height="52"/><rect x="40" y="98" width="20" height="52"/>
+            <rect x="80" y="98" width="20" height="52"/><rect x="120" y="98" width="20" height="52"/>
+            <rect x="160" y="98" width="20" height="52"/>
+          </g>
+          <!-- steam -->
+          <g stroke="#c9b7de" stroke-width="4" stroke-linecap="round" fill="none" opacity=".7">
+            <path d="M78 34 q-6 -10 0 -18"/><path d="M100 30 q6 -10 0 -18"/><path d="M122 34 q-6 -10 0 -18"/>
+          </g>
+          <!-- plate of spaghetti bolognese -->
+          <ellipse cx="100" cy="106" rx="74" ry="30" fill="#ffffff" stroke="#3a2358" stroke-width="4"/>
+          <ellipse cx="100" cy="103" rx="56" ry="21" fill="#f6d98a" stroke="#d9a53f" stroke-width="2.5"/>
+          <path d="M56 100 q22 -10 44 0 t44 0" fill="none" stroke="#e8b84b" stroke-width="4" stroke-linecap="round"/>
+          <path d="M60 108 q20 8 40 0 t40 0" fill="none" stroke="#e8b84b" stroke-width="4" stroke-linecap="round"/>
+          <path d="M66 96 Q100 78 134 96 Q142 106 128 112 Q100 120 74 112 Q60 106 66 96 Z" fill="#e2504c" stroke="#a33330" stroke-width="3"/>
+          <circle cx="88" cy="99" r="7" fill="#8b4513" stroke="#5a2c10" stroke-width="2"/>
+          <circle cx="112" cy="96" r="7" fill="#8b4513" stroke="#5a2c10" stroke-width="2"/>
+          <path d="M120 106 q7 -9 15 -4 q-1 9 -12 8 Z" fill="#4faf57" stroke="#2e7d36" stroke-width="2"/>
+          <!-- parmesan shaker tipping in -->
+          <g transform="translate(158,44) rotate(24)">
+            <rect x="-11" y="-18" width="22" height="34" rx="7" fill="#fffbe8" stroke="#3a2358" stroke-width="3"/>
+            <rect x="-11" y="-4" width="22" height="14" rx="4" fill="#ffd34d" opacity=".9"/>
+            <rect x="-9" y="-25" width="18" height="8" rx="3" fill="#c0c8d8" stroke="#3a2358" stroke-width="2.5"/>
+          </g>
+          <g fill="#ffd34d">
+            <circle cx="142" cy="62" r="2.4"/><circle cx="134" cy="72" r="2"/><circle cx="146" cy="76" r="2.2"/>
+          </g>
+          <!-- carrot + onion peeking -->
+          <g transform="translate(26,52) rotate(-18)">
+            <path d="M0 -14 L7 10 Q0 18 -7 10 Z" fill="#f4691e" stroke="#c24f10" stroke-width="2"/>
+            <path d="M-3 -14 q3 -8 6 0 M2 -15 q4 -6 6 1" stroke="#4faf57" stroke-width="3" fill="none" stroke-linecap="round"/>
+          </g>
+          <circle cx="34" cy="82" r="11" fill="#f2c266" stroke="#b97e2c" stroke-width="2.5"/>
+          <path d="M34 71 q3 -5 0 -8" stroke="#8a6d1a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="card-body">
+        <div class="card-tag">Cooking &middot; Skill Challenge</div>
+        <div class="card-title">Bolognese Master</div>
+        <div class="card-desc">Cook a real spaghetti bolognese in 7 timed kitchen challenges — peel and grate, slice the onion, measure, stir the sizzling pan, boil the pasta, strain it without spilling, and shake on the parmesan to earn your chef certificate!</div>
+        <span class="play">PLAY ▶</span>
+      </div>
+    </a>
+
     <a class="card goinghome" id="card-goinghome" href="football-is-going-home.html">
       <span class="newbadge">✦ NEW!</span>
       <div class="lockmsg">🔒 Sign in first</div>
@@ -950,6 +1008,7 @@ function renderUserBar(){
   }
 }
 function setCardsLocked(locked){
+  $('card-bolognese').classList.toggle('locked',locked);
   $('card-goinghome').classList.toggle('locked',locked);
   $('card-worldcup').classList.toggle('locked',locked);
   $('card-themepark').classList.toggle('locked',locked);
@@ -1152,11 +1211,12 @@ async function loadRecords(p){
   var sploosh=rows.filter(function(x){return x.game==='holes-sploosh';});
   var holesdig=rows.filter(function(x){return x.game==='holes-dig';});
   var goinghome=rows.filter(function(x){return x.game==='roadtoglory';});
+  var bolognese=rows.filter(function(x){return x.game==='bolognese';});
   /* any game not in the known list (e.g. Solar Builder, Legion Outpost, future games)
      is picked up automatically so the record is never incomplete again */
   var knownIds=['siege','nebula','empiremap','vicmuseum','victorians','junglecatch',
     'circuit','linolayers','lifecycles','rainforestrescue','angles','themeparkdatadash','worldcup',
-    'holes-sploosh','holes-dig','roadtoglory'];
+    'holes-sploosh','holes-dig','roadtoglory','bolognese'];
   var extraNames={solar:'🪐 SOLAR SYSTEM BUILDER',solarbuilder:'🪐 SOLAR SYSTEM BUILDER',
     solarsystem:'🪐 SOLAR SYSTEM BUILDER',builder:'🪐 SOLAR SYSTEM BUILDER',
     outpost:'🏰 LEGION OUTPOST',legionoutpost:'🏰 LEGION OUTPOST',legion:'🏰 LEGION OUTPOST',
@@ -1173,6 +1233,7 @@ async function loadRecords(p){
     '<div><div class="rec-name">'+escapeHtml(p.name)+'</div>'+
     '<div class="rec-sub">'+totalGames+' games played in total</div></div></div>';
   var stats='<div class="rec-stats">'+
+    '<div class="rec-stat"><div class="n">'+best(bolognese)+'</div><div class="l">BOLOGNESE BEST</div></div>'+
     '<div class="rec-stat"><div class="n">'+best(goinghome)+'</div><div class="l">GOING HOME BEST</div></div>'+
     '<div class="rec-stat"><div class="n">'+best(sploosh)+'</div><div class="l">SPLOOSH BEST</div></div>'+
     '<div class="rec-stat"><div class="n">'+best(holesdig)+'</div><div class="l">HOLES DIG BEST</div></div>'+
@@ -1207,6 +1268,7 @@ async function loadRecords(p){
     return h+'</tbody></table>';
   }
   $('recBody').innerHTML=head+stats+
+    historyTable('🍝 BOLOGNESE MASTER HISTORY',bolognese)+
     historyTable('🏆 FOOTBALL IS GOING HOME HISTORY',goinghome)+
     historyTable('🍑 SPLOOSH & ONION SURVIVAL HISTORY',sploosh)+
     historyTable('⛏️ HOLES — DIGGING HISTORY',holesdig)+
@@ -1259,8 +1321,9 @@ function renderHello(){
     '🔥 The leaderboards await, '+name+'…'
   ]:[
     '🎮 Ready to play?',
-    '⚡ Fifteen games. One champion. You?',
+    '⚡ Twenty games. One champion. You?',
     '🏆 Sign in and chase the high scores!',
+    '🍝 New! Cook your way to a chef certificate in Bolognese Master!',
     '⚽ New! Football Is Going Home — dodge 8 nations and lift the World Cup!',
     '🍑 New! Survive on God\'s Thumb in Sploosh & Onion Survival…'
   ];
