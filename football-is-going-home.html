@@ -86,6 +86,15 @@
   .charCard .cab{font-size:11px;color:#ffd94d;font-weight:700;}
   .charCard .cdesc{font-size:10px;color:#cfe9d6;line-height:1.25;}
   .charCard .cstats{font-size:9px;color:#9fd4ad;margin-top:2px;letter-spacing:.5px;}
+  .statline{display:flex;align-items:center;gap:5px;margin-top:3px;font-size:9px;}
+  .statline .sk{flex:0 0 34px;color:#9fd4ad;font-weight:800;letter-spacing:1px;}
+  .spdmeter{flex:1;height:8px;border-radius:5px;background:rgba(255,255,255,.1);overflow:hidden;max-width:110px;}
+  .spdmeter i{display:block;height:100%;border-radius:5px;background:linear-gradient(90deg,#7CFC9A,#ffd94d,#ff8a3d);}
+  .spdval{flex:0 0 auto;color:#fff;font-weight:900;font-size:9px;}
+  .hearts{letter-spacing:1px;font-size:11px;line-height:1;}
+  .hearts .empty{opacity:.28;}
+  .legend{display:flex;justify-content:center;gap:16px;font-size:10px;color:#9fd4ad;margin:2px 0 4px;font-weight:700;}
+  .legend b{color:#ffd94d;}
 
   .bigBtn{
     margin-top:14px;padding:12px 34px;font-size:17px;font-weight:900;letter-spacing:2px;
@@ -118,6 +127,13 @@
   #screen-result.win #resultTitle{color:#ffe066;text-shadow:0 0 24px rgba(255,220,80,.9);animation:titleGlow 1.4s infinite alternate;}
   #resultScore{font-size:16px;margin:2px 0 10px;color:#fff;}
   #resultScore b{color:#7CFC9A;font-size:22px;}
+  .brk{width:100%;max-width:300px;margin:4px auto 6px;}
+  .brkrow{display:flex;align-items:center;gap:7px;font-size:12px;margin:4px 0;}
+  .brkrow .bl{flex:0 0 120px;text-align:left;color:#d7f2df;font-weight:700;}
+  .brkbar{flex:1;height:11px;border-radius:6px;background:rgba(255,255,255,.08);overflow:hidden;}
+  .brkbar i{display:block;height:100%;border-radius:6px;}
+  .brkrow .bv{flex:0 0 52px;text-align:right;font-weight:900;color:#fff;}
+  .brkbest{margin-top:6px;font-size:12px;color:#ffd94d;font-weight:900;}
 
   /* leaderboard */
   #hsbadge{display:none;background:linear-gradient(90deg,#ffd94d,#ffb300);color:#3a2a00;
@@ -173,6 +189,7 @@
   <div class="screen on" id="screen-start">
     <h1 class="title">⚽ Football Is<br>Going Home</h1>
     <div class="subtitle">🏴󠁧󠁢󠁥󠁮󠁧󠁿 8 MATCHES · 1 TROPHY · 1 BONUS ROUND · CHOOSE YOUR STAR 🏴󠁧󠁢󠁥󠁮󠁧󠁿</div>
+    <div class="legend"><span>❤️ = <b>lives</b></span><span>▰▰▰ = <b>speed</b> (fuller = faster)</span></div>
     <div id="charGrid"></div>
     <button class="bigBtn" id="btnStart" disabled>Start Campaign</button>
     <div class="hint">⬅️ ➡️ arrows to move · SPACE = special (Jude's dash / Rashford's shot)<br>
@@ -197,6 +214,7 @@
     <div id="resultEmoji" style="font-size:54px;margin-top:6px;">😵</div>
     <h2 id="resultTitle">Knocked Out!</h2>
     <div id="resultScore">Final score: <b id="finalScore">0</b> pts</div>
+    <div class="brk" id="breakdown"></div>
     <span id="hsbadge"></span>
     <div id="nameform">
       <input id="nameinput" maxlength="14" placeholder="Your name">
@@ -372,6 +390,7 @@ var G={
   stage:0, timeLeft:0, lastT:0,
   px:W/2, lives:2, shield:false, invuln:0,
   score:0, secAcc:0,
+  tally:{survive:0,combo:0,pickup:0,special:0,bonus:0},
   enemies:[], pickups:[], parts:[], floats:[], ghosts:[],
   spawnT:0, pickT:0, regenT:0, turbo:0, tackleT:0,
   py:H-90, pointerY:null, shots:[], shotCd:0, frozen:0, freezeT:0, walkT:0, subLatch:false,
@@ -539,6 +558,7 @@ function drawShield(c,x,y,r,col){
 }
 
 /* ================= CHARACTER SELECT UI ================= */
+function heartStr(n){var full='❤️'.repeat(n),empt='';for(var i=n;i<3;i++)empt+='<span class="empty">🤍</span>';return full+empt;}
 (function buildSelect(){
   var grid=$('charGrid');
   CHARS.forEach(function(ch,i){
@@ -549,7 +569,10 @@ function drawShield(c,x,y,r,col){
     info.innerHTML='<div class="cname">'+ch.name+'</div>'
       +'<div class="cab">✨ '+ch.ability+'</div>'
       +'<div class="cdesc">'+ch.desc+'</div>'
-      +'<div class="cstats">SPEED '+ch.speed+' · LIVES '+ch.lives+'</div>';
+      +'<div class="statline"><span class="sk">SPEED</span>'
+        +'<span class="spdmeter"><i style="width:'+Math.round(ch.speed/8.5*100)+'%"></i></span>'
+        +'<span class="spdval">'+ch.speed+'</span></div>'
+      +'<div class="statline"><span class="sk">LIVES</span><span class="hearts">'+heartStr(ch.lives)+'</span></div>';
     card.appendChild(mini);card.appendChild(info);
     grid.appendChild(card);
     var mc=mini.getContext('2d');
@@ -590,6 +613,7 @@ $('btnStart').addEventListener('click',function(){
   if(G.charIdx<0)return;
   G.char=CHARS[G.charIdx];
   G.lives=G.char.lives;G.score=0;G.stage=0;
+  G.tally={survive:0,combo:0,pickup:0,special:0,bonus:0};
   showMatch(0);
 });
 $('btnKickoff').addEventListener('click',function(){startStage(G.stage);});
@@ -645,7 +669,7 @@ function stageClear(){
   var s=STAGES[G.stage];
   G.mode='frozen';
   G.enemies=[];G.pickups=[];
-  G.score+=s.bonus;
+  G.score+=s.bonus;G.tally.bonus+=s.bonus;
   addFloat(W/2,H/2,'FULL TIME! +'+s.bonus,'#ffd94d');
   G.hype=1;
   sndWhistle();sndFanfare();crowdCelebrate();
@@ -671,6 +695,7 @@ async function finalize(victory){
   $('resultEmoji').textContent=victory?'🏆':'😵';
   $('resultTitle').textContent=victory?'Football Is Going Home!':'Knocked Out! Try Again';
   $('finalScore').textContent=score;
+  renderBreakdown();
   show('screen-result');
   if(victory){spawnConfetti();sndFanfare();crowdCelebrate();setTimeout(sndFanfare,700);setTimeout(function(){sndClaps(2.5);},1500);}
   else sndHit();
@@ -706,6 +731,29 @@ $('savescore').addEventListener('click',async function(){
   $('savescore').disabled=false;
 });
 
+function renderBreakdown(){
+  var t=G.tally, host=$('breakdown');
+  if(!host)return;
+  var cats=[
+    {k:'survive',lbl:'⏱️ Survival',col:'#4ea1ff'},
+    {k:'combo',lbl:'✨ Skill combos',col:'#ffd94d'},
+    {k:'pickup',lbl:'⚽ Pickups',col:'#7CFC9A'},
+    {k:'special',lbl:'⭐ Star ability',col:'#ff8ad1'},
+    {k:'bonus',lbl:'🏆 Match bonuses',col:'#ffb000'}
+  ];
+  var max=Math.max(1,t.survive,t.combo,t.pickup,t.special,t.bonus);
+  var best=cats[0],bestv=-1;
+  cats.forEach(function(c){if(t[c.k]>bestv){bestv=t[c.k];best=c;}});
+  var html='<div class="boardTitle">HOW YOU SCORED</div>';
+  cats.forEach(function(c){
+    var v=t[c.k]||0,pct=Math.round(v/max*100);
+    html+='<div class="brkrow"><span class="bl">'+c.lbl+'</span>'+
+      '<span class="brkbar"><i style="width:'+pct+'%;background:'+c.col+'"></i></span>'+
+      '<span class="bv">'+v+'</span></div>';
+  });
+  if(bestv>0)html+='<div class="brkbest">💪 Your biggest earner: '+best.lbl.replace(/^[^ ]+ /,'')+' ('+bestv+' pts)</div>';
+  host.innerHTML=html;
+}
 function spawnConfetti(){
   var em=['🏆','🏴󠁧󠁢󠁥󠁮󠁧󠁿','🎉','⚽','⭐'];
   for(var i=0;i<26;i++){
@@ -796,7 +844,7 @@ function update(dt){
       G.enemies.forEach(function(e,idx){var ddx=e.x-G.px,ddy=e.y-playerY();var d2=ddx*ddx+ddy*ddy;if(d2<bd){bd=d2;bi=idx;}});
       if(bi>=0){
         var te=G.enemies.splice(bi,1)[0];
-        G.score+=15;
+        G.score+=15;G.tally.special+=15;
         burst(te.x,te.y+20,'#ffd94d',18);
         addFloat(te.x,te.y,'PERFECT TACKLE! +15','#ffd94d');hypeUp(0.25);
         sndShieldPop();
@@ -819,7 +867,7 @@ function update(dt){
     /* timer + survival points */
     G.timeLeft-=dt/1000;
     G.secAcc+=dt/1000;
-    while(G.secAcc>=1){G.secAcc-=1;G.score+=10;}
+    while(G.secAcc>=1){G.secAcc-=1;G.score+=10;G.tally.survive+=10;}
     if(G.timeLeft<=0){stageClear();return;}
 
     /* spawn defenders — knockout rounds drop 2 or 3 at once, always leaving a gap */
@@ -857,7 +905,7 @@ function update(dt){
         e.counted=true;
         if(Math.abs(e.x-G.px)<pw/2+28){
           G.combo=Math.min(5,G.combo+1);G.comboT=2.5;
-          var pts=25*G.combo;G.score+=pts;hypeUp(0.35);
+          var pts=25*G.combo;G.score+=pts;G.tally.combo+=pts;hypeUp(0.35);
           addFloat(G.px,py-30,(G.combo>1?'COMBO x'+G.combo+'! ':'SKILL MOVE! ')+'+'+pts,'#ffd94d');
           if(ch.momentum){G.turbo=2;addFloat(G.px,py-48,'TURBO! ⚡','#7CFC9A');}
           sndNear();
@@ -872,7 +920,7 @@ function update(dt){
          e.y+e.h-8>py && e.y+8<py+phh){
         G.enemies.splice(i,1);
         if(subOn){
-          G.score+=10;
+          G.score+=10;G.tally.special+=10;
           burst(e.x,e.y+20,'#ffe066',18);
           addFloat(e.x,e.y,'LATE WINNER! +10','#ffe066');hypeUp(0.3);
           sndPickup();
@@ -892,7 +940,7 @@ function update(dt){
         var en=G.enemies[ei];
         if(Math.abs(en.x-sh.x)<en.w/2+8&&sh.y>en.y&&sh.y<en.y+en.h){
           G.enemies.splice(ei,1);G.shots.splice(si,1);shot_hit=true;
-          G.score+=20;
+          G.score+=20;G.tally.special+=20;
           burst(en.x,en.y+20,'#ffd94d',16);
           addFloat(en.x,en.y,'GOLAZO! +20','#ffd94d');hypeUp(0.3);
           sndPickup();
@@ -912,7 +960,7 @@ function update(dt){
     t.x=Math.max(48,Math.min(W-48,t.x));
     if(t.y>H+60){t.y=-60;t.x=60+Math.random()*(W-120);say('It slipped past! Here it comes again...');}
     if(Math.abs(t.x-G.px)<pw/2+22 && t.y+34>py && t.y<py+phh){
-      t.caught=true;G.score+=STAGES[G.stage].bonus;
+      t.caught=true;G.score+=STAGES[G.stage].bonus;G.tally.bonus+=STAGES[G.stage].bonus;
       burst(t.x,t.y,'#ffd94d',40);burst(t.x,t.y,'#ffffff',30);
       addFloat(W/2,H/2,'+1000 CHAMPIONS!','#ffe066');
       G.hype=1;crowdCelebrate();
@@ -933,9 +981,9 @@ function update(dt){
     if(Math.abs(p.x-G.px)<pw/2+16 && p.y+14>py && p.y<py+phh){
       G.pickups.splice(j,1);
       hypeUp(0.2);
-      if(p.kind==='ball'){G.score+=50;addFloat(p.x,p.y,'+50 ⚽','#7CFC9A');}
+      if(p.kind==='ball'){G.score+=50;G.tally.pickup+=50;addFloat(p.x,p.y,'+50 ⚽','#7CFC9A');}
       else{
-        if(G.shield){G.score+=100;addFloat(p.x,p.y,'+100 BONUS','#7ce8ff');}
+        if(G.shield){G.score+=100;G.tally.pickup+=100;addFloat(p.x,p.y,'+100 BONUS','#7ce8ff');}
         else{G.shield=true;addFloat(p.x,p.y,'SHIELD UP! 🛡️','#7ce8ff');}
       }
       sndPickup();burst(p.x,p.y,p.kind==='ball'?'#7CFC9A':'#7ce8ff',10);
@@ -985,7 +1033,7 @@ function hitPlayer(x,y){
       }
     }
     if(cleared>0){
-      G.score+=cleared*5;G.shake=18;
+      G.score+=cleared*5;G.tally.special+=cleared*5;G.shake=18;
       addFloat(G.px,playerY()-46,'BIG DAN CLEARS IT! +'+(cleared*5),'#ffd94d');
       sndShieldPop();hypeUp(0.3);
       say('The Man Mountain shrugs them ALL off!');
