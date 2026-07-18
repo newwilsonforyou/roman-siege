@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Bolognese Master: 10-Level Nonna Edition</title>
+<title>Bolognese Master: 11-Level Nonna Edition</title>
 <style>
   :root{
     --pink:#ff5e8a; --pink2:#ff9a6c; --grape:#7b4bd6; --sky:#4bc0ff;
@@ -197,9 +197,9 @@
   <div id="start" class="screen active">
     <div class="title-emoji">🍝</div>
     <h1>Bolognese Master</h1>
-    <div class="sub">🎓 10-Level Nonna Edition 🎓</div>
+    <div class="sub">🎓 11-Level Nonna Edition 🎓</div>
     <div id="whoami"></div>
-    <div class="menu-emojis">🥕 🧅 🍅 🥩 🍷 🍳 🍜 🫗 🔥 🧀</div>
+    <div class="menu-emojis">🥕 🧅 🧄 🍅 🥩 🍷 🍳 🍜 🫗 🔥 🧀</div>
     <button class="bigbtn" id="startBtn">Let's Cook! 👩‍🍳</button>
     <button class="gbtn ghost" id="boardBtn">🏆 Top Chefs</button>
     <div style="color:#fff;font-size:13px;opacity:.9;">Cook with Nonna — peel, chop, fry &amp; plate a perfect bolognese!</div>
@@ -217,7 +217,7 @@
   <!-- PLAY -->
   <div id="play" class="screen">
     <div id="hud">
-      <div class="chip">Lvl <b id="lvlNum">1</b>/10</div>
+      <div class="chip">Lvl <b id="lvlNum">1</b>/11</div>
       <div id="timerBar"><div id="timerFill"></div></div>
       <div class="chip">⭐<b id="scoreNow">1000</b></div>
       <button class="muteBtn" id="muteBtn" title="Sound">🔊</button>
@@ -359,7 +359,7 @@ const G = {
   running:false, timeLeft:0, timerId:null, tickId:null,
   muted:false, cleanup:null, ended:false
 };
-const LEVEL_TIME=[12,9,10,9,12,12,10,9,10,8];
+const LEVEL_TIME=[12,9,10,10,9,12,12,10,9,10,8];
 const LEVEL_NAME=["The Veggie Prep","The Dice & Slice","The Secret Sauce",
   "The Sizzle & Stir","The Pasta Balance","The Great Strain","The Art of Plating"];
 
@@ -670,7 +670,7 @@ function showScorecard(){
   const msg=$('#interMsg'); msg.classList.toggle('fail',fail);
   msg.textContent=fail?pick(["Don't worry, Nonna will fix it! 💕","Is okay! Nonna will help you! 💕"])
                       :pick(NONNA_PRAISE);
-  const last=(G.level===9);
+  const last=(G.level===10);
   $('#nextBtn').textContent=last?'See Certificate 🎓':'Next Step ➜';
   if(fail){sfxBuzz();setTimeout(sfxChime,500);}else sfxChime();
   show('inter');
@@ -1893,16 +1893,128 @@ function levelTomato(){
   startTimer(LEVEL_TIME[G.level],()=>{ if(!done){toast('Time!');finishLevel();}});
 }
 
-const LEVELS=[level1,level2,levelTomato,levelMeat,level3,level4,level5,level6,levelFry,level7];
+/* =========================================================
+   NEW LEVEL — Mince the Garlic
+   ========================================================= */
+function levelGarlic(){
+  $('#instr').textContent='🧄 Swipe DOWN across each line — mince all 3 cloves fine!';
+  const sc=makeScene();
+  grad(sc.defs,'gGarlic',[[0,'#fffdf6'],[.5,'#f6efdd'],[1,'#ddd0b4']],true);
+
+  /* chopping board */
+  E('rect',ol({x:44,y:150,width:312,height:200,rx:22,fill:'url(#gWood)',stroke:'#8a5f22'}),sc.svg);
+  E('circle',{cx:330,cy:176,r:8,fill:'#8a5f22',opacity:.6},sc.svg);
+  for(let i=0;i<3;i++) E('path',{d:'M62,'+(190+i*48)+' q130,'+(i%2?9:-9)+' 276,0',stroke:'#caa057','stroke-width':4,fill:'none',opacity:.55,'stroke-linecap':'round'},sc.svg);
+
+  /* whole garlic bulb resting at the back */
+  const bulb=E('g',{transform:'translate(316,206)'},sc.svg);
+  E('ellipse',{cx:0,cy:26,rx:30,ry:8,fill:'rgba(0,0,0,.14)'},bulb);
+  E('path',ol({d:'M0,-34 C22,-30 32,-12 30,6 C28,22 16,30 0,30 C-16,30 -28,22 -30,6 C-32,-12 -22,-30 0,-34 Z',fill:'url(#gGarlic)'}),bulb);
+  E('path',{d:'M-12,-30 C-16,-8 -16,12 -10,28 M12,-30 C16,-8 16,12 10,28',stroke:'#cbbb98','stroke-width':3,fill:'none'},bulb);
+  E('path',{d:'M0,-34 q-3,-12 2,-18 q4,7 1,18',fill:'#c9b48a',stroke:'#9a8659','stroke-width':2.5},bulb);
+  E('ellipse',{cx:-12,cy:-8,rx:8,ry:14,fill:'#fff',opacity:.4},bulb);
+
+  /* 3 peeled cloves, each with 2 cut lines */
+  const cloves=[[112,250],[176,258],[240,248]];
+  const cloveG=[];
+  cloves.forEach((c,ci)=>{
+    const g=E('g',{transform:'translate('+c[0]+','+c[1]+')'},sc.svg); cloveG.push(g);
+    E('ellipse',{cx:0,cy:34,rx:26,ry:7,fill:'rgba(0,0,0,.15)'},g);
+    E('path',ol({d:'M0,-38 C16,-30 24,-8 20,14 C16,30 8,36 0,36 C-8,36 -16,30 -20,14 C-24,-8 -16,-30 0,-38 Z',fill:'url(#gGarlic)'}),g);
+    E('path',{d:'M-8,-26 C-12,-4 -12,16 -6,32',stroke:'#dcd0b2','stroke-width':3,fill:'none','stroke-linecap':'round'},g);
+    E('path',{d:'M0,-38 q-2,-9 3,-13 q3,6 0,13',fill:'#c9b48a',stroke:'#9a8659','stroke-width':2.5},g);
+    E('ellipse',{cx:-8,cy:-12,rx:6,ry:12,fill:'#fff',opacity:.5},g);
+    if(ci===1) kFace(g,0,4,0.8);
+  });
+
+  /* two cut lines per clove */
+  const xs=[]; cloves.forEach(c=>{ xs.push(c[0]-9); xs.push(c[0]+9); });
+  const N=xs.length, cut=new Array(N).fill(false); let count=0, done=false;
+  const lines=xs.map(x=>E('line',{x1:x,y1:200,x2:x,y2:300,stroke:'#ff4d4d','stroke-width':4,'stroke-dasharray':'7 7','stroke-linecap':'round'},sc.svg));
+  const slits=xs.map(x=>E('line',{x1:x,y1:200,x2:x,y2:200,stroke:'#b6a67e','stroke-width':5,'stroke-linecap':'round',opacity:.9},sc.svg));
+  const cutProg=new Array(N).fill(0), CUT_NEED=80;   /* garlic is soft — quicker chops */
+
+  /* knife cursor */
+  const knife=E('g',{opacity:0},sc.svg);
+  E('path',ol({d:'M0,0 C24,-4 66,-6 84,4 C66,16 24,16 0,12 Z',fill:'url(#gSteelH)','stroke-width':4}),knife);
+  E('rect',ol({x:84,y:-4,width:44,height:18,rx:8,fill:'#7a4b22','stroke-width':4}),knife);
+  E('circle',{cx:96,cy:5,r:2.6,fill:'#d9b98a'},knife);
+  E('circle',{cx:112,cy:5,r:2.6,fill:'#d9b98a'},knife);
+
+  const prog=makeProg();
+  let dragging=false, prev=null;
+
+  function slice(i){
+    cut[i]=true; count++;
+    lines[i].setAttribute('stroke','#2ecc71');
+    slits[i].setAttribute('opacity','0');
+    sfxSlice(); fxBurst(sc,xs[i],196,'CHOP!','#fff');
+    for(let k=0;k<4;k++) fxParticle(sc,xs[i],250,'#f6efdd',5);
+    /* the clove is fully minced once both of its lines are cut */
+    const ci=Math.floor(i/2);
+    if(cut[ci*2] && cut[ci*2+1]) mince(ci);
+    prog.set(count/N*100);
+    if(count>=N) complete();
+  }
+  function mince(ci){
+    const g=cloveG[ci];
+    g.style.transition='opacity .3s'; g.style.opacity='0';
+    for(let k=0;k<9;k++){
+      setTimeout(()=>{
+        const bit=E('rect',{x:cloves[ci][0]-22+Math.random()*44,y:cloves[ci][1]-16+Math.random()*46,
+          width:7,height:7,rx:2,fill:'#f6efdd',stroke:'#c9b48a','stroke-width':2.5},sc.svg);
+        bit.style.transform='scale(0) rotate('+(Math.random()*80-40)+'deg)';
+        bit.style.transition='transform .18s';
+        requestAnimationFrame(()=>bit.style.transform='scale(1) rotate('+(Math.random()*80-40)+'deg)');
+      },k*22);
+    }
+    addPts(25); sfxPop(720); nonnaPraise();
+  }
+  function move(e){
+    const p=sc.pt(e);
+    knife.setAttribute('opacity',1);
+    knife.setAttribute('transform','translate('+(p.x+6)+','+(p.y-8)+') rotate(24)');
+    if(!dragging||done){ prev=p; return; }
+    e.preventDefault();
+    if(prev){
+      const dy=p.y-prev.y;                       /* must SWIPE DOWN to chop */
+      if(dy>0){
+        xs.forEach((x0,i)=>{
+          if(cut[i]) return;
+          if(Math.abs(p.x-x0)<18 && p.y>190 && p.y<312){
+            cutProg[i]+=dy;
+            slits[i].setAttribute('y2',200+Math.min(100,cutProg[i]/CUT_NEED*100));
+            if(Math.random()<0.3) fxParticle(sc,x0+(Math.random()*10-5),p.y,'#fffdf6',4);
+            if(cutProg[i]>=CUT_NEED) slice(i);
+          }
+        });
+      }
+    }
+    prev=p;
+  }
+  function down(e){ e.preventDefault(); dragging=true; prev=sc.pt(e); }
+  function up(){ dragging=false; prev=null; }
+  function complete(){
+    if(done)return; done=true;
+    slits.forEach(l=>l.remove()); lines.forEach(l=>l.remove());
+    reward(180,'+180 Minced!'); toast('Fragrant garlic — perfetto! 🧄','#a0d468');
+    setTimeout(finishLevel,750);
+  }
+  on(stage,'pointerdown',down); on(stage,'pointermove',move);
+  on(window,'pointerup',up); on(window,'pointercancel',up);
+  startTimer(LEVEL_TIME[G.level],()=>{ if(!done){toast('Time!');finishLevel();}});
+}
+
+const LEVELS=[level1,level2,levelGarlic,levelTomato,levelMeat,level3,level4,level5,level6,levelFry,level7];
 
 /* ---------- FINAL SCREEN ---------- */
 async function showFinal(){
   const score=G.total;
   $('#finalScore').textContent=score;
   let rank;
-  if(score>=8600) rank='🏆 GRAND MASTER CHEF 🏆';
-  else if(score>=6000) rank='👨‍🍳 Head Chef';
-  else if(score>=3600) rank='🥄 Sous Chef';
+  if(score>=9400) rank='🏆 GRAND MASTER CHEF 🏆';
+  else if(score>=6600) rank='👨‍🍳 Head Chef';
+  else if(score>=4000) rank='🥄 Sous Chef';
   else rank='🌱 Kitchen Helper';
   $('#finalRank').textContent=rank;
   show('final');
@@ -1928,7 +2040,7 @@ async function showFinal(){
 
 /* ---------- WIRING ---------- */
 $('#startBtn').addEventListener('click',()=>{ ensureAudio(); G.total=0; startLevel(0); });
-$('#nextBtn').addEventListener('click',()=>{ if(G.level===9) showFinal(); else startLevel(G.level+1); });
+$('#nextBtn').addEventListener('click',()=>{ if(G.level===10) showFinal(); else startLevel(G.level+1); });
 $('#againBtn').addEventListener('click',()=>{ G.total=0; startLevel(0); });
 $('#muteBtn').addEventListener('click',()=>{ G.muted=!G.muted; $('#muteBtn').textContent=G.muted?'🔇':'🔊'; });
 $('#boardBtn').addEventListener('click',()=>{ $('#boardwrap').classList.add('open'); loadMainBoard(); });
