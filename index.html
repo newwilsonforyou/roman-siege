@@ -159,6 +159,12 @@
     radial-gradient(circle at 75% 75%,rgba(91,217,127,.25),transparent 55%),#0E3B23;}
   .jungle .card-tag{color:#5BD97F;} .jungle .play{background:#5BD97F;color:#0A2818;}
 
+  .amazon{background:linear-gradient(160deg,#17603c,#0a2a1a);}
+  .amazon .card-art{background:radial-gradient(circle at 72% 22%,rgba(255,179,64,.35),transparent 55%),
+    linear-gradient(180deg,#3fa06a,#1d6b45);}
+  .amazon .card-tag{color:#8ff0b6;} .amazon .play{background:#ffb340;color:#14301e;}
+  .amazon:hover{box-shadow:0 18px 50px rgba(82,214,138,.5);border-color:#52d68a;}
+
   .bolognese{background:linear-gradient(160deg,#8c2f3a,#4a1220);}
   .bolognese .card-art{background:radial-gradient(circle at 70% 25%,rgba(255,211,77,.35),transparent 55%),
     linear-gradient(160deg,#fdeff0,#f6d9db);}
@@ -277,10 +283,77 @@
     <div class="kicker">Choose your game</div>
     <h1 id="bigtitle" title="Psst… try clicking me!">Year 5 Arcade</h1>
     <p class="hello" id="hello">🎮 Ready to play?</p>
-    <p class="sub">Twenty-one games in one place — cook a bolognese, bring football home, survive, explore and master maths, history and science. Sign in, and every game you play is saved to your record.</p>
+    <p class="sub">Twenty-two games in one place — deliver fruit down the Amazon by boat, cook a bolognese, bring football home, survive, explore and master maths, history and science. Sign in, and every game you play is saved to your record.</p>
   </header>
 
   <main class="cards">
+    <a class="card amazon" id="card-amazon" href="amazon-river-courier.html">
+      <span class="newbadge">✦ NEW!</span>
+      <div class="lockmsg">🔒 Sign in first</div>
+      <div class="card-art">
+        <svg class="art-svg pulse" viewBox="0 0 200 150" aria-hidden="true">
+          <!-- sky + jungle backdrop -->
+          <rect x="0" y="0" width="200" height="150" fill="#bfe8c8"/>
+          <rect x="0" y="0" width="200" height="62" fill="#ffe2a8" opacity=".55"/>
+          <circle cx="166" cy="26" r="16" fill="#ffd34d" opacity=".9"/>
+          <!-- far trees -->
+          <g fill="#2e8757">
+            <circle cx="18" cy="58" r="20"/><circle cx="42" cy="52" r="16"/><circle cx="64" cy="60" r="18"/>
+            <circle cx="132" cy="58" r="17"/><circle cx="156" cy="62" r="20"/><circle cx="182" cy="56" r="16"/>
+          </g>
+          <g fill="#1d6b45">
+            <circle cx="30" cy="66" r="16"/><circle cx="54" cy="70" r="14"/>
+            <circle cx="146" cy="70" r="15"/><circle cx="172" cy="68" r="13"/>
+          </g>
+          <!-- river -->
+          <path d="M0 78 Q60 70 100 82 Q150 96 200 84 L200 150 L0 150 Z" fill="#2a7fb8"/>
+          <path d="M0 88 Q60 80 100 92 Q150 106 200 94 L200 150 L0 150 Z" fill="#1f6a9c"/>
+          <g stroke="#9fd8f2" stroke-width="3" stroke-linecap="round" fill="none" opacity=".7">
+            <path d="M18 108 q10 -5 20 0"/><path d="M150 116 q10 -5 20 0"/><path d="M60 128 q10 -5 20 0"/>
+          </g>
+          <!-- floating log hazard -->
+          <g transform="translate(36,120) rotate(-8)">
+            <rect x="-18" y="-5" width="36" height="10" rx="5" fill="#7a4a24" stroke="#4d2c12" stroke-width="2"/>
+            <circle cx="18" cy="0" r="4.5" fill="#9c6435" stroke="#4d2c12" stroke-width="2"/>
+          </g>
+          <!-- motorboat with capybara courier -->
+          <g transform="translate(112,106)">
+            <path d="M-34 6 L34 6 L26 20 L-26 20 Z" fill="#ffb340" stroke="#8a4f12" stroke-width="3" stroke-linejoin="round"/>
+            <rect x="-14" y="-2" width="28" height="9" rx="3" fill="#f6e3c2" stroke="#8a4f12" stroke-width="2.5"/>
+            <!-- crate of fruit -->
+            <rect x="-30" y="-8" width="16" height="14" rx="3" fill="#c98a4b" stroke="#6b3f18" stroke-width="2.5"/>
+            <circle cx="-26" cy="-11" r="4" fill="#ff6f5e" stroke="#a8352a" stroke-width="2"/>
+            <circle cx="-18" cy="-12" r="4" fill="#ffd34d" stroke="#b8871a" stroke-width="2"/>
+            <!-- capybara -->
+            <ellipse cx="6" cy="-8" rx="12" ry="9" fill="#b07a45" stroke="#6b451f" stroke-width="2.5"/>
+            <ellipse cx="16" cy="-14" rx="8" ry="6.5" fill="#c08a52" stroke="#6b451f" stroke-width="2.5"/>
+            <circle cx="12" cy="-19" r="2.6" fill="#5b3a18"/><circle cx="20" cy="-19" r="2.6" fill="#5b3a18"/>
+            <circle cx="19" cy="-16" r="1.8" fill="#fff"/>
+            <circle cx="22.5" cy="-13" r="2" fill="#5b3a18"/>
+          </g>
+          <!-- wake -->
+          <g stroke="#eaf7ff" stroke-width="3.5" stroke-linecap="round" fill="none" opacity=".85">
+            <path d="M74 126 q10 4 22 2"/><path d="M80 134 q12 4 24 1"/>
+          </g>
+          <!-- glowing delivery dock + beacon -->
+          <g transform="translate(176,96)">
+            <rect x="-16" y="0" width="32" height="7" rx="2" fill="#c98a4b" stroke="#6b3f18" stroke-width="2.5"/>
+            <rect x="-11" y="7" width="4" height="12" fill="#6b3f18"/><rect x="7" y="7" width="4" height="12" fill="#6b3f18"/>
+            <circle cx="0" cy="-14" r="9" fill="#52d68a" opacity=".35"/>
+            <circle cx="0" cy="-14" r="5" fill="#52d68a" stroke="#1d6b45" stroke-width="2"/>
+          </g>
+          <!-- leaping pink river dolphin -->
+          <path d="M56 96 q10 -18 22 -4 q-10 -6 -16 6 Z" fill="#ff9fc4" stroke="#c25c8b" stroke-width="2.5" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="card-body">
+        <div class="card-tag">Geography &middot; 3D Driving</div>
+        <div class="card-title">Amazon River Courier</div>
+        <div class="card-desc">Be the fastest capybara boat courier in the Amazon! Load fruit at the floating market, race it to the glowing dock before the timer runs out, dodge the floating logs, spot dolphins and jaguars along the banks, and spend your coins upgrading your boat in the Boat Yard.</div>
+        <span class="play">PLAY ▶</span>
+      </div>
+    </a>
+
     <a class="card bolognese" id="card-bolognese" href="bolognese-master.html">
       <span class="newbadge">✦ NEW!</span>
       <div class="lockmsg">🔒 Sign in first</div>
@@ -1008,6 +1081,7 @@ function renderUserBar(){
   }
 }
 function setCardsLocked(locked){
+  $('card-amazon').classList.toggle('locked',locked);
   $('card-bolognese').classList.toggle('locked',locked);
   $('card-goinghome').classList.toggle('locked',locked);
   $('card-worldcup').classList.toggle('locked',locked);
@@ -1212,11 +1286,12 @@ async function loadRecords(p){
   var holesdig=rows.filter(function(x){return x.game==='holes-dig';});
   var goinghome=rows.filter(function(x){return x.game==='roadtoglory';});
   var bolognese=rows.filter(function(x){return x.game==='bolognese';});
+  var amazon=rows.filter(function(x){return x.game==='amazoncourier';});
   /* any game not in the known list (e.g. Solar Builder, Legion Outpost, future games)
      is picked up automatically so the record is never incomplete again */
   var knownIds=['siege','nebula','empiremap','vicmuseum','victorians','junglecatch',
     'circuit','linolayers','lifecycles','rainforestrescue','angles','themeparkdatadash','worldcup',
-    'holes-sploosh','holes-dig','roadtoglory','bolognese'];
+    'holes-sploosh','holes-dig','roadtoglory','bolognese','amazoncourier'];
   var extraNames={solar:'🪐 SOLAR SYSTEM BUILDER',solarbuilder:'🪐 SOLAR SYSTEM BUILDER',
     solarsystem:'🪐 SOLAR SYSTEM BUILDER',builder:'🪐 SOLAR SYSTEM BUILDER',
     outpost:'🏰 LEGION OUTPOST',legionoutpost:'🏰 LEGION OUTPOST',legion:'🏰 LEGION OUTPOST',
@@ -1233,6 +1308,7 @@ async function loadRecords(p){
     '<div><div class="rec-name">'+escapeHtml(p.name)+'</div>'+
     '<div class="rec-sub">'+totalGames+' games played in total</div></div></div>';
   var stats='<div class="rec-stats">'+
+    '<div class="rec-stat"><div class="n">'+best(amazon)+'</div><div class="l">AMAZON BEST</div></div>'+
     '<div class="rec-stat"><div class="n">'+best(bolognese)+'</div><div class="l">BOLOGNESE BEST</div></div>'+
     '<div class="rec-stat"><div class="n">'+best(goinghome)+'</div><div class="l">GOING HOME BEST</div></div>'+
     '<div class="rec-stat"><div class="n">'+best(sploosh)+'</div><div class="l">SPLOOSH BEST</div></div>'+
@@ -1268,6 +1344,7 @@ async function loadRecords(p){
     return h+'</tbody></table>';
   }
   $('recBody').innerHTML=head+stats+
+    historyTable('🛶 AMAZON RIVER COURIER HISTORY',amazon)+
     historyTable('🍝 BOLOGNESE MASTER HISTORY',bolognese)+
     historyTable('🏆 FOOTBALL IS GOING HOME HISTORY',goinghome)+
     historyTable('🍑 SPLOOSH & ONION SURVIVAL HISTORY',sploosh)+
@@ -1321,8 +1398,9 @@ function renderHello(){
     '🔥 The leaderboards await, '+name+'…'
   ]:[
     '🎮 Ready to play?',
-    '⚡ Twenty-one games. One champion. You?',
+    '⚡ Twenty-two games. One champion. You?',
     '🏆 Sign in and chase the high scores!',
+    '🛶 New! Race fruit down the river in Amazon River Courier!',
     '🍝 New! Cook your way to a chef certificate in Bolognese Master!',
     '⚽ New! Football Is Going Home — dodge 8 nations and lift the World Cup!',
     '🍑 New! Survive on God\'s Thumb in Sploosh & Onion Survival…'
