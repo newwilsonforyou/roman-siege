@@ -388,7 +388,7 @@ var KITS={
   KSA:kFlat('#ffffff','#006c35'),
   URU:kFlat('#5aa9e6','#0b1d3a'),
   POR:kFlat('#a3132e','#046a38'),
-  BEL:kFlat('#e30613','#111111'),
+  BEL:function(c,x,y,w,h){c.fillStyle='#e30613';c.fillRect(x,y,w,h);c.fillStyle='#111';c.fillRect(x,y,w,4);c.fillStyle='#fdda24';c.fillRect(x,y+4,w,2.5);c.fillStyle='#111';c.fillRect(x+1,y+7,3,h-9);c.fillRect(x+w-4,y+7,3,h-9);},
   BRA:kFlat('#ffdf00','#009739'),
   SCO:kFlat('#0b3d91','#ffffff'),
   HAI:kHalf('#00209f','#d21034'),
@@ -397,7 +397,13 @@ var KITS={
   MAR:function(c,x,y,w,h){c.fillStyle='#c1272d';c.fillRect(x,y,w,h);star5(c,x+w/2,y+h/2,6,'#006233');},
   JPN:kFlat('#12326e','#ffffff'),
   TUN:kFlat('#ffffff','#e70013'),
-  SWE:kFlat('#fecb00','#005293')
+  SWE:kFlat('#fecb00','#005293'),
+  IRQ:kFlat('#1e8449','#ffffff'),
+  SEN:function(c,x,y,w,h){c.fillStyle='#fff';c.fillRect(x,y,w,h);star5(c,x+w/2,y+h/2,6,'#00853f');},
+  CIV:kFlat('#ff8200','#009e60'),
+  IRN:function(c,x,y,w,h){c.fillStyle='#fff';c.fillRect(x,y,w,h);c.fillStyle='#239f40';c.fillRect(x,y,w,3);c.fillStyle='#da0000';c.fillRect(x,y+h-4,w,4);c.fillRect(x+1,y+3,3,h-7);c.fillRect(x+w-4,y+3,3,h-7);},
+  NZL:kFlat('#f2f2f2','#111111'),
+  USA:function(c,x,y,w,h){c.fillStyle='#fff';c.fillRect(x,y,w,h);c.fillStyle='#0a3161';c.fillRect(x,y,w,4);c.fillRect(x+1,y+4,3,h-6);c.fillRect(x+w-4,y+4,3,h-6);c.fillStyle='#b31942';c.fillRect(x,y+h/2-2,w,4);}
 };
 
 /* ================= SQUADS ================= */
@@ -509,6 +515,9 @@ MAR:[
   lives:2,speed:6,vertical:true,w:34,h:44}
 ],
 BRA:[
+ {id:'neymar',name:'NEYMAR JR',short:'NEYMAR',ability:'Samba Magic',
+  desc:'Rainbow flicks and stepovers! Every near-miss fires a 2-second TURBO boost (+2.5 speed) — chain your dodges together and nobody can live with him.',
+  lives:2,speed:7,momentum:true,w:32,h:42},
  {id:'vinicius',name:'VINÍCIUS JR',short:'VINI',ability:'Lightning Step',
   desc:'Electric pace (8.5) and a smaller body — nobody catches Vini in a straight line!',
   lives:2,speed:8.5,w:28,h:38},
@@ -527,6 +536,34 @@ BRA:[
  {id:'endrick',name:'ENDRICK',short:'ENDRICK',ability:'Super Sub',
   desc:'The young star always pops up late! In the last 5 seconds of every match he turns golden — defenders bounce off for +10 each.',
   lives:2,speed:6.5,supersub:true,w:34,h:44}
+],
+NOR:[
+ {id:'haaland',name:'ERLING HAALAND',short:'HAALAND',ability:'The Terminator ⚡',
+  desc:'THE STRONGEST PLAYER IN THE GAME. 3 lives, huge pace, a SPACE rocket shot (3s cooldown) AND a shockwave that knocks every defender near him flying when he is finally tackled. He is a big target though!',
+  lives:3,speed:7.5,shoot:true,shock:true,w:38,h:48},
+ {id:'odegaard',name:'MARTIN ØDEGAARD',short:'ØDEGAARD',ability:"Captain's Calm",
+  desc:'The captain slows the whole game down — every 12 seconds he freezes ALL defenders solid for 1.5s. ❄️',
+  lives:2,speed:6,freeze:true,w:32,h:42},
+ {id:'nusa',name:'ANTONIO NUSA',short:'NUSA',ability:'Lightning Step',
+  desc:'Blistering pace (8) and a smaller body — the young winger slips through gaps nobody else sees.',
+  lives:2,speed:8,w:28,h:38},
+ {id:'nyland',name:'ØRJAN NYLAND',short:'NYLAND',ability:'Safe Hands',
+  desc:'Grows a brand-new blue shield every 10 seconds. Slow feet, but very hard to beat.',
+  lives:2,speed:4,regen:true,w:34,h:44}
+],
+BEL:[
+ {id:'debruyne',name:'KEVIN DE BRUYNE',short:'KDB',ability:'Vision Dash',
+  desc:'Press SPACE (or double-tap) to burst through the gap before anyone spots it. 4s cooldown bar.',
+  lives:2,speed:6.5,dash:true,w:34,h:44},
+ {id:'doku',name:'JÉRÉMY DOKU',short:'DOKU',ability:'Lightning Step',
+  desc:'Electric feet! Top speed (8.5) and a smaller body — impossible to pin down.',
+  lives:2,speed:8.5,w:28,h:38},
+ {id:'lukaku',name:'ROMELU LUKAKU',short:'LUKAKU',ability:'Big Rom',
+  desc:'A powerhouse striker! Bigger and slower, but 3 lives — and when he IS tackled the shockwave knocks every nearby defender flying (+5 each).',
+  lives:3,speed:5,shock:true,w:40,h:50},
+ {id:'courtois',name:'THIBAUT COURTOIS',short:'COURTOIS',ability:'Safe Hands',
+  desc:'One of the greatest keepers in the world — grows a fresh blue shield every 10 seconds.',
+  lives:2,speed:4,regen:true,w:34,h:44}
 ],
 JPN:[
  {id:'mitoma',name:'KAORU MITOMA',short:'MITOMA',ability:'Ghost Dash',
@@ -616,6 +653,26 @@ BRA:[
  {code:'ARG',flag:'🇦🇷',name:'Argentina',desc:'The Superclásico in a World Cup semi-final. There is no bigger game in football.',line:'The Superclásico — a semi-final for the ages!'},
  {code:'ESP',flag:'🇪🇸',name:'Spain',desc:'The Grand Final against La Roja. Survive their elite defensive press and win a sixth star!',line:'The Grand Final. Go and win the sixth star!'}
 ],
+NOR:[
+ {code:'IRQ',flag:'🇮🇶',name:'Iraq',desc:'Norway thumped Iraq 4-1 in the real group opener. A dream start — go and do it again!',line:'4-1 in real life — what a start!'},
+ {code:'SEN',flag:'🇸🇳',name:'Senegal',desc:'A real 3-2 win over Senegal, and a proper battle it was too. The Lions of Teranga never stop coming.',line:'3-2 last time — this one was a battle!'},
+ {code:'FRA',flag:'🇫🇷',name:'France',desc:'The one that got away — France won this 4-1 for real, Norway\'s only group slip. Put it right this time!',line:'France won this 4-1 for real. Put it right!'},
+ {code:'CIV',flag:'🇨🇮',name:'Ivory Coast',desc:'Norway saw off the Elephants 2-1 in the real Round of 32. Knockout football — no second chances.',line:'Knockout football begins — no second chances!'},
+ {code:'BRA',flag:'🇧🇷',name:'Brazil',desc:'The famous night! Norway knocked Brazil out of the real Round of 16, winning 2-1. Do it all over again.',line:'Norway beat BRAZIL here for real — repeat it!'},
+ {code:'ENG',flag:'🏴󠁧󠁢󠁥󠁮󠁧󠁿',name:'England',desc:'This is where the real run ended — England won the quarter-final 2-1 after extra time. Beat them here and the story keeps going!',line:'This is where it ended for real. Change it!'},
+ {code:'ARG',flag:'🇦🇷',name:'Argentina',desc:'Past the real quarter-final, Norway take over England\'s ladder — and that means the Albiceleste in a World Cup semi-final.',line:'A semi-final! All of Norway is watching!'},
+ {code:'ESP',flag:'🇪🇸',name:'Spain',desc:'The Grand Final against La Roja, the fixture England were handed. Survive their elite press and take the cup to Oslo!',line:'The Grand Final. Take it home to Oslo!'}
+],
+BEL:[
+ {code:'EGY',flag:'🇪🇬',name:'Egypt',desc:'A real 1-1 draw with Egypt to open Group G. The Pharaohs defended deep and made it awkward.',line:'1-1 last time — go one better!'},
+ {code:'IRN',flag:'🇮🇷',name:'Iran',desc:'A goalless 0-0 with Iran for real — one of the toughest defences to break down anywhere.',line:'0-0 last time. Somebody has to break through!'},
+ {code:'NZL',flag:'🇳🇿',name:'New Zealand',desc:'The Red Devils exploded here, winning 5-1 for real. Enjoy the space while you have it!',line:'5-1 in real life — the goals are flowing!'},
+ {code:'SEN',flag:'🇸🇳',name:'Senegal',desc:'A real Round of 32 epic — Belgium needed extra time to edge it 3-2 against Senegal.',line:'Extra time last time! Hold your nerve.'},
+ {code:'USA',flag:'🇺🇸',name:'USA',desc:'Belgium won the real Round of 16 4-1 against the co-hosts, in front of a huge American crowd.',line:'A stadium full of noise — and a 4-1 win last time!'},
+ {code:'ESP',flag:'🇪🇸',name:'Spain',desc:'This is where the real run ended — Spain won the quarter-final 2-1. Beat them here and the story keeps going!',line:'This is where it ended for real. Change it!'},
+ {code:'ARG',flag:'🇦🇷',name:'Argentina',desc:'Past the real quarter-final, Belgium take over England\'s ladder — and that means Argentina in a World Cup semi-final.',line:'A semi-final! The Red Devils are dreaming!'},
+ {code:'ESP',flag:'🇪🇸',name:'Spain',desc:'THE REMATCH. Spain knocked Belgium out in the real quarter-final — and now they stand between the Red Devils and the trophy. Beat them this time and it is all worth it!',line:'The Grand Final — and it is Spain AGAIN. Revenge time!'}
+],
 JPN:[
  {code:'NED',flag:'🇳🇱',name:'Netherlands',desc:'A superb real 2-2 draw with the Netherlands to open the group. Japan never stop running.',line:'2-2 with the Dutch — what an opener!'},
  {code:'TUN',flag:'🇹🇳',name:'Tunisia',desc:'Japan were brilliant here, winning 4-0 for real. Quick passing, quick feet!',line:'4-0 in real life — the passing is flowing!'},
@@ -677,12 +734,28 @@ var COUNTRIES=[
   winTitle:'The Atlas Lions Win It!',
   bonusDesc:'The cup is won — and France want a rematch after that quarter-final! Pure exhibition fun: a tackle only ends the round. Survive 20 seconds for a huge +800!'},
 
- {code:'BRA',name:'Brazil',flag:'🇧🇷',tag:'Vinícius, Rodrygo & co',route:'Morocco → Spain',
+ {code:'BRA',name:'Brazil',flag:'🇧🇷',tag:'Neymar, Vini & Rodrygo',route:'Morocco → Spain',
   kit:KITS.BRA,
   crowd:['#ffdf00','#009739','#ffffff','#ffe94d','#0aa14a','#f4f4f4'],
   fanFlag:function(c,x,y){c.fillStyle='#009739';c.fillRect(x,y,7,5);c.fillStyle='#ffdf00';c.beginPath();c.moveTo(x+3.5,y+0.6);c.lineTo(x+6.2,y+2.5);c.lineTo(x+3.5,y+4.4);c.lineTo(x+0.8,y+2.5);c.closePath();c.fill();c.fillStyle='#002776';c.beginPath();c.arc(x+3.5,y+2.5,1,0,Math.PI*2);c.fill();},
   champLine:'HEXA! BRAZIL ARE WORLD CHAMPIONS!!!',
   winTitle:'Hexa! Brazil Win It!',
+  bonusDesc:'The cup is won — now the champions play France in an exhibition match, just for fun! A tackle only ends the round. Survive 20 seconds of French flair for a huge +800!'},
+
+ {code:'NOR',name:'Norway',flag:'🇳🇴',tag:'Haaland & Ødegaard',route:'Iraq → Spain',
+  kit:KITS.NOR,
+  crowd:['#d31f2b','#ffffff','#0b2c6b','#e8443f','#f4f4f4','#1b3f8b'],
+  fanFlag:function(c,x,y){c.fillStyle='#d31f2b';c.fillRect(x,y,7,5);c.fillStyle='#fff';c.fillRect(x+2,y,2.6,5);c.fillRect(x,y+1.4,7,2.2);c.fillStyle='#00205b';c.fillRect(x+2.6,y,1.4,5);c.fillRect(x,y+1.8,7,1.4);},
+  champLine:'NORWAY ARE WORLD CHAMPIONS!!! WHAT A STORY!!!',
+  winTitle:'Norway Win The World Cup!',
+  bonusDesc:'The cup is won — and France want another go after that 4-1 in the group stage! Pure exhibition fun: a tackle only ends the round. Survive 20 seconds for a huge +800!'},
+
+ {code:'BEL',name:'Belgium',flag:'🇧🇪',tag:'De Bruyne & the Red Devils',route:'Egypt → Spain',
+  kit:KITS.BEL,
+  crowd:['#e30613','#fdda24','#111111','#f04a52','#ffe680','#2b2b2b'],
+  fanFlag:function(c,x,y){c.fillStyle='#111';c.fillRect(x,y,2.4,5);c.fillStyle='#fdda24';c.fillRect(x+2.4,y,2.3,5);c.fillStyle='#e30613';c.fillRect(x+4.7,y,2.3,5);},
+  champLine:'THE RED DEVILS HAVE DONE IT — BELGIUM ARE WORLD CHAMPIONS!!!',
+  winTitle:'The Red Devils Win It!',
   bonusDesc:'The cup is won — now the champions play France in an exhibition match, just for fun! A tackle only ends the round. Survive 20 seconds of French flair for a huge +800!'},
 
  {code:'JPN',name:'Japan',flag:'🇯🇵',tag:'Mitoma & the Samurai Blue',route:'Netherlands → Spain',
