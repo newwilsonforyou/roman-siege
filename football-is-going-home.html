@@ -163,6 +163,32 @@
     animation:fall linear forwards;}
   @keyframes fall{to{transform:translateY(680px) rotate(360deg);opacity:.9;}}
 
+  /* ============ COUNTRY SELECT ============ */
+  #countryGrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%;margin-top:2px;}
+  .ctyCard{
+    display:flex;flex-direction:column;align-items:center;gap:2px;
+    background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.02));
+    border:2px solid rgba(255,255,255,.18);border-radius:12px;
+    padding:8px 6px 9px;cursor:pointer;color:#fff;font-family:inherit;
+    transition:transform .15s, border-color .15s, box-shadow .15s;
+  }
+  .ctyCard:hover{transform:translateY(-3px);}
+  .ctyCard.picked{border-color:#ffd94d;box-shadow:0 0 14px rgba(255,217,77,.5);
+    background:linear-gradient(180deg,rgba(255,217,77,.2),rgba(255,255,255,.03));}
+  .ctyCard .cflag{font-size:30px;line-height:1;}
+  .ctyCard .cnm{font-weight:900;font-size:12px;letter-spacing:.5px;margin-top:2px;}
+  .ctyCard .ctag{font-size:9px;color:#bfe8c9;line-height:1.25;}
+  .ctyCard .crte{font-size:8px;color:#ffd94d;font-weight:700;letter-spacing:.4px;margin-top:2px;}
+  .backBtn{margin-top:10px;padding:7px 18px;font-size:11px;font-weight:800;letter-spacing:1px;
+    color:#cfe9d6;background:rgba(255,255,255,.08);border:2px solid rgba(255,255,255,.2);
+    border-radius:30px;cursor:pointer;font-family:inherit;text-transform:uppercase;}
+  .backBtn:hover{border-color:#ffd94d;color:#ffd94d;}
+  #pickedCountry{font-size:12px;color:#ffd94d;font-weight:900;letter-spacing:1px;margin-bottom:4px;}
+
+  /* leaderboard extra column */
+  table.lb td.pl{font-size:10px;color:#ffd94d;font-weight:700;letter-spacing:.3px;}
+  table.lb td:nth-child(2){text-align:left;font-size:11px;}
+
   /* touch zones highlight */
   #touchHint{position:absolute;inset:0;z-index:4;display:none;pointer-events:none;}
   #touchHint div{position:absolute;top:0;bottom:0;width:50%;background:rgba(255,255,255,.06);opacity:0;transition:opacity .1s;}
@@ -185,17 +211,29 @@
   <div id="touchHint"><div class="tl"></div><div class="tr"></div></div>
   <div id="ticker"></div>
 
-  <!-- START / CHARACTER SELECT -->
-  <div class="screen on" id="screen-start">
+  <!-- COUNTRY SELECT (first screen) -->
+  <div class="screen on" id="screen-country">
     <h1 class="title">⚽ Football Is<br>Going Home</h1>
-    <div class="subtitle">🏴󠁧󠁢󠁥󠁮󠁧󠁿 8 MATCHES · 1 TROPHY · 1 BONUS ROUND · CHOOSE YOUR STAR 🏴󠁧󠁢󠁥󠁮󠁧󠁿</div>
+    <div class="subtitle">🌍 PICK YOUR COUNTRY · 8 MATCHES · 1 TROPHY · 1 BONUS ROUND 🌍</div>
+    <div id="countryGrid"></div>
+    <button class="bigBtn" id="btnCountry" disabled>Choose Your Star ▶</button>
+    <div class="hint">Every nation plays a full 8-match run to the final, lifts the trophy and
+      plays the France bonus round — so everyone can score the same. One shared world leaderboard!</div>
+    <div class="boardWrap"><div class="boardTitle">🌍 WORLD LEADERBOARD</div><div id="mainboard"></div></div>
+  </div>
+
+  <!-- CHARACTER SELECT -->
+  <div class="screen" id="screen-start">
+    <h1 class="title">Choose<br>Your Star</h1>
+    <div id="pickedCountry">🏴󠁧󠁢󠁥󠁮󠁧󠁿 ENGLAND</div>
+    <div class="subtitle" id="startSub">8 MATCHES · 1 TROPHY · 1 BONUS ROUND</div>
     <div class="legend"><span>❤️ = <b>lives</b></span><span>▰▰▰ = <b>speed</b> (fuller = faster)</span></div>
     <div id="charGrid"></div>
     <button class="bigBtn" id="btnStart" disabled>Start Campaign</button>
-    <div class="hint">⬅️ ➡️ arrows to move · SPACE = special (Jude's dash / Rashford's shot)<br>
-      ↑↓ = Rice runs up &amp; down the pitch · 📱 touch: hold left / right, double-tap = special<br>
+    <button class="backBtn" id="btnBackCountry">◀ Change country</button>
+    <div class="hint">⬅️ ➡️ arrows to move · SPACE = special move (dash / rocket shot)<br>
+      ↑↓ = box-to-box players run up &amp; down the pitch · 📱 touch: hold left / right, double-tap = special<br>
       Dodge defenders, grab ⚽ +50 &amp; 🛡️ shields, near-misses = combo bonus!</div>
-    <div class="boardWrap"><div class="boardTitle">🌍 WORLD LEADERBOARD</div><div id="mainboard"></div></div>
   </div>
 
   <!-- MATCH PRESENTATION -->
@@ -240,7 +278,9 @@ var GAME_ID='roadtoglory';   /* unique id for this game's leaderboard */
 function currentPlayer(){try{return JSON.parse(localStorage.getItem('rna_player')||'null');}catch(e){return null;}}
 function playerName(){var p=currentPlayer();return p?p.name:null;}
 
-async function sbFetchTop(limit){limit=limit||15;try{var r=await fetch(SB_URL+'/rest/v1/scores?select=name%2Cscore&game=eq.'+GAME_ID+'&order=score.desc&limit='+limit,{headers:sbH()});if(!r.ok)return null;return await r.json();}catch(e){return null;}}
+async function sbFetchTop(limit){limit=limit||15;try{var r=await fetch(SB_URL+'/rest/v1/scores?select=name%2Cscore%2Cdetails&game=eq.'+GAME_ID+'&order=score.desc&limit='+limit,{headers:sbH()});if(r.ok)return await r.json();
+  /* older rows / missing column: fall back to the plain select */
+  var r2=await fetch(SB_URL+'/rest/v1/scores?select=name%2Cscore&game=eq.'+GAME_ID+'&order=score.desc&limit='+limit,{headers:sbH()});if(!r2.ok)return null;return await r2.json();}catch(e){return null;}}
 /* avatars live in the launcher's players table; match by name, case-insensitive */
 async function sbFetchAvatars(){try{var r=await fetch(SB_URL+'/rest/v1/players?select=name%2Cavatar&limit=1000',{headers:sbH()});if(!r.ok)return {};var rows=await r.json();var m={};rows.forEach(function(x){if(x&&x.name)m[String(x.name).trim().toLowerCase()]=x.avatar||'🎮';});return m;}catch(e){return {};}}
 function avatarFor(map,name){var k=String(name==null?'':name).trim().toLowerCase();return (map&&map[k])?map[k]:'🎮';}
@@ -248,8 +288,17 @@ async function sbInsert(name,score,details){try{var h=sbH();h['Prefer']='return=
 async function sbQualifies(score){try{var r=await fetch(SB_URL+'/rest/v1/scores?select=score&game=eq.'+GAME_ID+'&order=score.desc&limit=30',{headers:sbH()});if(!r.ok)return true;var rows=await r.json();if(!rows||rows.length<30)return true;return score>rows[rows.length-1].score;}catch(e){return true;}}
 function lbEsc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function lbLoading(){return '<div class="lb-loading"><div class="lb-spin"></div>Loading…</div>';}
-/* rows come back as {name,score}; avatars is the map from sbFetchAvatars() */
-function lbTable(rows,hiN,hiS,avatars){if(!rows||!rows.length)return '<div class="lb-msg">No champions yet — lift the trophy first!</div>';var med=['🥇','🥈','🥉'],h='<table class="lb"><thead><tr><th>RANK</th><th>PLAYER</th><th>POINTS</th></tr></thead><tbody>',mk=false;rows.forEach(function(r,i){var me=(!mk&&hiN&&r.name===hiN&&r.score===hiS);if(me)mk=true;var av=avatarFor(avatars,r.name);h+='<tr class="'+(me?'me':'')+'"><td>'+(i<3?med[i]:(i+1))+'</td><td><span class="lb-av">'+av+'</span>'+lbEsc(r.name)+'</td><td>'+r.score+'</td></tr>';});return h+'</tbody></table>';}
+/* the footballer a run was played with, read out of the saved details JSON */
+function lbPicked(r){
+  var d=r&&r.details;if(!d)return '—';
+  if(typeof d==='string'){try{d=JSON.parse(d);}catch(e){return '—';}}
+  if(!d||typeof d!=='object')return '—';
+  var who=d.character||d.player||'';
+  if(!who)return '—';
+  return (d.flag?d.flag+' ':'')+lbEsc(who);
+}
+/* rows come back as {name,score,details}; avatars is the map from sbFetchAvatars() */
+function lbTable(rows,hiN,hiS,avatars){if(!rows||!rows.length)return '<div class="lb-msg">No champions yet — lift the trophy first!</div>';var med=['🥇','🥈','🥉'],h='<table class="lb"><thead><tr><th>RANK</th><th>STUDENT</th><th>PLAYER</th><th>POINTS</th></tr></thead><tbody>',mk=false;rows.forEach(function(r,i){var me=(!mk&&hiN&&r.name===hiN&&r.score===hiS);if(me)mk=true;var av=avatarFor(avatars,r.name);h+='<tr class="'+(me?'me':'')+'"><td>'+(i<3?med[i]:(i+1))+'</td><td><span class="lb-av">'+av+'</span>'+lbEsc(r.name)+'</td><td class="pl">'+lbPicked(r)+'</td><td>'+r.score+'</td></tr>';});return h+'</tbody></table>';}
 async function loadMainBoard(){$('mainboard').innerHTML=lbLoading();var res=await Promise.all([sbFetchTop(30),sbFetchAvatars()]);$('mainboard').innerHTML=lbTable(res[0],null,null,res[1]);}
 async function loadEndBoard(n,s){$('endboard').innerHTML=lbLoading();var res=await Promise.all([sbFetchTop(30),sbFetchAvatars()]);$('endboard').innerHTML=lbTable(res[0],n,s,res[1]);}
 
@@ -299,8 +348,63 @@ function sndCheer(){
 }
 function crowdCelebrate(){sndCheer();sndClaps(2.4);}
 
-/* ================= CHARACTERS ================= */
-var CHARS=[
+/* ================= KIT LIBRARY ================= */
+/* every kit is kit(ctx,x,y,w,h) and paints the shirt rectangle only */
+function kFlat(a,b){return function(c,x,y,w,h){c.fillStyle=a;c.fillRect(x,y,w,h);if(b){c.fillStyle=b;c.fillRect(x,y,w,3);c.fillRect(x+1,y+3,3,h-5);c.fillRect(x+w-4,y+3,3,h-5);}};}
+function kBand(a,b){return function(c,x,y,w,h){c.fillStyle=a;c.fillRect(x,y,w,h);c.fillStyle=b;c.fillRect(x,y+h/2-2,w,4);};}
+function kHalf(a,b){return function(c,x,y,w,h){c.fillStyle=a;c.fillRect(x,y,w,h/2);c.fillStyle=b;c.fillRect(x,y+h/2,w,h-h/2);};}
+function kHoops(a,b){return function(c,x,y,w,h){c.fillStyle=a;c.fillRect(x,y,w,h);c.fillStyle=b;for(var i=0;i<h;i+=10)c.fillRect(x,y+i,w,5);};}
+function kCross(a,b){return function(c,x,y,w,h){c.fillStyle=a;c.fillRect(x,y,w,h);c.fillStyle=b;c.fillRect(x+w/2-2,y,4,h);c.fillRect(x,y+h/2-2,w,4);};}
+function kVert(a,b){return function(c,x,y,w,h){c.fillStyle=a;c.fillRect(x,y,w,h);c.fillStyle=b;for(var i=0;i<3;i++)c.fillRect(x+3+i*Math.floor(w/3),y,Math.floor(w/6),h);};}
+function star5(c,cx,cy,r,col){c.fillStyle=col;c.beginPath();for(var i=0;i<10;i++){var rr=i%2?r*0.45:r,a=-Math.PI/2+i*Math.PI/5;c[i?'lineTo':'moveTo'](cx+Math.cos(a)*rr,cy+Math.sin(a)*rr);}c.closePath();c.fill();}
+
+function englandKit(c,x,y,w,h){
+  c.fillStyle='#fff';c.fillRect(x,y,w,h);
+  c.fillStyle='#d31f2b';
+  c.fillRect(x+w/2-2,y,4,h);            /* vertical of St George's Cross */
+  c.fillRect(x,y+h/2-2,w,4);            /* horizontal */
+  c.strokeStyle='#c9c9c9';c.lineWidth=1;c.strokeRect(x+0.5,y+0.5,w-1,h-1);
+}
+
+var KITS={
+  /* ---- opponents already in the game ---- */
+  CRO:function(c,x,y,w,h){c.fillStyle='#fff';c.fillRect(x,y,w,h);c.fillStyle='#e03a3e';var s=6;for(var r=0;r<Math.ceil(h/s);r++)for(var q=0;q<Math.ceil(w/s);q++)if((r+q)%2===0)c.fillRect(x+q*s,y+r*s,Math.min(s,w-q*s),Math.min(s,h-r*s));},
+  GHA:function(c,x,y,w,h){c.fillStyle='#fff';c.fillRect(x,y,w,h);c.fillStyle='#ce1126';c.fillRect(x,y,w,4);c.fillStyle='#fcd116';c.fillRect(x,y+4,w,3);c.fillStyle='#006b3f';c.fillRect(x,y+h-4,w,4);star5(c,x+w/2,y+h/2,5,'#000');},
+  PAN:function(c,x,y,w,h){c.fillStyle='#d21034';c.fillRect(x,y,w,h);c.fillStyle='#fff';c.fillRect(x,y,w,4);c.fillStyle='#005293';c.fillRect(x,y+h-5,w,4);c.fillStyle='#fff';c.beginPath();c.arc(x+w/2,y+h/2,3,0,Math.PI*2);c.fill();},
+  COD:function(c,x,y,w,h){c.fillStyle='#007fff';c.fillRect(x,y,w,h);c.fillStyle='#f7d618';c.save();c.beginPath();c.rect(x,y,w,h);c.clip();c.translate(x,y);c.rotate(-0.5);c.fillRect(-6,h/2,w*2,5);c.restore();c.fillStyle='#ce1021';c.fillRect(x,y,w,3);},
+  MEX:function(c,x,y,w,h){c.fillStyle='#006847';c.fillRect(x,y,w,h);c.fillStyle='#fff';c.fillRect(x,y+2,3,h-4);c.fillRect(x+w-3,y+2,3,h-4);c.fillStyle='#ce1126';c.fillRect(x,y+h/2-2,w,3);},
+  NOR:function(c,x,y,w,h){c.fillStyle='#d31f2b';c.fillRect(x,y,w,h);c.fillStyle='#0b2c6b';c.fillRect(x,y,w,4);c.fillRect(x,y+h-5,w,4);c.fillRect(x+w/2-2,y,4,h);},
+  ARG:kVert('#fff','#6fb6e8'),
+  ESP:function(c,x,y,w,h){c.fillStyle='#c60b1e';c.fillRect(x,y,w,h);c.fillStyle='#ffc400';c.fillRect(x,y+h/2-2,w,4);c.fillRect(x+2,y+2,3,h-4);c.fillRect(x+w-5,y+2,3,h-4);},
+  FRA:function(c,x,y,w,h){c.fillStyle='#0055a4';c.fillRect(x,y,w,h);c.fillStyle='#fff';c.fillRect(x,y+h/2-2,w,4);c.fillStyle='#ef4135';c.fillRect(x+2,y+2,3,h-4);c.fillRect(x+w-5,y+2,3,h-4);},
+  ENG:englandKit,
+  /* ---- new opponents ---- */
+  ALG:kFlat('#ffffff','#007a3d'),
+  AUT:kBand('#e4002b','#ffffff'),
+  JOR:kFlat('#ffffff','#ce1126'),
+  CPV:kFlat('#003893','#ffffff'),
+  EGY:kFlat('#c8102e','#ffffff'),
+  SUI:kCross('#d52b1e','#ffffff'),
+  KSA:kFlat('#ffffff','#006c35'),
+  URU:kFlat('#5aa9e6','#0b1d3a'),
+  POR:kFlat('#a3132e','#046a38'),
+  BEL:kFlat('#e30613','#111111'),
+  BRA:kFlat('#ffdf00','#009739'),
+  SCO:kFlat('#0b3d91','#ffffff'),
+  HAI:kHalf('#00209f','#d21034'),
+  NED:kFlat('#f36c21','#ffffff'),
+  CAN:kBand('#d80621','#ffffff'),
+  MAR:function(c,x,y,w,h){c.fillStyle='#c1272d';c.fillRect(x,y,w,h);star5(c,x+w/2,y+h/2,6,'#006233');},
+  JPN:kFlat('#12326e','#ffffff'),
+  TUN:kFlat('#ffffff','#e70013'),
+  SWE:kFlat('#fecb00','#005293')
+};
+
+/* ================= SQUADS ================= */
+/* ability flags: dash · startShield · aura · regen · momentum · tackle · freeze
+   magnet · vertical · shoot · supersub · wrap · shock  (all handled in update()) */
+var SQUADS={
+ENG:[
  {id:'bellingham',name:'JUDE BELLINGHAM',short:'JUDE',ability:'Midfield Dash',
   desc:'Press SPACE (or double-tap) to teleport-dash out of danger. 4s cooldown bar.',
   lives:2,speed:6,dash:true,w:34,h:44},
@@ -343,43 +447,270 @@ var CHARS=[
  {id:'burn',name:'DAN BURN',short:'BURN',ability:'Man Mountain',
   desc:'A 6ft 7in giant! Bigger body and slower, but 3 lives — and when he IS tackled, the shockwave knocks every nearby defender flying (+5 each).',
   lives:3,speed:4.5,shock:true,w:42,h:54}
+],
+ARG:[
+ {id:'messi',name:'LIONEL MESSI',short:'MESSI',ability:'Impossible Dribble',
+  desc:'Press SPACE (or double-tap) to glide past everyone in a blink. 4s cooldown bar.',
+  lives:2,speed:6.5,dash:true,w:32,h:42},
+ {id:'alvarez',name:'JULIÁN ÁLVAREZ',short:'ÁLVAREZ',ability:'Rocket Shot',
+  desc:'Press SPACE (or double-tap) to fire a shot that blasts a defender out of the way! 3s cooldown.',
+  lives:2,speed:6.5,shoot:true,w:34,h:44},
+ {id:'dibu',name:'EMILIANO MARTÍNEZ',short:'DIBU',ability:'Dibu\'s Gloves',
+  desc:'The penalty king! Grows a brand-new shield every 10 seconds — but he is the slowest of the squad.',
+  lives:2,speed:4,regen:true,w:34,h:44},
+ {id:'enzo',name:'ENZO FERNÁNDEZ',short:'ENZO',ability:'Box-to-Box',
+  desc:'Can also run UP and DOWN the pitch! Use ↑↓ keys or slide your finger.',
+  lives:2,speed:6,vertical:true,w:34,h:44},
+ {id:'romero',name:'CRISTIAN ROMERO',short:'CUTI',ability:'Perfect Tackle',
+  desc:'Every 8 seconds he wins the ball off the nearest defender and clears them away (+15 pts).',
+  lives:2,speed:5.5,tackle:true,w:34,h:44},
+ {id:'lautaro',name:'LAUTARO MARTÍNEZ',short:'LAUTARO',ability:'Super Sub',
+  desc:'El Toro scores late! In the last 5 seconds of every match he turns golden — defenders bounce off him for +10 each.',
+  lives:2,speed:6.5,supersub:true,w:34,h:44}
+],
+ESP:[
+ {id:'yamal',name:'LAMINE YAMAL',short:'YAMAL',ability:'Lightning Step',
+  desc:'Blistering speed (8.5) and a smaller body — squeeze through gaps nobody else can!',
+  lives:2,speed:8.5,w:28,h:38},
+ {id:'pedri',name:'PEDRI',short:'PEDRI',ability:'Slow It Down',
+  desc:'Every 12 seconds he takes total control and freezes ALL defenders for 1.5s. ❄️',
+  lives:2,speed:5,freeze:true,w:32,h:42},
+ {id:'nico',name:'NICO WILLIAMS',short:'NICO',ability:'Momentum',
+  desc:'Every near-miss fires a 2-second TURBO boost (+2.5 speed). Chain your dodges and fly down the wing!',
+  lives:2,speed:7,momentum:true,w:34,h:44},
+ {id:'rodri',name:'RODRI',short:'RODRI',ability:'Perfect Tackle',
+  desc:'The best holding midfielder around — every 8 seconds he cleans out the nearest defender (+15 pts).',
+  lives:2,speed:5.5,tackle:true,w:34,h:44},
+ {id:'simon',name:'UNAI SIMÓN',short:'SIMÓN',ability:'Safe Hands',
+  desc:'Grows a fresh blue shield every 10 seconds. Slow, but almost impossible to beat.',
+  lives:2,speed:4,regen:true,w:34,h:44},
+ {id:'oyarzabal',name:'MIKEL OYARZABAL',short:'OYAR',ability:'Super Sub',
+  desc:'Famous for late winners! In the last 5 seconds of every match he turns golden — defenders bounce off for +10 each.',
+  lives:2,speed:6.5,supersub:true,w:34,h:44}
+],
+MAR:[
+ {id:'hakimi',name:'ACHRAF HAKIMI',short:'HAKIMI',ability:'Wing Wizard',
+  desc:'Owns the flanks! Run off one side of the pitch and he sprints round to appear on the other side.',
+  lives:2,speed:7,wrap:true,w:34,h:44},
+ {id:'brahim',name:'BRAHIM DÍAZ',short:'BRAHIM',ability:'Silk Dash',
+  desc:'Press SPACE (or double-tap) to dance straight through the danger. 4s cooldown bar.',
+  lives:2,speed:6.5,dash:true,w:32,h:42},
+ {id:'bounou',name:'YASSINE BOUNOU',short:'BONO',ability:'Penalty King',
+  desc:'The shot-stopper who beat Spain on penalties — grows a new shield every 10 seconds.',
+  lives:2,speed:4,regen:true,w:34,h:44},
+ {id:'amrabat',name:'SOFYAN AMRABAT',short:'AMRABAT',ability:'Perfect Tackle',
+  desc:'Every 8 seconds he steams in and wins the ball off the nearest defender (+15 pts).',
+  lives:2,speed:5.5,tackle:true,w:34,h:44},
+ {id:'ennesyri',name:'YOUSSEF EN-NESYRI',short:'NESYRI',ability:'Tower Header',
+  desc:'A huge target man! Bigger and slower, but 3 lives — and when he IS tackled the shockwave knocks every nearby defender flying (+5 each).',
+  lives:3,speed:5,shock:true,w:40,h:52},
+ {id:'ounahi',name:'AZZEDINE OUNAHI',short:'OUNAHI',ability:'Box-to-Box',
+  desc:'Runs all day! He can also move UP and DOWN the pitch with ↑↓ or a finger slide.',
+  lives:2,speed:6,vertical:true,w:34,h:44}
+],
+BRA:[
+ {id:'vinicius',name:'VINÍCIUS JR',short:'VINI',ability:'Lightning Step',
+  desc:'Electric pace (8.5) and a smaller body — nobody catches Vini in a straight line!',
+  lives:2,speed:8.5,w:28,h:38},
+ {id:'rodrygo',name:'RODRYGO',short:'RODRYGO',ability:'Samba Dash',
+  desc:'Press SPACE (or double-tap) to skip past the tackle in a flash. 4s cooldown bar.',
+  lives:2,speed:6.5,dash:true,w:32,h:42},
+ {id:'alisson',name:'ALISSON',short:'ALISSON',ability:'Safe Hands',
+  desc:'Grows a brand-new blue shield every 10 seconds. The safest hands in the world.',
+  lives:2,speed:4,regen:true,w:34,h:44},
+ {id:'marquinhos',name:'MARQUINHOS',short:'MARQUI',ability:"Captain's Shield",
+  desc:'The captain starts the campaign with 3 lives and one shield bubble already up.',
+  lives:3,speed:5,startShield:true,w:34,h:44},
+ {id:'raphinha',name:'RAPHINHA',short:'RAPHA',ability:'Rocket Shot',
+  desc:'Press SPACE (or double-tap) to blast a ball that knocks a defender out! 3s cooldown.',
+  lives:2,speed:6.5,shoot:true,w:34,h:44},
+ {id:'endrick',name:'ENDRICK',short:'ENDRICK',ability:'Super Sub',
+  desc:'The young star always pops up late! In the last 5 seconds of every match he turns golden — defenders bounce off for +10 each.',
+  lives:2,speed:6.5,supersub:true,w:34,h:44}
+],
+JPN:[
+ {id:'mitoma',name:'KAORU MITOMA',short:'MITOMA',ability:'Ghost Dash',
+  desc:'Press SPACE (or double-tap) to vanish past the defender. 4s cooldown bar.',
+  lives:2,speed:6.5,dash:true,w:32,h:42},
+ {id:'kubo',name:'TAKEFUSA KUBO',short:'KUBO',ability:'Magnet Boots',
+  desc:'Golden footballs ⚽ and shield crests 🛡️ are pulled towards him from far away.',
+  lives:2,speed:6,magnet:true,w:32,h:42},
+ {id:'endo',name:'WATARU ENDO',short:'ENDO',ability:'Perfect Tackle',
+  desc:'The captain in midfield — every 8 seconds he wins the ball off the nearest defender (+15 pts).',
+  lives:2,speed:5.5,tackle:true,w:34,h:44},
+ {id:'suzuki',name:'ZION SUZUKI',short:'SUZUKI',ability:'Safe Hands',
+  desc:'Grows a fresh blue shield every 10 seconds. Slow feet, brilliant hands.',
+  lives:2,speed:4,regen:true,w:34,h:44},
+ {id:'maeda',name:'DAIZEN MAEDA',short:'MAEDA',ability:'Momentum',
+  desc:'Never stops running! Every near-miss fires a 2-second TURBO boost (+2.5 speed).',
+  lives:2,speed:7,momentum:true,w:34,h:44},
+ {id:'ueda',name:'AYASE UEDA',short:'UEDA',ability:'Super Sub',
+  desc:'A late-goal specialist! In the last 5 seconds of every match he turns golden — defenders bounce off for +10 each.',
+  lives:2,speed:6.5,supersub:true,w:34,h:44}
+]
+};
+
+/* ================= THE LADDER =================
+   Identical difficulty curve for every country, so the shared leaderboard is fair:
+   8 matches → trophy catch → France bonus round. */
+var TIER=[
+ {label:'GROUP MATCH 1',dur:18,speed:3,spawn:1100,pack:1,bonus:100},
+ {label:'GROUP MATCH 2',dur:20,speed:3.5,spawn:1000,pack:1,bonus:120},
+ {label:'GROUP MATCH 3',dur:22,speed:4,spawn:950,pack:1,bonus:150},
+ {label:'ROUND OF 32',dur:25,speed:4.5,spawn:900,pack:2,bonus:180},
+ {label:'ROUND OF 16',dur:28,speed:5,spawn:850,pack:2,bonus:220},
+ {label:'QUARTER-FINAL',dur:30,speed:5.5,spawn:800,pack:2,bonus:250},
+ {label:'SEMI-FINAL',dur:35,speed:6,spawn:750,pack:3,bonus:300},
+ {label:'THE GRAND FINAL',dur:40,speed:7,spawn:650,pack:4,bonus:500}
 ];
 
-/* ================= STAGES ================= */
-var STAGES=[
- {flag:'🇭🇷',code:'CRO',label:'GROUP MATCH 1',title:'England vs Croatia',dur:18,speed:3,spawn:1100,pack:1,bonus:100,
-  desc:'England smashed Croatia 4-2 in the real group stage! Dodge the checkerboard kings to get the campaign going.',
-  kit:function(c,x,y,w,h){c.fillStyle='#fff';c.fillRect(x,y,w,h);c.fillStyle='#e03a3e';var s=6;for(var r=0;r<Math.ceil(h/s);r++)for(var q=0;q<Math.ceil(w/s);q++)if((r+q)%2===0)c.fillRect(x+q*s,y+r*s,Math.min(s,w-q*s),Math.min(s,h-r*s));}},
- {flag:'🇬🇭',code:'GHA',label:'GROUP MATCH 2',title:'England vs Ghana',dur:20,speed:3.5,spawn:1000,pack:1,bonus:120,
-  desc:'It finished 0-0 against Ghana in real life — this time, dance around the Black Stars and win it!',
-  kit:function(c,x,y,w,h){c.fillStyle='#fff';c.fillRect(x,y,w,h);c.fillStyle='#ce1126';c.fillRect(x,y,w,4);c.fillStyle='#fcd116';c.fillRect(x,y+4,w,3);c.fillStyle='#006b3f';c.fillRect(x,y+h-4,w,4);c.fillStyle='#000';c.beginPath();var cx=x+w/2,cy=y+h/2;c.moveTo(cx,cy-5);c.lineTo(cx+2,cy-1);c.lineTo(cx+5,cy-1);c.lineTo(cx+2,cy+2);c.lineTo(cx+3,cy+5);c.lineTo(cx,cy+3);c.lineTo(cx-3,cy+5);c.lineTo(cx-2,cy+2);c.lineTo(cx-5,cy-1);c.lineTo(cx-2,cy-1);c.closePath();c.fill();}},
- {flag:'🇵🇦',code:'PAN',label:'GROUP MATCH 3',title:'England vs Panama',dur:22,speed:4,spawn:950,pack:1,bonus:150,
-  desc:'England beat Panama 2-0 for real! Skip past the red wall to finish top of Group L.',
-  kit:function(c,x,y,w,h){c.fillStyle='#d21034';c.fillRect(x,y,w,h);c.fillStyle='#fff';c.fillRect(x,y,w,4);c.fillStyle='#005293';c.fillRect(x,y+h-5,w,4);c.fillStyle='#fff';c.beginPath();c.arc(x+w/2,y+h/2,3,0,Math.PI*2);c.fill();}},
- {flag:'🇨🇩',code:'COD',label:'ROUND OF 32',title:'England vs DR Congo',dur:25,speed:4.5,spawn:900,pack:2,bonus:180,
-  desc:'England edged DR Congo 2-1 in the real Round of 32 — the Leopards pounce fast, stay sharp!',
-  kit:function(c,x,y,w,h){c.fillStyle='#007fff';c.fillRect(x,y,w,h);c.fillStyle='#f7d618';c.save();c.beginPath();c.rect(x,y,w,h);c.clip();c.translate(x,y);c.rotate(-0.5);c.fillRect(-6,h/2,w*2,5);c.restore();c.fillStyle='#ce1021';c.fillRect(x,y,w,3);}},
- {flag:'🇲🇽',code:'MEX',label:'ROUND OF 16',title:'England vs Mexico',dur:28,speed:5,spawn:850,pack:2,bonus:220,
-  desc:'A real 3-2 thriller against Mexico! Dodge El Tri\'s high press to reach the Quarters.',
-  kit:function(c,x,y,w,h){c.fillStyle='#006847';c.fillRect(x,y,w,h);c.fillStyle='#fff';c.fillRect(x,y+2,3,h-4);c.fillRect(x+w-3,y+2,3,h-4);c.fillStyle='#ce1126';c.fillRect(x,y+h/2-2,w,3);}},
- {flag:'🇳🇴',code:'NOR',label:'QUARTER-FINAL',title:'England vs Norway',dur:30,speed:5.5,spawn:800,pack:2,bonus:250,
-  desc:'England beat Norway 2-1 after extra time in real life! Avoid their solid defense to reach the Semis.',
-  kit:function(c,x,y,w,h){c.fillStyle='#d31f2b';c.fillRect(x,y,w,h);c.fillStyle='#0b2c6b';c.fillRect(x,y,w,4);c.fillRect(x,y+h-5,w,4);c.fillRect(x+w/2-2,y,4,h);}},
- {flag:'🇦🇷',code:'ARG',label:'SEMI-FINAL',title:'England vs Argentina',dur:35,speed:6,spawn:750,pack:3,bonus:300,
-  desc:'Argentina knocked England out for real — time to rewrite the history books and dodge the Albiceleste!',
-  kit:function(c,x,y,w,h){c.fillStyle='#fff';c.fillRect(x,y,w,h);c.fillStyle='#6fb6e8';for(var i=0;i<3;i++)c.fillRect(x+3+i*Math.floor(w/3),y,Math.floor(w/6),h);}},
- {flag:'🇪🇸',code:'ESP',label:'THE GRAND FINAL',title:'England vs Spain',dur:40,speed:7,spawn:650,pack:4,bonus:500,
-  desc:'The ultimate test against La Roja! Survive their elite defensive press to win the cup!',
-  kit:function(c,x,y,w,h){c.fillStyle='#c60b1e';c.fillRect(x,y,w,h);c.fillStyle='#ffc400';c.fillRect(x,y+h/2-2,w,4);c.fillRect(x+2,y+2,3,h-4);c.fillRect(x+w-5,y+2,3,h-4);}},
- {flag:'🏆',code:'WIN',label:'CHAMPIONS!',title:"Winner's Celebration",dur:0,speed:0,spawn:0,bonus:1000,
-  desc:'The whistle has gone — ENGLAND ARE CHAMPIONS! Move under the golden trophy and catch it to lift the World Cup!'},
- {flag:'🇫🇷',code:'FRA',label:'⭐ BONUS ROUND ⭐',title:'England vs France',dur:20,speed:7.5,spawn:500,pack:3,bonus:800,bonusRound:true,
-  desc:'In real life England play France in the third-place play-off — but here the champions play it just for fun! A tackle only ends the round. Survive 20 seconds of French flair for a huge +800!',
-  kit:function(c,x,y,w,h){c.fillStyle='#0055a4';c.fillRect(x,y,w,h);c.fillStyle='#fff';c.fillRect(x,y+h/2-2,w,4);c.fillStyle='#ef4135';c.fillRect(x+2,y+2,3,h-4);c.fillRect(x+w-5,y+2,3,h-4);}}
+/* fixtures: {code, flag, name, desc, line}  — 8 per country */
+var ROUTES={
+ENG:[
+ {code:'CRO',flag:'🇭🇷',name:'Croatia',desc:'England smashed Croatia 4-2 in the real group stage! Dodge the checkerboard kings to get the campaign going.',line:'And we are underway — a 4-2 classic to repeat!'},
+ {code:'GHA',flag:'🇬🇭',name:'Ghana',desc:'It finished 0-0 against Ghana in real life — this time, dance around the Black Stars and win it!',line:'The Black Stars line up — can England do better than 0-0?'},
+ {code:'PAN',flag:'🇵🇦',name:'Panama',desc:'England beat Panama 2-0 for real! Skip past the red wall to finish top of Group L.',line:'Win this and England top Group L!'},
+ {code:'COD',flag:'🇨🇩',name:'DR Congo',desc:'England edged DR Congo 2-1 in the real Round of 32 — the Leopards pounce fast, stay sharp!',line:'Knockout football begins — no second chances!'},
+ {code:'MEX',flag:'🇲🇽',name:'Mexico',desc:'A real 3-2 thriller against Mexico! Dodge El Tri\'s high press to reach the Quarters.',line:'Remember that 3-2 thriller? Here we go again!'},
+ {code:'NOR',flag:'🇳🇴',name:'Norway',desc:'England beat Norway 2-1 after extra time in real life! Avoid their solid defense to reach the Semis.',line:'A quarter-final under the lights — extra time last time!'},
+ {code:'ARG',flag:'🇦🇷',name:'Argentina',desc:'Argentina knocked England out for real — time to rewrite the history books and dodge the Albiceleste!',line:'The revenge match. Rewrite history!'},
+ {code:'ESP',flag:'🇪🇸',name:'Spain',desc:'The ultimate test against La Roja! Survive their elite defensive press to win the cup!',line:'The Grand Final. Everything on the line!'}
+],
+ARG:[
+ {code:'ALG',flag:'🇩🇿',name:'Algeria',desc:'Argentina won this one 3-0 in the real group stage. A perfect start — now do it again!',line:'Here we go — 3-0 in real life, let\'s repeat it!'},
+ {code:'AUT',flag:'🇦🇹',name:'Austria',desc:'A real 2-0 win over Austria. They defend in a tight block, so pick your gaps carefully.',line:'Austria sit deep — find the space!'},
+ {code:'JOR',flag:'🇯🇴',name:'Jordan',desc:'Argentina beat Jordan 3-1 for real to finish top of the group. Dance past the white shirts!',line:'Win this and Argentina top the group!'},
+ {code:'CPV',flag:'🇨🇻',name:'Cape Verde',desc:'The real Round of 32 went to extra time — Argentina survived 3-2 against the Blue Sharks. Nervy!',line:'Extra time last time — no slip-ups now!'},
+ {code:'EGY',flag:'🇪🇬',name:'Egypt',desc:'A real 3-2 rollercoaster against the Pharaohs in the Round of 16. They counter-attack in packs!',line:'The Pharaohs counter fast — stay alert!'},
+ {code:'SUI',flag:'🇨🇭',name:'Switzerland',desc:'Argentina won the real quarter-final 3-1. Swiss defending is famously organised — be patient.',line:'A quarter-final against the best-drilled defence around!'},
+ {code:'ENG',flag:'🏴󠁧󠁢󠁥󠁮󠁧󠁿',name:'England',desc:'The real semi-final! Argentina beat England 2-1 to reach the final. The Three Lions will not go quietly.',line:'The semi-final. England stand in the way!'},
+ {code:'ESP',flag:'🇪🇸',name:'Spain',desc:'The real final ended 1-0 to Spain — this is your chance to flip it. Survive La Roja\'s press and lift the cup!',line:'The Grand Final. Rewrite the ending!'}
+],
+ESP:[
+ {code:'CPV',flag:'🇨🇻',name:'Cape Verde',desc:'A frustrating 0-0 in the real group opener — Cape Verde defended brilliantly. Break them down this time!',line:'0-0 last time — go and win it!'},
+ {code:'KSA',flag:'🇸🇦',name:'Saudi Arabia',desc:'Spain ran riot for real, winning 4-0. Keep the ball moving and enjoy yourself.',line:'4-0 in real life — the tiki-taka is flowing!'},
+ {code:'URU',flag:'🇺🇾',name:'Uruguay',desc:'A hard-fought real 1-0 win over Uruguay. La Celeste tackle hard — don\'t get caught dawdling.',line:'Uruguay tackle hard — keep your feet moving!'},
+ {code:'AUT',flag:'🇦🇹',name:'Austria',desc:'Spain cruised past Austria 3-0 in the real Round of 32. Two defenders can drop at once now!',line:'Knockout football — the pressure is on!'},
+ {code:'POR',flag:'🇵🇹',name:'Portugal',desc:'The Iberian derby! Spain won the real Round of 16 by a single goal, 1-0. Nothing between them.',line:'The Iberian derby — this one always goes to the wire!'},
+ {code:'BEL',flag:'🇧🇪',name:'Belgium',desc:'A real 2-1 quarter-final win over the Red Devils. They break at lightning speed.',line:'Belgium counter like lightning — be ready!'},
+ {code:'FRA',flag:'🇫🇷',name:'France',desc:'The real semi-final against France — Les Bleus are packed with pace. Survive them to reach the final again.',line:'The semi-final. Les Bleus await!'},
+ {code:'ARG',flag:'🇦🇷',name:'Argentina',desc:'The real final — and Spain actually WON it 1-0! Do it all over again against the Albiceleste.',line:'The Grand Final. Spain won this for real — do it again!'}
+],
+MAR:[
+ {code:'BRA',flag:'🇧🇷',name:'Brazil',desc:'A brilliant 1-1 draw with Brazil in the real group stage! The Atlas Lions can live with anyone.',line:'Holding Brazil 1-1 — what a start!'},
+ {code:'SCO',flag:'🏴󠁧󠁢󠁳󠁣󠁴󠁿',name:'Scotland',desc:'Morocco won this one 1-0 for real. The Tartan Army are noisy and Scotland defend in numbers.',line:'A 1-0 win last time — grind it out again!'},
+ {code:'HAI',flag:'🇭🇹',name:'Haiti',desc:'A real 4-2 goal-fest against Haiti sent Morocco through. End-to-end stuff!',line:'4-2 last time — goals everywhere!'},
+ {code:'NED',flag:'🇳🇱',name:'Netherlands',desc:'The real Round of 32 went all the way to penalties — and Morocco held their nerve to win the shoot-out!',line:'Penalties last time! Keep those nerves steady.'},
+ {code:'CAN',flag:'🇨🇦',name:'Canada',desc:'A real Round of 16 tie against the co-hosts, roared on by a huge crowd. Two defenders drop at once now.',line:'The co-hosts, and a stadium full of noise!'},
+ {code:'FRA',flag:'🇫🇷',name:'France',desc:'This is where the real run ended — France knocked Morocco out in the quarter-final. Beat them here and the story keeps going!',line:'This is where it ended for real. Change it!'},
+ {code:'ARG',flag:'🇦🇷',name:'Argentina',desc:'Beyond the real quarter-final, Morocco take over England\'s ladder — and that means the Albiceleste in the semi. Dream territory!',line:'Uncharted territory — a World Cup semi-final!'},
+ {code:'ESP',flag:'🇪🇸',name:'Spain',desc:'The Grand Final against La Roja, the fixture England were handed. Survive their elite press and make history!',line:'The Grand Final. Make history!'}
+],
+BRA:[
+ {code:'MAR',flag:'🇲🇦',name:'Morocco',desc:'A real 1-1 draw with a superb Morocco side in the group opener. The Atlas Lions defend brilliantly.',line:'1-1 last time — Morocco are no pushovers!'},
+ {code:'HAI',flag:'🇭🇹',name:'Haiti',desc:'Brazil won 3-0 for real. Time for some samba football — enjoy the space while you have it!',line:'3-0 in real life — let the samba begin!'},
+ {code:'SCO',flag:'🏴󠁧󠁢󠁳󠁣󠁴󠁿',name:'Scotland',desc:'Another real 3-0 win, this time over Scotland, to finish top of the group.',line:'Win this and Brazil top the group!'},
+ {code:'JPN',flag:'🇯🇵',name:'Japan',desc:'A tight real Round of 32 — Brazil edged Japan 2-1. The Samurai Blue press in waves.',line:'Japan press in waves — 2-1 last time!'},
+ {code:'NOR',flag:'🇳🇴',name:'Norway',desc:'This is where the real run ended — Norway knocked Brazil out in the Round of 16. Win it this time!',line:'This is where it ended for real. Change it!'},
+ {code:'MEX',flag:'🇲🇽',name:'Mexico',desc:'Past the real exit, Brazil pick up England\'s ladder. El Tri\'s high press guards the semi-finals.',line:'Borrowed fixture, real pressure — El Tri await!'},
+ {code:'ARG',flag:'🇦🇷',name:'Argentina',desc:'The Superclásico in a World Cup semi-final. There is no bigger game in football.',line:'The Superclásico — a semi-final for the ages!'},
+ {code:'ESP',flag:'🇪🇸',name:'Spain',desc:'The Grand Final against La Roja. Survive their elite defensive press and win a sixth star!',line:'The Grand Final. Go and win the sixth star!'}
+],
+JPN:[
+ {code:'NED',flag:'🇳🇱',name:'Netherlands',desc:'A superb real 2-2 draw with the Netherlands to open the group. Japan never stop running.',line:'2-2 with the Dutch — what an opener!'},
+ {code:'TUN',flag:'🇹🇳',name:'Tunisia',desc:'Japan were brilliant here, winning 4-0 for real. Quick passing, quick feet!',line:'4-0 in real life — the passing is flowing!'},
+ {code:'SWE',flag:'🇸🇪',name:'Sweden',desc:'A real 1-1 draw with Sweden was enough to go through. The Swedes are tall and well organised.',line:'A draw takes Japan through — stay calm!'},
+ {code:'BRA',flag:'🇧🇷',name:'Brazil',desc:'This is where the real run ended — Brazil won the Round of 32 2-1. Beat them here and keep the dream alive!',line:'This is where it ended for real. Change it!'},
+ {code:'MEX',flag:'🇲🇽',name:'Mexico',desc:'Past the real exit, Japan take over England\'s ladder — starting with El Tri and their high press.',line:'Borrowed fixture, real pressure — El Tri await!'},
+ {code:'NOR',flag:'🇳🇴',name:'Norway',desc:'A quarter-final against Norway, the tie England needed extra time to win. Solid, physical defending.',line:'A quarter-final under the lights!'},
+ {code:'ARG',flag:'🇦🇷',name:'Argentina',desc:'A World Cup semi-final against the Albiceleste — the biggest night in Japanese football history.',line:'A semi-final! The whole country is watching!'},
+ {code:'ESP',flag:'🇪🇸',name:'Spain',desc:'The Grand Final against La Roja. Survive their elite press and take the trophy back to Tokyo!',line:'The Grand Final. Everything on the line!'}
+]
+};
+
+/* build the 10-stage campaign (8 matches + trophy + France bonus) for a country */
+function mkStages(cty){
+  var st=ROUTES[cty.code].map(function(f,i){
+    var t=TIER[i];
+    return {flag:f.flag,code:f.code,label:t.label,title:cty.name+' vs '+f.name,
+      dur:t.dur,speed:t.speed,spawn:t.spawn,pack:t.pack,bonus:t.bonus,
+      desc:f.desc,line:f.line,kit:KITS[f.code]};
+  });
+  st.push({flag:'🏆',code:'WIN',label:'CHAMPIONS!',title:"Winner's Celebration",dur:0,speed:0,spawn:0,bonus:1000,
+    desc:'The whistle has gone — '+cty.name.toUpperCase()+' ARE CHAMPIONS! Move under the golden trophy and catch it to lift the World Cup!'});
+  st.push({flag:'🇫🇷',code:'FRA',label:'⭐ BONUS ROUND ⭐',title:cty.name+' vs France',dur:20,speed:7.5,spawn:500,pack:3,bonus:800,bonusRound:true,
+    desc:cty.bonusDesc,kit:KITS.FRA});
+  return st;
+}
+
+/* ================= COUNTRIES ================= */
+var COUNTRIES=[
+ {code:'ENG',name:'England',flag:'🏴󠁧󠁢󠁥󠁮󠁧󠁿',tag:'14 stars to choose from',route:'Croatia → Spain',
+  kit:englandKit,
+  crowd:['#ffffff','#d31f2b','#ffd94d','#e8e8e8','#c8102e','#f4f4f4'],
+  fanFlag:function(c,x,y){c.fillStyle='#fff';c.fillRect(x,y,7,5);c.fillStyle='#d31f2b';c.fillRect(x+2.7,y,1.6,5);c.fillRect(x,y+1.7,7,1.6);},
+  champLine:'FOOTBALL IS GOING HOME! ENGLAND ARE WORLD CHAMPIONS!!!',
+  winTitle:'Football Is Going Home!',
+  bonusDesc:'In real life England play France in the third-place play-off — but here the champions play it just for fun! A tackle only ends the round. Survive 20 seconds of French flair for a huge +800!'},
+
+ {code:'ARG',name:'Argentina',flag:'🇦🇷',tag:'Messi, Dibu & co',route:'Algeria → Spain',
+  kit:KITS.ARG,
+  crowd:['#6fb6e8','#ffffff','#ffd94d','#bfe3f7','#ffffff','#8ecdf0'],
+  fanFlag:function(c,x,y){c.fillStyle='#6fb6e8';c.fillRect(x,y,7,5);c.fillStyle='#fff';c.fillRect(x,y+1.7,7,1.6);c.fillStyle='#f6b40e';c.fillRect(x+3,y+2.2,1,1);},
+  champLine:'VAMOS ARGENTINA! THE ALBICELESTE ARE WORLD CHAMPIONS!!!',
+  winTitle:'Vamos Argentina!',
+  bonusDesc:'The cup is won — now the champions play France in an exhibition match, just for fun! A tackle only ends the round. Survive 20 seconds of French flair for a huge +800!'},
+
+ {code:'ESP',name:'Spain',flag:'🇪🇸',tag:'Yamal, Pedri & co',route:'Cape Verde → Argentina',
+  kit:KITS.ESP,
+  crowd:['#c60b1e','#ffc400','#ffffff','#e63946','#ffd94d','#f4f4f4'],
+  fanFlag:function(c,x,y){c.fillStyle='#c60b1e';c.fillRect(x,y,7,5);c.fillStyle='#ffc400';c.fillRect(x,y+1.6,7,1.8);},
+  champLine:'¡CAMPEONES! SPAIN ARE WORLD CHAMPIONS!!!',
+  winTitle:'¡Campeones! Spain Win It!',
+  bonusDesc:'The cup is won — and France want a rematch after that semi-final! Pure exhibition fun: a tackle only ends the round. Survive 20 seconds for a huge +800!'},
+
+ {code:'MAR',name:'Morocco',flag:'🇲🇦',tag:'Hakimi & the Atlas Lions',route:'Brazil → Spain',
+  kit:KITS.MAR,
+  crowd:['#c1272d','#006233','#ffffff','#e03a3e','#0f8a4d','#f4f4f4'],
+  fanFlag:function(c,x,y){c.fillStyle='#c1272d';c.fillRect(x,y,7,5);c.fillStyle='#006233';c.fillRect(x+3,y+2,1.6,1.6);},
+  champLine:'THE ATLAS LIONS ROAR — MOROCCO ARE WORLD CHAMPIONS!!!',
+  winTitle:'The Atlas Lions Win It!',
+  bonusDesc:'The cup is won — and France want a rematch after that quarter-final! Pure exhibition fun: a tackle only ends the round. Survive 20 seconds for a huge +800!'},
+
+ {code:'BRA',name:'Brazil',flag:'🇧🇷',tag:'Vinícius, Rodrygo & co',route:'Morocco → Spain',
+  kit:KITS.BRA,
+  crowd:['#ffdf00','#009739','#ffffff','#ffe94d','#0aa14a','#f4f4f4'],
+  fanFlag:function(c,x,y){c.fillStyle='#009739';c.fillRect(x,y,7,5);c.fillStyle='#ffdf00';c.beginPath();c.moveTo(x+3.5,y+0.6);c.lineTo(x+6.2,y+2.5);c.lineTo(x+3.5,y+4.4);c.lineTo(x+0.8,y+2.5);c.closePath();c.fill();c.fillStyle='#002776';c.beginPath();c.arc(x+3.5,y+2.5,1,0,Math.PI*2);c.fill();},
+  champLine:'HEXA! BRAZIL ARE WORLD CHAMPIONS!!!',
+  winTitle:'Hexa! Brazil Win It!',
+  bonusDesc:'The cup is won — now the champions play France in an exhibition match, just for fun! A tackle only ends the round. Survive 20 seconds of French flair for a huge +800!'},
+
+ {code:'JPN',name:'Japan',flag:'🇯🇵',tag:'Mitoma & the Samurai Blue',route:'Netherlands → Spain',
+  kit:KITS.JPN,
+  crowd:['#12326e','#ffffff','#bc002d','#2a4f9c','#f4f4f4','#ffd94d'],
+  fanFlag:function(c,x,y){c.fillStyle='#fff';c.fillRect(x,y,7,5);c.fillStyle='#bc002d';c.beginPath();c.arc(x+3.5,y+2.5,1.5,0,Math.PI*2);c.fill();},
+  champLine:'THE SAMURAI BLUE HAVE DONE IT — JAPAN ARE WORLD CHAMPIONS!!!',
+  winTitle:'Samurai Blue Win It!',
+  bonusDesc:'The cup is won — now the champions play France in an exhibition match, just for fun! A tackle only ends the round. Survive 20 seconds of French flair for a huge +800!'}
 ];
-var CODES=STAGES.map(function(s){return s.code;});
-var FINAL_IDX=CODES.indexOf('ESP');   /* Spain final: hunting press + 4-drops */
-var BONUS_IDX=CODES.indexOf('FRA');   /* France bonus round */
+
+/* active country — set by the country-select screen */
+var COUNTRY=COUNTRIES[0];
+var CHARS=SQUADS.ENG;
+var STAGES=mkStages(COUNTRIES[0]);
+var FINAL_IDX=7;   /* the grand final: hunting press + 4-drops */
+var WIN_IDX=8;     /* trophy catch  */
+var BONUS_IDX=9;   /* France bonus round */
+function playerKit(){return COUNTRY.kit;}
+function setCountry(c){
+  COUNTRY=c;
+  CHARS=SQUADS[c.code];
+  STAGES=mkStages(c);
+  buildCrowd(c.crowd);
+  buildSelect();
+  $('pickedCountry').textContent=c.flag+' '+c.name.toUpperCase();
+  $('startSub').textContent='8 MATCHES · 1 TROPHY · 1 BONUS ROUND · '+CHARS.length+' STARS';
+}
 
 /* ================= STATE ================= */
 var cv=$('pitch'), ctx=cv.getContext('2d');
@@ -404,15 +735,18 @@ var G={
 
 /* ================= CROWD (stands on three sides) ================= */
 var FANS=[];
-(function buildCrowd(){
-  var shirts=['#ffffff','#d31f2b','#ffd94d','#e8e8e8','#c8102e','#f4f4f4'];
+/* rebuilt every time a country is chosen, so the stands wear the right colours */
+function buildCrowd(shirts){
+  shirts=shirts||['#ffffff','#d31f2b','#ffd94d','#e8e8e8','#c8102e','#f4f4f4'];
+  FANS=[];
   var skins=['#e8b98a','#c68642','#8d5524','#f1c27d'];
   function add(x,y){FANS.push({x:x,y:y,c:shirts[(Math.random()*shirts.length)|0],
     sk:skins[(Math.random()*skins.length)|0],ph:Math.random()*6.28,flag:Math.random()<0.07});}
   for(var y=42;y<H-8;y+=13){add(6+Math.random()*2,y);add(13+Math.random()*2,y+4);add(20+Math.random()*2,y);}
   for(var y2=42;y2<H-8;y2+=13){add(W-22+Math.random()*2,y2);add(W-15+Math.random()*2,y2+4);add(W-8+Math.random()*2,y2);}
   for(var x2=8;x2<W-8;x2+=11){add(x2,9+Math.random()*3);add(x2+5,20+Math.random()*3);}
-})();
+}
+buildCrowd(COUNTRIES[0].crowd);
 function hypeUp(v){G.hype=Math.min(1,G.hype+v);}
 function drawCrowd(){
   var t=performance.now();
@@ -430,8 +764,7 @@ function drawCrowd(){
     if(f.flag){
       var fx=f.x+3, fy=yy-8+Math.sin(t/190+f.ph)*1.6;
       ctx.strokeStyle='#777';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(fx,fy);ctx.lineTo(fx,fy+10);ctx.stroke();
-      ctx.fillStyle='#fff';ctx.fillRect(fx,fy,7,5);
-      ctx.fillStyle='#d31f2b';ctx.fillRect(fx+2.7,fy,1.6,5);ctx.fillRect(fx,fy+1.7,7,1.6);
+      COUNTRY.fanFlag(ctx,fx,fy);
     }
   }
   /* camera flashes when the crowd goes wild */
@@ -542,13 +875,6 @@ function drawFootballer(c,x,y,w,h,kit,label,opts){
   if(label){c.font='bold 9px Verdana';c.textAlign='center';c.fillStyle='#fff';
     c.strokeStyle='rgba(0,0,0,.7)';c.lineWidth=3;c.strokeText(label,x,y-12);c.fillText(label,x,y-12);}
 }
-function englandKit(c,x,y,w,h){
-  c.fillStyle='#fff';c.fillRect(x,y,w,h);
-  c.fillStyle='#d31f2b';
-  c.fillRect(x+w/2-2,y,4,h);            /* vertical of St George's Cross */
-  c.fillRect(x,y+h/2-2,w,4);            /* horizontal */
-  c.strokeStyle='#c9c9c9';c.lineWidth=1;c.strokeRect(x+0.5,y+0.5,w-1,h-1);
-}
 function drawShield(c,x,y,r,col){
   c.save();c.globalAlpha=0.85;
   var g=c.createRadialGradient(x,y,r*0.5,x,y,r);
@@ -559,8 +885,10 @@ function drawShield(c,x,y,r,col){
 
 /* ================= CHARACTER SELECT UI ================= */
 function heartStr(n){var full='❤️'.repeat(n),empt='';for(var i=n;i<3;i++)empt+='<span class="empty">🤍</span>';return full+empt;}
-(function buildSelect(){
+function buildSelect(){
   var grid=$('charGrid');
+  grid.innerHTML='';
+  G.charIdx=-1;$('btnStart').disabled=true;
   CHARS.forEach(function(ch,i){
     var card=document.createElement('button');
     card.className='charCard';card.type='button';
@@ -576,17 +904,8 @@ function heartStr(n){var full='❤️'.repeat(n),empt='';for(var i=n;i<3;i++)emp
     card.appendChild(mini);card.appendChild(info);
     grid.appendChild(card);
     var mc=mini.getContext('2d');
-    drawFootballer(mc,32,18,ch.w,ch.h,englandKit,ch.short);
+    drawFootballer(mc,32,18,ch.w,ch.h,playerKit(),ch.short);
     if(ch.startShield||ch.regen)drawShield(mc,32,38,30);
-    if(ch.supersub&&G.mode==='play'&&G.timeLeft>0&&G.timeLeft<=5){
-      ctx.save();var gp=0.6+Math.sin(performance.now()/90)*0.25;
-      var gg=ctx.createRadialGradient(G.px,py+ch.h/2,8,G.px,py+ch.h/2,60);
-      gg.addColorStop(0,'rgba(255,224,102,0)');gg.addColorStop(0.7,'rgba(255,210,63,'+(0.25*gp)+')');gg.addColorStop(1,'rgba(255,180,0,'+(0.55*gp)+')');
-      ctx.fillStyle=gg;ctx.beginPath();ctx.arc(G.px,py+ch.h/2,60,0,Math.PI*2);ctx.fill();
-      ctx.strokeStyle='rgba(255,224,102,'+gp+')';ctx.lineWidth=3;
-      ctx.beginPath();ctx.arc(G.px,py+ch.h/2,ch.w+12,0,Math.PI*2);ctx.stroke();
-      ctx.restore();
-    }
     if(ch.aura){mc.strokeStyle='rgba(255,140,0,.8)';mc.lineWidth=3;mc.beginPath();mc.arc(32,38,29,0,Math.PI*2);mc.stroke();}
     if(ch.momentum){mc.fillStyle='#7CFC9A';mc.font='bold 14px Verdana';mc.textAlign='center';mc.fillText('⚡',54,16);}
     if(ch.tackle){mc.fillStyle='#ffd94d';mc.font='bold 14px Verdana';mc.textAlign='center';mc.fillText('★',54,16);}
@@ -605,10 +924,41 @@ function heartStr(n){var full='❤️'.repeat(n),empt='';for(var i=n;i<3;i++)emp
       beep(660,.08,'triangle');
     });
   });
+}
+
+/* ================= COUNTRY SELECT UI ================= */
+var ctyIdx=-1;
+(function buildCountries(){
+  var grid=$('countryGrid');
+  COUNTRIES.forEach(function(c,i){
+    var card=document.createElement('button');
+    card.className='ctyCard';card.type='button';
+    card.innerHTML='<span class="cflag">'+c.flag+'</span>'
+      +'<span class="cnm">'+c.name.toUpperCase()+'</span>'
+      +'<span class="ctag">'+c.tag+'</span>'
+      +'<span class="crte">'+c.route+'</span>';
+    grid.appendChild(card);
+    card.addEventListener('click',function(){
+      audio();
+      document.querySelectorAll('.ctyCard').forEach(function(x){x.classList.remove('picked');});
+      card.classList.add('picked');
+      ctyIdx=i;$('btnCountry').disabled=false;
+      beep(700,.08,'triangle');
+    });
+  });
 })();
+$('btnCountry').addEventListener('click',function(){
+  if(ctyIdx<0)return;
+  setCountry(COUNTRIES[ctyIdx]);
+  show('screen-start');
+  beep(880,.1,'triangle');
+});
+$('btnBackCountry').addEventListener('click',function(){
+  show('screen-country');loadMainBoard();
+});
 
 /* ================= SCREEN FLOW ================= */
-function show(id){['screen-start','screen-match','screen-result'].forEach(function(s){$(s).classList.toggle('on',s===id);});}
+function show(id){['screen-country','screen-start','screen-match','screen-result'].forEach(function(s){$(s).classList.toggle('on',s===id);});}
 $('btnStart').addEventListener('click',function(){
   if(G.charIdx<0)return;
   G.char=CHARS[G.charIdx];
@@ -619,13 +969,13 @@ $('btnStart').addEventListener('click',function(){
 $('btnKickoff').addEventListener('click',function(){startStage(G.stage);});
 $('btnAgain').addEventListener('click',function(){
   clearConfetti();
-  show('screen-start');G.mode='menu';loadMainBoard();
+  show('screen-country');G.mode='menu';loadMainBoard();
 });
 
 function showMatch(i){
   var s=STAGES[i], isWin=(s.code==='WIN'), isBonus=!!s.bonusRound;
   G.mode='frozen';
-  $('matchFlags').textContent = isWin ? '🏆🏴󠁧󠁢󠁥󠁮󠁧󠁿🏆' : (isBonus?'🏴󠁧󠁢󠁥󠁮󠁧󠁿 ⭐ '+s.flag:'🏴󠁧󠁢󠁥󠁮󠁧󠁿 ⚡ '+s.flag);
+  $('matchFlags').textContent = isWin ? ('🏆'+COUNTRY.flag+'🏆') : (COUNTRY.flag+(isBonus?' ⭐ ':' ⚡ ')+s.flag);
   $('matchStage').textContent=s.label;
   $('matchTitle').textContent=s.title;
   $('matchDesc').textContent=s.desc;
@@ -656,10 +1006,7 @@ function startStage(i){
     G.mode='walkin';G.walkT=0;G.px=-50;
     beep(523,.18,'triangle',.07);beep(659,.18,'triangle',.07,.18);beep(784,.25,'triangle',.08,.36);
     if(s.bonusRound)say('The champions walk out one more time — Les Bleus await!');
-    else{
-      var lines=['And we are underway — a 4-2 classic to repeat!','The Black Stars line up — can England do better than 0-0?','Win this and England top Group L!','Knockout football begins — no second chances!','Remember that 3-2 thriller? Here we go again!','A quarter-final under the lights — extra time last time!','The revenge match. Rewrite history!','The Grand Final. Everything on the line!'];
-      say(lines[Math.min(i,lines.length-1)]);
-    }
+    else say(s.line||('Here we go — '+s.title+'!'));
   }
   updateHUD();
   G.lastT=performance.now();
@@ -685,7 +1032,7 @@ function stageClear(){
 }
 
 /* ================= RESULT / SAVE ================= */
-function charDetails(){return G.char?JSON.stringify({character:G.char.short}):null;}
+function charDetails(){return G.char?JSON.stringify({character:G.char.short,country:COUNTRY.code,flag:COUNTRY.flag}):null;}
 async function finalize(victory){
   G.mode='frozen';
   $('hud').style.display='none';
@@ -693,7 +1040,7 @@ async function finalize(victory){
   var scr=$('screen-result');
   scr.classList.toggle('win',victory);scr.classList.toggle('lose',!victory);
   $('resultEmoji').textContent=victory?'🏆':'😵';
-  $('resultTitle').textContent=victory?'Football Is Going Home!':'Knocked Out! Try Again';
+  $('resultTitle').textContent=victory?COUNTRY.winTitle:'Knocked Out! Try Again';
   $('finalScore').textContent=score;
   renderBreakdown();
   show('screen-result');
@@ -755,7 +1102,7 @@ function renderBreakdown(){
   host.innerHTML=html;
 }
 function spawnConfetti(){
-  var em=['🏆','🏴󠁧󠁢󠁥󠁮󠁧󠁿','🎉','⚽','⭐'];
+  var em=['🏆',COUNTRY.flag,'🎉','⚽','⭐'];
   for(var i=0;i<26;i++){
     var s=document.createElement('span');s.className='confetti';
     s.textContent=em[i%em.length];
@@ -964,7 +1311,7 @@ function update(dt){
       burst(t.x,t.y,'#ffd94d',40);burst(t.x,t.y,'#ffffff',30);
       addFloat(W/2,H/2,'+1000 CHAMPIONS!','#ffe066');
       G.hype=1;crowdCelebrate();
-      say('FOOTBALL IS GOING HOME! ENGLAND ARE WORLD CHAMPIONS!!!',4000);
+      say(COUNTRY.champLine,4000);
       setTimeout(function(){G.stage=BONUS_IDX;showMatch(BONUS_IDX);},1600);
     }
   }
@@ -1013,7 +1360,7 @@ function hitPlayer(x,y){
     burst(G.px,playerY()+20,'#7aa2ff',24);
     sndHit();
     addFloat(G.px,playerY()-30,'CAUGHT!','#7aa2ff');
-    say('France catch you — but England are still CHAMPIONS!',3500);
+    say('France catch you — but '+COUNTRY.name+' are still CHAMPIONS!',3500);
     setTimeout(function(){finalize(true);},1200);
     return;
   }
@@ -1156,7 +1503,7 @@ function render(){
   /* dash ghosts */
   G.ghosts.forEach(function(g){
     ctx.save();ctx.globalAlpha=g.a;
-    drawFootballer(ctx,g.x,g.y,ch?ch.w:34,ch?ch.h:44,englandKit,null);
+    drawFootballer(ctx,g.x,g.y,ch?ch.w:34,ch?ch.h:44,playerKit(),null);
     ctx.restore();
   });
 
@@ -1175,7 +1522,7 @@ function render(){
       ctx.restore();
     }
     if(!(G.invuln>0&&Math.floor(performance.now()/100)%2===0)){
-      drawFootballer(ctx,G.px,py,ch.w,ch.h,englandKit,ch.short);
+      drawFootballer(ctx,G.px,py,ch.w,ch.h,playerKit(),ch.short);
     }
     if(G.shield)drawShield(ctx,G.px,py+ch.h/2,ch.w+14);
     /* ability cooldown bar under player (dash or rocket shot) */
@@ -1219,6 +1566,8 @@ function fit(){
 window.addEventListener('resize',fit);fit();
 
 /* boot */
+setCountry(COUNTRIES[0]);
+show('screen-country');
 loadMainBoard();
 </script>
 </body>
