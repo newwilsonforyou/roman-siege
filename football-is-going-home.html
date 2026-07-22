@@ -399,6 +399,7 @@ var KITS={
   TUN:kFlat('#ffffff','#e70013'),
   SWE:kFlat('#fecb00','#005293'),
   IRQ:kFlat('#1e8449','#ffffff'),
+  WORLD:function(c,x,y,w,h){c.fillStyle='#141414';c.fillRect(x,y,w,h);c.fillStyle='#ffd94d';c.fillRect(x,y+h/2-2,w,4);star5(c,x+w/2,y+h*0.28,5,'#ffd94d');},
   SEN:function(c,x,y,w,h){c.fillStyle='#fff';c.fillRect(x,y,w,h);star5(c,x+w/2,y+h/2,6,'#00853f');},
   CIV:kFlat('#ff8200','#009e60'),
   IRN:function(c,x,y,w,h){c.fillStyle='#fff';c.fillRect(x,y,w,h);c.fillStyle='#239f40';c.fillRect(x,y,w,3);c.fillStyle='#da0000';c.fillRect(x,y+h-4,w,4);c.fillRect(x+1,y+3,3,h-7);c.fillRect(x+w-4,y+3,3,h-7);},
@@ -538,17 +539,23 @@ BRA:[
   lives:2,speed:6.5,supersub:true,w:34,h:44}
 ],
 NOR:[
- {id:'haaland',name:'ERLING HAALAND',short:'HAALAND',ability:'The Terminator ⚡',
+ {id:'haaland',name:'ERLING HAALAND',short:'HAALAND',flag:'🇳🇴',ability:'The Terminator ⚡',
   desc:'THE STRONGEST PLAYER IN THE GAME. 3 lives, huge pace, a SPACE rocket shot (3s cooldown) AND a shockwave that knocks every defender near him flying when he is finally tackled. He is a big target though!',
   lives:3,speed:7.5,shoot:true,shock:true,w:38,h:48},
- {id:'odegaard',name:'MARTIN ØDEGAARD',short:'ØDEGAARD',ability:"Captain's Calm",
+ {id:'odegaard',name:'MARTIN ØDEGAARD',short:'ØDEGAARD',flag:'🇳🇴',ability:"Captain's Calm",
   desc:'The captain slows the whole game down — every 12 seconds he freezes ALL defenders solid for 1.5s. ❄️',
   lives:2,speed:6,freeze:true,w:32,h:42},
- {id:'nusa',name:'ANTONIO NUSA',short:'NUSA',ability:'Lightning Step',
-  desc:'Blistering pace (8) and a smaller body — the young winger slips through gaps nobody else sees.',
-  lives:2,speed:8,w:28,h:38},
- {id:'nyland',name:'ØRJAN NYLAND',short:'NYLAND',ability:'Safe Hands',
-  desc:'Grows a brand-new blue shield every 10 seconds. Slow feet, but very hard to beat.',
+ {id:'upamecano',name:'DAYOT UPAMECANO',short:'UPA',flag:'🇫🇷',ability:'Perfect Tackle',
+  desc:'A rock at the back — every 8 seconds he wins the ball off the nearest defender and clears them away (+15 pts).',
+  lives:2,speed:5.5,tackle:true,w:34,h:44},
+ {id:'olise',name:'MICHAEL OLISE',short:'OLISE',flag:'🇫🇷',ability:'Silky Dash',
+  desc:'Press SPACE (or double-tap) to glide past the tackle with a bit of magic. 4s cooldown bar.',
+  lives:2,speed:6.5,dash:true,w:32,h:42},
+ {id:'mbappe',name:'KYLIAN MBAPPÉ',short:'MBAPPÉ',flag:'🇫🇷',ability:'Lightning Step',
+  desc:'The fastest man on the planet! Top speed (8.5) and a smaller body — nobody catches Mbappé.',
+  lives:2,speed:8.5,w:28,h:38},
+ {id:'vozinha',name:'VOZINHA',short:'VOZINHA',flag:'🇨🇻',ability:'Safe Hands',
+  desc:'The Cape Verde shot-stopper grows a brand-new blue shield every 10 seconds. Slow feet, safe hands.',
   lives:2,speed:4,regen:true,w:34,h:44}
 ],
 BEL:[
@@ -654,14 +661,14 @@ BRA:[
  {code:'ESP',flag:'🇪🇸',name:'Spain',desc:'The Grand Final against La Roja. Survive their elite defensive press and win a sixth star!',line:'The Grand Final. Go and win the sixth star!'}
 ],
 NOR:[
- {code:'IRQ',flag:'🇮🇶',name:'Iraq',desc:'Norway thumped Iraq 4-1 in the real group opener. A dream start — go and do it again!',line:'4-1 in real life — what a start!'},
- {code:'SEN',flag:'🇸🇳',name:'Senegal',desc:'A real 3-2 win over Senegal, and a proper battle it was too. The Lions of Teranga never stop coming.',line:'3-2 last time — this one was a battle!'},
- {code:'FRA',flag:'🇫🇷',name:'France',desc:'The one that got away — France won this 4-1 for real, Norway\'s only group slip. Put it right this time!',line:'France won this 4-1 for real. Put it right!'},
- {code:'CIV',flag:'🇨🇮',name:'Ivory Coast',desc:'Norway saw off the Elephants 2-1 in the real Round of 32. Knockout football — no second chances.',line:'Knockout football begins — no second chances!'},
- {code:'BRA',flag:'🇧🇷',name:'Brazil',desc:'The famous night! Norway knocked Brazil out of the real Round of 16, winning 2-1. Do it all over again.',line:'Norway beat BRAZIL here for real — repeat it!'},
- {code:'ENG',flag:'🏴󠁧󠁢󠁥󠁮󠁧󠁿',name:'England',desc:'This is where the real run ended — England won the quarter-final 2-1 after extra time. Beat them here and the story keeps going!',line:'This is where it ended for real. Change it!'},
- {code:'ARG',flag:'🇦🇷',name:'Argentina',desc:'Past the real quarter-final, Norway take over England\'s ladder — and that means the Albiceleste in a World Cup semi-final.',line:'A semi-final! All of Norway is watching!'},
- {code:'ESP',flag:'🇪🇸',name:'Spain',desc:'The Grand Final against La Roja, the fixture England were handed. Survive their elite press and take the cup to Oslo!',line:'The Grand Final. Take it home to Oslo!'}
+ {code:'IRQ',flag:'🇮🇶',name:'Iraq',desc:'The World XI open up with a 4-1 rout of Iraq. A dream start — go and get it!',line:'4-1 to start — what a way to begin!'},
+ {code:'SEN',flag:'🇸🇳',name:'Senegal',desc:'A proper battle against Senegal, edged 3-2. The Lions of Teranga never stop coming.',line:'3-2 last time — this one was a battle!'},
+ {code:'FRA',flag:'🇫🇷',name:'France',desc:'The all-star clash of the group — a 4-1 defeat to a France side full of the World XI\'s own team-mates. Avenge it!',line:'The France game — avenge that 4-1!'},
+ {code:'CIV',flag:'🇨🇮',name:'Ivory Coast',desc:'A 2-1 win over the Elephants in the Round of 32. Knockout football — no second chances.',line:'Knockout football begins — no second chances!'},
+ {code:'BRA',flag:'🇧🇷',name:'Brazil',desc:'The famous night — a 2-1 win over Brazil to reach the last eight! Do it all over again.',line:'You beat BRAZIL here — repeat it!'},
+ {code:'ENG',flag:'🏴󠁧󠁢󠁥󠁮󠁧󠁿',name:'England',desc:'A quarter-final against England, a 2-1 extra-time epic. Win it inside 90 minutes this time!',line:'A quarter-final against England!'},
+ {code:'ARG',flag:'🇦🇷',name:'Argentina',desc:'A World Cup semi-final against the Albiceleste. The whole planet is tuning in for this one.',line:'A semi-final! The world is watching!'},
+ {code:'ESP',flag:'🇪🇸',name:'Spain',desc:'The Grand Final against La Roja. Survive their elite defensive press and lift the World Cup!',line:'The Grand Final. Everything on the line!'}
 ],
 BEL:[
  {code:'EGY',flag:'🇪🇬',name:'Egypt',desc:'A real 1-1 draw with Egypt to open Group G. The Pharaohs defended deep and made it awkward.',line:'1-1 last time — go one better!'},
@@ -742,13 +749,13 @@ var COUNTRIES=[
   winTitle:'Hexa! Brazil Win It!',
   bonusDesc:'The cup is won — now the champions play France in an exhibition match, just for fun! A tackle only ends the round. Survive 20 seconds of French flair for a huge +800!'},
 
- {code:'NOR',name:'Norway',flag:'🇳🇴',tag:'Haaland & Ødegaard',route:'Iraq → Spain',
-  kit:KITS.NOR,
-  crowd:['#d31f2b','#ffffff','#0b2c6b','#e8443f','#f4f4f4','#1b3f8b'],
-  fanFlag:function(c,x,y){c.fillStyle='#d31f2b';c.fillRect(x,y,7,5);c.fillStyle='#fff';c.fillRect(x+2,y,2.6,5);c.fillRect(x,y+1.4,7,2.2);c.fillStyle='#00205b';c.fillRect(x+2.6,y,1.4,5);c.fillRect(x,y+1.8,7,1.4);},
-  champLine:'NORWAY ARE WORLD CHAMPIONS!!! WHAT A STORY!!!',
-  winTitle:'Norway Win The World Cup!',
-  bonusDesc:'The cup is won — and France want another go after that 4-1 in the group stage! Pure exhibition fun: a tackle only ends the round. Survive 20 seconds for a huge +800!'},
+ {code:'NOR',name:'International',flag:'🌍',tag:'A World XI — Mbappé, Haaland & co',route:'Iraq → Spain',
+  kit:KITS.WORLD,
+  crowd:['#ffd94d','#141414','#ffffff','#2a4f9c','#f4f4f4','#c9a227'],
+  fanFlag:function(c,x,y){c.fillStyle='#1b3f8b';c.fillRect(x,y,7,5);star5(c,x+3.5,y+2.5,2.2,'#ffd94d');},
+  champLine:'THE WORLD XI HAVE DONE IT — THE INTERNATIONAL SIDE ARE CHAMPIONS!!!',
+  winTitle:'The World XI Win It!',
+  bonusDesc:'The cup is won — and France want another go after that group-stage meeting! Pure exhibition fun: a tackle only ends the round. Survive 20 seconds for a huge +800!'},
 
  {code:'BEL',name:'Belgium',flag:'🇧🇪',tag:'De Bruyne & the Red Devils',route:'Egypt → Spain',
   kit:KITS.BEL,
@@ -967,7 +974,7 @@ function buildSelect(){
     card.className='charCard';card.type='button';
     var mini=document.createElement('canvas');mini.width=64;mini.height=78;
     var info=document.createElement('div');
-    info.innerHTML='<div class="cname">'+ch.name+'</div>'
+    info.innerHTML='<div class="cname">'+ch.name+(ch.flag?' '+ch.flag:'')+'</div>'
       +'<div class="cab">✨ '+ch.ability+'</div>'
       +'<div class="cdesc">'+ch.desc+'</div>'
       +'<div class="statline"><span class="sk">SPEED</span>'
@@ -1105,7 +1112,7 @@ function stageClear(){
 }
 
 /* ================= RESULT / SAVE ================= */
-function charDetails(){return G.char?JSON.stringify({character:G.char.short,country:COUNTRY.code,flag:COUNTRY.flag}):null;}
+function charDetails(){return G.char?JSON.stringify({character:G.char.short,country:COUNTRY.code,flag:(G.char.flag||COUNTRY.flag)}):null;}
 async function finalize(victory){
   G.mode='frozen';
   $('hud').style.display='none';
