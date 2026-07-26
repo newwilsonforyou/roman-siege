@@ -159,6 +159,18 @@
     radial-gradient(circle at 75% 75%,rgba(91,217,127,.25),transparent 55%),#0E3B23;}
   .jungle .card-tag{color:#5BD97F;} .jungle .play{background:#5BD97F;color:#0A2818;}
 
+  .locket{background:linear-gradient(160deg,#2a0f1e,#0c0a12);}
+  .locket .card-art{background:radial-gradient(circle at 50% 40%,rgba(201,151,63,.32),transparent 58%),
+    radial-gradient(circle at 20% 85%,rgba(127,212,255,.18),transparent 55%),#120a1c;}
+  .locket .card-tag{color:#f2d488;} .locket .play{background:#c9973f;color:#1a1208;}
+  .locket:hover{box-shadow:0 18px 50px rgba(201,151,63,.45);border-color:#ffe3a1;}
+
+  .pottery{background:linear-gradient(160deg,#8a5a3c,#3d2b23);}
+  .pottery .card-art{background:radial-gradient(circle at 28% 22%,rgba(242,132,130,.28),transparent 55%),
+    linear-gradient(170deg,#f7ecdd,#e5d2ba);}
+  .pottery .card-tag{color:#ffc9a8;} .pottery .play{background:#f28482;color:#3a1d17;}
+  .pottery:hover{box-shadow:0 18px 50px rgba(242,132,130,.45);border-color:#f28482;}
+
   .amazon{background:linear-gradient(160deg,#17603c,#0a2a1a);}
   .amazon .card-art{background:radial-gradient(circle at 72% 22%,rgba(255,179,64,.35),transparent 55%),
     linear-gradient(180deg,#3fa06a,#1d6b45);}
@@ -283,10 +295,121 @@
     <div class="kicker">Choose your game</div>
     <h1 id="bigtitle" title="Psst… try clicking me!">Year 5 Arcade</h1>
     <p class="hello" id="hello">🎮 Ready to play?</p>
-    <p class="sub">Twenty-two games in one place — deliver fruit down the Amazon by boat, cook a bolognese, bring football home, survive, explore and master maths, history and science. Sign in, and every game you play is saved to your record.</p>
+    <p class="sub">Twenty-four games in one place — escape a magician's locket, throw and fire a pot on a 3D wheel, deliver fruit down the Amazon by boat, cook a bolognese, bring football home, survive, explore and master maths, history and science. Sign in, and every game you play is saved to your record.</p>
   </header>
 
   <main class="cards">
+    <a class="card locket" id="card-locket" href="vanishing-locket.html">
+      <span class="newbadge">✦ NEW!</span>
+      <div class="lockmsg">🔒 Sign in first</div>
+      <div class="card-art">
+        <svg class="art-svg pulse" viewBox="0 0 200 150" aria-hidden="true">
+          <!-- dark cabinet interior -->
+          <rect x="0" y="0" width="200" height="150" fill="#120a1c"/>
+          <rect x="0" y="0" width="200" height="150" fill="url(#lkGlow)" opacity=".9"/>
+          <defs>
+            <radialGradient id="lkGlow" cx="50%" cy="46%" r="62%">
+              <stop offset="0%" stop-color="#4a2340" stop-opacity=".95"/>
+              <stop offset="100%" stop-color="#0b0612" stop-opacity="0"/>
+            </radialGradient>
+          </defs>
+          <!-- cabinet panelling -->
+          <g stroke="#3a2436" stroke-width="2.5" fill="none">
+            <rect x="10" y="10" width="180" height="130" rx="6"/>
+            <path d="M28 10 L28 140 M172 10 L172 140"/>
+          </g>
+          <!-- hanging brass locket, chain -->
+          <path d="M100 12 L100 40" stroke="#c9973f" stroke-width="2.5"/>
+          <circle cx="100" cy="18" r="3" fill="none" stroke="#ffe3a1" stroke-width="2"/>
+          <g transform="translate(100,84)">
+            <circle r="40" fill="#c9973f" opacity=".12"/>
+            <circle r="33" fill="#3a2a12" stroke="#c9973f" stroke-width="4"/>
+            <circle r="26" fill="#1c1408" stroke="#b06a3a" stroke-width="2.5"/>
+            <!-- clockwork gears inside -->
+            <g fill="none" stroke="#ffe3a1" stroke-width="2.5">
+              <circle cx="-8" cy="-4" r="11"/>
+              <path d="M-8 -19 L-8 -15 M-8 7 L-8 11 M-23 -4 L-19 -4 M3 -4 L7 -4 M-19 -15 L-16 -12 M0 -12 L3 -15 M-19 7 L-16 4 M0 4 L3 7"/>
+            </g>
+            <g fill="none" stroke="#c9973f" stroke-width="2.5">
+              <circle cx="11" cy="9" r="8"/>
+              <path d="M11 -2 L11 1 M11 17 L11 20 M0 9 L3 9 M19 9 L22 9"/>
+            </g>
+            <!-- pendulum -->
+            <path d="M0 -26 L6 14" stroke="#b06a3a" stroke-width="2"/>
+            <circle cx="6" cy="16" r="4" fill="#ffe3a1"/>
+            <!-- fading boy silhouette -->
+            <g opacity=".65" fill="#7fd4ff">
+              <circle cx="-2" cy="14" r="4"/>
+              <path d="M-7 27 q5 -10 10 0 z"/>
+            </g>
+          </g>
+          <!-- escaping memory sparks -->
+          <g fill="#7fd4ff">
+            <circle cx="46" cy="52" r="3.4" opacity=".95"/>
+            <circle cx="158" cy="62" r="2.8" opacity=".8"/>
+            <circle cx="58" cy="116" r="2.4" opacity=".7"/>
+            <circle cx="150" cy="118" r="3.2" opacity=".85"/>
+          </g>
+          <g stroke="#ffe3a1" stroke-width="1.6" opacity=".55">
+            <path d="M46 44 L46 60 M38 52 L54 52"/>
+            <path d="M150 110 L150 126 M142 118 L158 118"/>
+          </g>
+        </svg>
+      </div>
+      <div class="card-body">
+        <div class="card-tag">Reading &middot; Escape Puzzle</div>
+        <div class="card-title">Escape the Cabinet</div>
+        <div class="card-desc">Pinchbeck has shrunk you — Leander from <em>The Vanishing Trick</em> — inside a brass locket, and The Fading is eating you away second by second. Catch memory sparks for combos, work out which loose gear fits the empty axle, wind open the viewport and knock the secret rhythm so Felix hears you. Escape with your Soul Integrity as high as you can.</div>
+        <span class="play">PLAY ▶</span>
+      </div>
+    </a>
+
+    <a class="card pottery" id="card-pottery" href="pottery-wheel.html">
+      <span class="newbadge">✦ NEW!</span>
+      <div class="lockmsg">🔒 Sign in first</div>
+      <div class="card-art">
+        <svg class="art-svg pulse" viewBox="0 0 200 150" aria-hidden="true">
+          <rect x="0" y="0" width="200" height="150" fill="#efe3d5"/>
+          <rect x="0" y="0" width="200" height="66" fill="#f7ecdd"/>
+          <!-- workshop shelf with the three target pots -->
+          <rect x="12" y="40" width="60" height="4" rx="2" fill="#c9a480"/>
+          <g stroke="#7a4433" stroke-width="1.6">
+            <path d="M20 20 L30 20 L30.5 23 L29 25 L29 38 L31 40 L19 40 L21 38 L21 25 L19.5 23 Z" fill="#b5674d"/>
+            <path d="M41 18 L47 18 L47 23 Q52 26 52 31 Q52 37 46 40 L42 40 Q36 37 36 31 Q36 26 41 23 Z" fill="#2e2620"/>
+            <path d="M60 19 L66 19 L66.5 24 Q71 27 71 32 Q71 38 63 40 Q55 38 55 32 Q55 27 59.5 24 Z" fill="#c98a4b"/>
+          </g>
+          <!-- spinning wheel head -->
+          <ellipse cx="112" cy="126" rx="52" ry="14" fill="#8a6a4f"/>
+          <ellipse cx="112" cy="121" rx="52" ry="14" fill="#a9856a" stroke="#6f533c" stroke-width="2.5"/>
+          <ellipse cx="112" cy="121" rx="30" ry="8" fill="#8f6d53" opacity=".55"/>
+          <!-- the pot being thrown -->
+          <path d="M96 58 Q84 72 86 90 Q88 110 112 116 Q136 110 138 90 Q140 72 128 58 Q120 52 112 52 Q104 52 96 58 Z"
+                fill="#c07a55" stroke="#7a4433" stroke-width="3" stroke-linejoin="round"/>
+          <path d="M96 58 Q112 66 128 58 Q120 52 112 52 Q104 52 96 58 Z" fill="#5e3524" stroke="#7a4433" stroke-width="2.5"/>
+          <ellipse cx="112" cy="57" rx="16" ry="5" fill="#3d2b23"/>
+          <!-- painted bands + dots -->
+          <path d="M89 82 Q112 90 135 82" stroke="#e8d5ae" stroke-width="4" fill="none"/>
+          <path d="M88 96 Q112 104 136 96" stroke="#2e2620" stroke-width="3" fill="none"/>
+          <g fill="#e8d5ae"><circle cx="99" cy="70" r="3"/><circle cx="112" cy="72" r="3"/><circle cx="125" cy="70" r="3"/></g>
+          <!-- motion arcs -->
+          <g stroke="#b06a68" stroke-width="2.6" fill="none" stroke-linecap="round" opacity=".8">
+            <path d="M52 108 q-8 10 0 20"/><path d="M172 108 q8 10 0 20"/>
+          </g>
+          <!-- potter's hands -->
+          <g fill="#f2c9a0" stroke="#b98a63" stroke-width="2.2">
+            <path d="M70 92 q10 -6 16 2 q-6 10 -16 6 z"/>
+            <path d="M154 92 q-10 -6 -16 2 q6 10 16 6 z"/>
+          </g>
+        </svg>
+      </div>
+      <div class="card-body">
+        <div class="card-tag">History &middot; 3D Making</div>
+        <div class="card-title">3D Pottery Wheel</div>
+        <div class="card-desc">Be a little master potter. Pick a real historical pot to copy — a Maya vase, a Greek amphora or an Inca aryballus — then drag the spinning clay to shape it, press the middle to open it, glaze it with bands, dots and zigzags, and fire it in the kiln to see how many stars your copy earns.</div>
+        <span class="play">PLAY ▶</span>
+      </div>
+    </a>
+
     <a class="card amazon" id="card-amazon" href="amazon-river-courier.html">
       <span class="newbadge">✦ NEW!</span>
       <div class="lockmsg">🔒 Sign in first</div>
@@ -1081,6 +1204,8 @@ function renderUserBar(){
   }
 }
 function setCardsLocked(locked){
+  $('card-locket').classList.toggle('locked',locked);
+  $('card-pottery').classList.toggle('locked',locked);
   $('card-amazon').classList.toggle('locked',locked);
   $('card-bolognese').classList.toggle('locked',locked);
   $('card-goinghome').classList.toggle('locked',locked);
@@ -1287,11 +1412,14 @@ async function loadRecords(p){
   var goinghome=rows.filter(function(x){return x.game==='roadtoglory';});
   var bolognese=rows.filter(function(x){return x.game==='bolognese';});
   var amazon=rows.filter(function(x){return x.game==='amazoncourier';});
+  var locket=rows.filter(function(x){return x.game==='vanishinglocket';});
+  var pottery=rows.filter(function(x){return x.game==='potterywheel';});
   /* any game not in the known list (e.g. Solar Builder, Legion Outpost, future games)
      is picked up automatically so the record is never incomplete again */
   var knownIds=['siege','nebula','empiremap','vicmuseum','victorians','junglecatch',
     'circuit','linolayers','lifecycles','rainforestrescue','angles','themeparkdatadash','worldcup',
-    'holes-sploosh','holes-dig','roadtoglory','bolognese','amazoncourier'];
+    'holes-sploosh','holes-dig','roadtoglory','bolognese','amazoncourier',
+    'vanishinglocket','potterywheel'];
   var extraNames={solar:'🪐 SOLAR SYSTEM BUILDER',solarbuilder:'🪐 SOLAR SYSTEM BUILDER',
     solarsystem:'🪐 SOLAR SYSTEM BUILDER',builder:'🪐 SOLAR SYSTEM BUILDER',
     outpost:'🏰 LEGION OUTPOST',legionoutpost:'🏰 LEGION OUTPOST',legion:'🏰 LEGION OUTPOST',
@@ -1308,6 +1436,8 @@ async function loadRecords(p){
     '<div><div class="rec-name">'+escapeHtml(p.name)+'</div>'+
     '<div class="rec-sub">'+totalGames+' games played in total</div></div></div>';
   var stats='<div class="rec-stats">'+
+    '<div class="rec-stat"><div class="n">'+best(locket)+'</div><div class="l">LOCKET BEST</div></div>'+
+    '<div class="rec-stat"><div class="n">'+best(pottery)+'</div><div class="l">POTTERY BEST</div></div>'+
     '<div class="rec-stat"><div class="n">'+best(amazon)+'</div><div class="l">AMAZON BEST</div></div>'+
     '<div class="rec-stat"><div class="n">'+best(bolognese)+'</div><div class="l">BOLOGNESE BEST</div></div>'+
     '<div class="rec-stat"><div class="n">'+best(goinghome)+'</div><div class="l">GOING HOME BEST</div></div>'+
@@ -1344,6 +1474,8 @@ async function loadRecords(p){
     return h+'</tbody></table>';
   }
   $('recBody').innerHTML=head+stats+
+    historyTable('⚙️ ESCAPE THE CABINET HISTORY',locket)+
+    historyTable('🏺 3D POTTERY WHEEL HISTORY',pottery)+
     historyTable('🛶 AMAZON RIVER COURIER HISTORY',amazon)+
     historyTable('🍝 BOLOGNESE MASTER HISTORY',bolognese)+
     historyTable('🏆 FOOTBALL IS GOING HOME HISTORY',goinghome)+
@@ -1398,8 +1530,10 @@ function renderHello(){
     '🔥 The leaderboards await, '+name+'…'
   ]:[
     '🎮 Ready to play?',
-    '⚡ Twenty-two games. One champion. You?',
+    '⚡ Twenty-four games. One champion. You?',
     '🏆 Sign in and chase the high scores!',
+    '⚙️ New! Trapped in a locket — escape before you fade away…',
+    '🏺 New! Throw, paint and fire your own pot on the 3D Pottery Wheel!',
     '🛶 New! Race fruit down the river in Amazon River Courier!',
     '🍝 New! Cook your way to a chef certificate in Bolognese Master!',
     '⚽ New! Football Is Going Home — dodge 8 nations and lift the World Cup!',

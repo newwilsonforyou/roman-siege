@@ -1,0 +1,1171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Escape the Cabinet — The Vanishing Trick</title>
+<style>
+:root{
+  --fade-level:0;
+  --brass:#c9973f; --brass-hi:#ffe3a1; --copper:#b06a3a; --velvet:#2a0f1e;
+  --ink:#0c0a12; --spark:#7fd4ff; --gold-text:#f2d488;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;}
+body{
+  background:
+    radial-gradient(ellipse at 20% 0%,#241028 0%,transparent 55%),
+    radial-gradient(ellipse at 85% 100%,#1e0c14 0%,transparent 55%),
+    #06040c;
+  color:#e8dcc0;overflow:hidden;
+  font-family:Georgia,'Palatino Linotype',Palatino,serif;
+  user-select:none;-webkit-user-select:none;touch-action:manipulation;
+}
+#stage{
+  position:fixed;inset:0;display:flex;gap:12px;padding:78px 14px 14px;
+  filter:blur(calc(var(--fade-level) * 4px)) saturate(calc(1 - var(--fade-level)*0.7));
+  transition:filter .4s linear;
+}
+#stage.shaking{animation:shake .12s linear infinite;}
+@keyframes shake{0%{transform:translate(0,0);}25%{transform:translate(1.6px,-1px);}50%{transform:translate(-1.4px,1.2px);}75%{transform:translate(1px,1.4px);}100%{transform:translate(-1.2px,-1.2px);}}
+
+/* ================= HUD ================= */
+#hud{
+  position:fixed;top:0;left:0;right:0;height:70px;z-index:40;
+  display:flex;align-items:center;justify-content:space-between;padding:0 18px;gap:12px;
+  background:linear-gradient(180deg,rgba(24,15,8,.97),rgba(24,15,8,.55) 78%,transparent);
+}
+#hudleft{display:flex;flex-direction:column;gap:5px;}
+.hud-title{font-size:13px;letter-spacing:3px;color:#9c7c4a;text-transform:uppercase;white-space:nowrap;}
+.hud-title b{color:var(--brass-hi);}
+#objective{
+  font-size:13px;letter-spacing:1px;color:#a5e2ff;font-style:italic;
+  text-shadow:0 0 10px rgba(127,212,255,.4);transition:opacity .4s;
+}
+#objective .stepnum{
+  display:inline-flex;width:18px;height:18px;border-radius:50%;align-items:center;justify-content:center;
+  background:rgba(127,212,255,.15);border:1px solid #5a8ca8;font-style:normal;font-size:11px;margin-right:5px;vertical-align:-3px;
+}
+#scorebox{
+  font-size:28px;font-weight:bold;letter-spacing:1px;color:var(--gold-text);
+  text-shadow:0 0 16px rgba(242,212,136,.5),0 2px 0 #3a2708;
+  padding:5px 22px;border:1px solid #6b5322;border-radius:12px;position:relative;
+  background:radial-gradient(ellipse at 50% -40%,#4a3410,#171008 70%);
+  box-shadow:0 4px 14px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,227,161,.25);
+}
+#scorebox small{font-size:10px;letter-spacing:3px;color:#9c7c4a;display:block;text-align:center;font-weight:normal;}
+#scorebox.bump{animation:bump .3s ease;}
+#scorebox.hurt{animation:hurt .35s ease;}
+@keyframes bump{40%{transform:scale(1.12);box-shadow:0 0 26px rgba(242,212,136,.7);}}
+@keyframes hurt{40%{transform:scale(.94);color:#ff8a7a;text-shadow:0 0 16px rgba(255,90,70,.7);}}
+#combo{
+  position:absolute;top:-14px;right:-10px;font-size:14px;font-weight:bold;color:#8affb0;
+  background:#0c2014;border:1px solid #3a8a5a;border-radius:14px;padding:2px 10px;
+  text-shadow:0 0 8px #4aff8a;transform:scale(0);transition:transform .2s cubic-bezier(.5,1.6,.4,1);
+}
+#combo.on{transform:scale(1);}
+#hudright{display:flex;align-items:center;gap:12px;}
+#fadewrap{display:flex;flex-direction:column;align-items:flex-end;gap:4px;}
+#fadelabel{font-size:10px;letter-spacing:3px;color:#7fa8c0;}
+#fadebar{width:180px;height:12px;border:1px solid #33506b;border-radius:7px;background:#0a1018;overflow:hidden;position:relative;}
+#fadefill{height:100%;width:0%;background:linear-gradient(90deg,#4aa8d8,#a5e2ff);transition:width .3s;box-shadow:0 0 12px #6fc4ff;}
+#fadefill.danger{background:linear-gradient(90deg,#d84a4a,#ffb3a5);box-shadow:0 0 14px #ff6a5a;}
+#muteBtn{
+  width:38px;height:38px;border-radius:50%;cursor:pointer;font-size:17px;
+  background:radial-gradient(circle at 35% 30%,#4a3410,#171008);
+  border:1px solid #6b5322;color:var(--gold-text);
+}
+
+/* ================= LEFT PANEL : inside the locket ================= */
+#locket{
+  flex:0 0 70%;position:relative;border-radius:26px;overflow:hidden;
+  border:7px solid transparent;
+  background:
+    radial-gradient(ellipse at 28% 18%,rgba(255,170,80,.13),transparent 50%),
+    radial-gradient(ellipse at 78% 88%,rgba(176,106,58,.14),transparent 46%),
+    radial-gradient(ellipse at 50% 120%,rgba(90,40,70,.35),transparent 60%),
+    linear-gradient(160deg,#221510 0%,#150e1a 45%,#0c0a14 100%);
+  background-clip:padding-box;
+  box-shadow:inset 0 0 90px #000,0 0 40px rgba(0,0,0,.9),0 0 26px rgba(201,151,63,.15);
+}
+#locket::before{ /* engraved brass rim */
+  content:"";position:absolute;inset:-7px;border-radius:26px;padding:7px;pointer-events:none;z-index:9;
+  background:
+    repeating-linear-gradient(45deg,#8a6428 0 6px,#5c3f14 6px 12px),
+    linear-gradient(180deg,#a87c34,#5c3f14);
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;mask-composite:exclude;
+}
+#locket::after{ /* inner glow line + rivets */
+  content:"";position:absolute;inset:7px;border-radius:18px;pointer-events:none;z-index:9;
+  border:1px solid rgba(255,227,161,.35);
+  box-shadow:inset 0 0 22px rgba(255,180,90,.12);
+}
+.corner{position:absolute;width:74px;height:74px;z-index:8;opacity:.8;pointer-events:none;}
+.corner svg{width:100%;height:100%;}
+.corner.tl{left:8px;top:8px;} .corner.tr{right:8px;top:8px;transform:scaleX(-1);}
+.corner.bl{left:8px;bottom:8px;transform:scaleY(-1);} .corner.br{right:8px;bottom:8px;transform:scale(-1);}
+#emberCanvas{position:absolute;inset:0;z-index:1;pointer-events:none;}
+.lamp{
+  position:absolute;width:14px;height:14px;border-radius:50%;z-index:2;
+  background:radial-gradient(circle,#ffd9a0 0%,#ff9a40 45%,rgba(255,120,40,0) 72%);
+  box-shadow:0 0 26px 10px rgba(255,150,60,.25);
+  animation:lampflicker 3.4s ease-in-out infinite;
+}
+@keyframes lampflicker{0%,100%{opacity:.85;}30%{opacity:1;}55%{opacity:.7;}80%{opacity:.95;}}
+.pipe{position:absolute;z-index:2;background:linear-gradient(180deg,#96603a,#5a3018);border-radius:7px;box-shadow:inset 0 2px 3px rgba(255,200,140,.4),0 4px 10px #000;}
+.pipe.h{height:15px;} .pipe.v{width:15px;background:linear-gradient(90deg,#96603a,#5a3018);}
+.pipejoint{position:absolute;z-index:2;width:28px;height:28px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#d09258,#5a3018);box-shadow:0 3px 8px #000,inset 0 -2px 4px rgba(0,0,0,.6);}
+.gauge{
+  position:absolute;z-index:2;width:58px;height:58px;border-radius:50%;
+  background:radial-gradient(circle at 40% 32%,#efe2c0,#b8a878 70%,#6b5322 100%);
+  border:5px solid #7a5a22;box-shadow:0 4px 12px #000,inset 0 0 8px rgba(0,0,0,.4);
+}
+.gauge .needle{
+  position:absolute;left:50%;top:50%;width:2.5px;height:20px;background:#8a1a10;transform-origin:50% 100%;
+  transform:translate(-50%,-100%) rotate(-50deg);animation:needle 5s ease-in-out infinite;border-radius:2px;
+}
+@keyframes needle{0%,100%{transform:translate(-50%,-100%) rotate(-50deg);}50%{transform:translate(-50%,-100%) rotate(42deg);}}
+.gauge::after{content:"";position:absolute;left:50%;top:50%;width:7px;height:7px;border-radius:50%;background:#3a2708;transform:translate(-50%,-50%);}
+.bg-gear{position:absolute;opacity:.17;animation:spin 26s linear infinite;pointer-events:none;z-index:1;}
+.bg-gear.rev{animation-direction:reverse;animation-duration:34s;}
+@keyframes spin{to{transform:rotate(360deg);}}
+/* pendulum */
+#pendulum{position:absolute;right:11%;top:6%;z-index:2;transform-origin:50% 0;animation:swing 2.2s ease-in-out infinite alternate;}
+@keyframes swing{from{transform:rotate(-13deg);}to{transform:rotate(13deg);}}
+#pendulum .rod{width:4px;height:120px;margin:0 auto;background:linear-gradient(180deg,#a87c34,#5c3f14);}
+#pendulum .bob{width:34px;height:34px;border-radius:50%;margin:-2px auto 0;background:radial-gradient(circle at 35% 30%,#ffe3a1,#8a6428 70%,#4a3410);box-shadow:0 4px 10px #000,0 0 14px rgba(255,200,120,.3);}
+
+/* ---------- Gear lock puzzle ---------- */
+#gearlock{position:absolute;left:50%;top:47%;transform:translate(-50%,-50%);width:min(560px,84%);z-index:5;}
+#lockplate{
+  position:absolute;inset:-26px -18px -40px;border-radius:24px;z-index:-1;
+  background:linear-gradient(170deg,rgba(60,40,18,.55),rgba(28,18,10,.65));
+  border:2px solid rgba(168,124,52,.5);box-shadow:inset 0 2px 12px rgba(0,0,0,.7),0 6px 20px rgba(0,0,0,.5);
+}
+#lockplate .screw{position:absolute;width:11px;height:11px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#d0b070,#4a3410);}
+#lockplate .screw::after{content:"";position:absolute;left:1px;right:1px;top:45%;height:2px;background:#241708;transform:rotate(40deg);}
+.axle-row{display:flex;justify-content:space-between;align-items:center;}
+.axle{position:relative;width:31%;aspect-ratio:1;display:flex;align-items:center;justify-content:center;}
+.axle .mount{
+  position:absolute;width:32%;height:32%;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,#6b5330,#241708);
+  border:3px solid #8a6a30;box-shadow:0 0 16px #000,inset 0 0 8px #000;
+}
+.axle .label{position:absolute;bottom:-30px;width:130%;left:-15%;text-align:center;font-size:11px;letter-spacing:2.5px;color:#9c7c4a;}
+.gear-svg{width:100%;height:100%;filter:drop-shadow(0 5px 9px rgba(0,0,0,.75));}
+#gearA .gear-svg{animation:spin 4.5s linear infinite;}
+.running #gearB-img{animation:spin 4.5s linear infinite reverse;}
+.running #gearC .gear-svg{animation:spin 4.5s linear infinite;}
+#gearB-img{display:none;width:100%;height:100%;}
+#axleB.filled #gearB-img{display:block;}
+#axleB .hint-ring{
+  position:absolute;inset:6%;border-radius:50%;border:3px dashed rgba(127,212,255,.6);
+  animation:pulse-ring 1.5s ease-in-out infinite;pointer-events:none;
+}
+@keyframes pulse-ring{0%,100%{transform:scale(.95);opacity:.4;}50%{transform:scale(1.05);opacity:1;box-shadow:0 0 18px rgba(127,212,255,.35);}}
+#axleB.near .hint-ring{border-style:solid;border-color:#cfeeff;box-shadow:0 0 24px rgba(165,226,255,.7);}
+#axleB.filled .hint-ring{display:none;}
+
+/* loose gears shelf */
+#shelf{position:absolute;left:26px;bottom:20px;width:230px;z-index:5;}
+#shelf .shelf-plank{height:12px;border-radius:5px;background:linear-gradient(180deg,#96603a,#4a2812);box-shadow:0 5px 12px #000,inset 0 2px 2px rgba(255,200,140,.35);}
+#shelf .bracket{position:absolute;top:12px;width:10px;height:22px;background:linear-gradient(180deg,#5a3018,#2a1608);border-radius:0 0 4px 4px;}
+#shelf .shelf-note{margin-top:12px;font-size:12px;color:#b09258;letter-spacing:.5px;font-style:italic;text-align:center;line-height:1.5;}
+.loose{
+  position:absolute;z-index:30;cursor:grab;touch-action:none;
+  filter:drop-shadow(0 7px 10px rgba(0,0,0,.85));transition:filter .2s;
+}
+.loose:hover{filter:drop-shadow(0 7px 10px rgba(0,0,0,.85)) brightness(1.18) drop-shadow(0 0 8px rgba(255,227,161,.4));}
+.loose.dragging{cursor:grabbing;filter:drop-shadow(0 14px 20px rgba(0,0,0,.9)) brightness(1.2);}
+.loose .gear-svg{animation:none;}
+#gearWrong{width:78px;height:78px;}
+#gearRight{width:126px;height:126px;}
+.loose.wobble{animation:wobble .7s ease;}
+@keyframes wobble{0%{transform:rotate(0);}18%{transform:rotate(14deg) translateY(-4px);}38%{transform:rotate(-12deg);}58%{transform:rotate(9deg);}78%{transform:rotate(-6deg);}100%{transform:rotate(0);}}
+
+/* memory sparks */
+.spark{
+  position:absolute;width:60px;height:60px;z-index:20;cursor:pointer;
+  animation:floatup linear forwards;
+  filter:drop-shadow(0 0 11px rgba(127,212,255,.95));
+}
+.spark.gold{filter:drop-shadow(0 0 13px rgba(255,214,110,1));}
+.spark svg{width:100%;height:100%;position:relative;z-index:2;animation:sway 2.4s ease-in-out infinite;}
+@keyframes sway{0%,100%{transform:translateX(-6px) rotate(-5deg);}50%{transform:translateX(6px) rotate(5deg);}}
+.spark .halo{
+  position:absolute;inset:-13px;border-radius:50%;
+  background:radial-gradient(circle,rgba(127,212,255,.4),transparent 70%);
+  animation:halo-breathe 1.1s ease-in-out infinite;
+}
+.spark.gold .halo{background:radial-gradient(circle,rgba(255,214,110,.5),transparent 70%);}
+@keyframes halo-breathe{0%,100%{transform:scale(.88);opacity:.7;}50%{transform:scale(1.18);opacity:1;}}
+@keyframes floatup{from{transform:translateY(0);}to{transform:translateY(-120vh);}}
+.spark.popped{animation:pop .38s ease-out forwards;pointer-events:none;}
+@keyframes pop{0%{transform:scale(1);opacity:1;}100%{transform:scale(2.3);opacity:0;}}
+.float-text{
+  position:absolute;z-index:60;font-size:19px;font-weight:bold;color:#a5e2ff;pointer-events:none;
+  text-shadow:0 0 12px #4aa8d8;animation:rise 1.1s ease-out forwards;white-space:nowrap;
+}
+.float-text.gold{color:#ffd66e;text-shadow:0 0 12px #d8a030;}
+.float-text.bad{color:#ff8a7a;text-shadow:0 0 12px #d84a30;}
+@keyframes rise{from{transform:translateY(0) scale(.8);opacity:0;}15%{opacity:1;transform:translateY(-8px) scale(1.1);}to{transform:translateY(-70px) scale(1);opacity:0;}}
+.pop-burst{position:absolute;z-index:55;width:6px;height:6px;border-radius:50%;pointer-events:none;animation:burst .55s ease-out forwards;}
+@keyframes burst{to{transform:translate(var(--bx),var(--by)) scale(.2);opacity:0;}}
+
+/* ================= RIGHT PANEL : viewport ================= */
+#outside{
+  flex:1;position:relative;border-radius:26px;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:16px;padding:16px;overflow:hidden;
+  border:7px solid transparent;background-clip:padding-box;
+  background:
+    radial-gradient(ellipse at 50% 0%,rgba(90,60,120,.18),transparent 55%),
+    linear-gradient(180deg,#191220,#0b0810);
+  box-shadow:inset 0 0 60px #000;
+}
+#outside::before{
+  content:"";position:absolute;inset:-7px;border-radius:26px;padding:7px;pointer-events:none;z-index:9;
+  background:repeating-linear-gradient(45deg,#8a6428 0 6px,#5c3f14 6px 12px),linear-gradient(180deg,#a87c34,#5c3f14);
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;mask-composite:exclude;
+}
+#outside h4{font-size:11px;letter-spacing:4px;color:#9c7c4a;}
+#lens{
+  position:relative;width:min(258px,88%);aspect-ratio:1;border-radius:50%;cursor:pointer;
+  border:11px solid #8a6a30;
+  background:radial-gradient(circle at 35% 28%,#33475e 0%,#18222f 55%,#0a0e16 100%);
+  box-shadow:
+    inset 0 0 34px #000,
+    0 0 0 3px #4a3410,
+    0 0 30px rgba(201,151,63,.4),
+    0 10px 30px rgba(0,0,0,.7);
+  overflow:hidden;transition:box-shadow .3s;
+}
+#lens.glow{box-shadow:inset 0 0 34px #000,0 0 0 3px #4a3410,0 0 44px rgba(165,226,255,.75),0 10px 30px rgba(0,0,0,.7);}
+#lens::after{
+  content:"";position:absolute;left:10%;top:6%;width:38%;height:24%;border-radius:50%;z-index:8;
+  background:linear-gradient(160deg,rgba(255,255,255,.3),transparent 70%);transform:rotate(-18deg);pointer-events:none;
+}
+/* the room outside, seen through glass */
+#roomScene{position:absolute;inset:0;}
+#roomScene .moon{position:absolute;right:14%;top:12%;width:26%;height:26%;border-radius:50%;
+  background:radial-gradient(circle at 40% 35%,#e8f0ff,#9ab0d0 65%,transparent 75%);
+  box-shadow:0 0 30px rgba(200,220,255,.5);opacity:.85;}
+#roomScene .beam{position:absolute;right:0;top:8%;width:70%;height:90%;
+  background:linear-gradient(200deg,rgba(180,205,255,.14),transparent 60%);}
+#roomScene .shelfline{position:absolute;left:0;height:5px;background:linear-gradient(180deg,#2a2030,#0d0a12);box-shadow:0 3px 8px rgba(0,0,0,.6);}
+#roomScene .bottle{position:absolute;border-radius:4px 4px 2px 2px;background:#1a1424;box-shadow:inset 0 0 5px rgba(140,120,200,.3);}
+#roomScene .candle{position:absolute;left:12%;top:34%;width:9px;height:26px;background:#2a2438;border-radius:2px;}
+#roomScene .flame{position:absolute;left:calc(12% + 1px);top:calc(34% - 13px);width:8px;height:13px;border-radius:50% 50% 40% 40%;
+  background:radial-gradient(circle at 50% 80%,#ffdf9a,#ff9a40 70%,transparent);
+  box-shadow:0 0 16px 5px rgba(255,170,70,.35);animation:lampflicker 1.6s ease-in-out infinite;}
+#felix{position:absolute;inset:0;display:flex;align-items:flex-end;justify-content:center;z-index:3;}
+#felix svg{width:80%;height:auto;transform-origin:50% 100%;animation:felix-idle 3.2s ease-in-out infinite;}
+@keyframes felix-idle{0%,100%{transform:rotate(-1.4deg);}50%{transform:rotate(1.4deg);}}
+#felix .arm{transform-origin:74px 66px;animation:dusting 1.5s ease-in-out infinite;}
+@keyframes dusting{0%,100%{transform:rotate(-16deg);}50%{transform:rotate(10deg);}}
+#felix.noticing svg{animation:felix-step 1.5s ease forwards;}
+#felix.noticing .arm{animation:none;transform:rotate(-60deg);}
+@keyframes felix-step{to{transform:scale(1.4) translateY(5%);}}
+#shutter{
+  position:absolute;inset:0;z-index:6;border-radius:50%;
+  background:
+    repeating-conic-gradient(from 0deg,#5a3f18 0deg 30deg,#3a2810 30deg 60deg),
+    radial-gradient(circle,#6b5330,#241708);
+  background-blend-mode:multiply;
+  display:flex;align-items:center;justify-content:center;
+  transition:transform 1.3s cubic-bezier(.6,-0.2,.3,1.15),opacity 1.3s;
+}
+#shutter .keyhole{font-size:36px;filter:drop-shadow(0 0 8px rgba(255,200,120,.4));animation:halo-breathe 2s ease-in-out infinite;}
+#shutter.open{transform:scale(0) rotate(260deg);opacity:0;pointer-events:none;}
+.ripple{
+  position:absolute;border-radius:50%;border:3px solid rgba(165,226,255,.85);pointer-events:none;z-index:7;
+  animation:rippleAnim .6s ease-out forwards;
+}
+@keyframes rippleAnim{from{transform:scale(.2);opacity:1;}to{transform:scale(2.6);opacity:0;}}
+#lens.badshake{animation:badshake .4s ease;}
+@keyframes badshake{20%{transform:translateX(-7px);}40%{transform:translateX(7px);}60%{transform:translateX(-5px);}80%{transform:translateX(5px);}}
+#viewport-cap{font-size:13px;letter-spacing:1.5px;color:#9c7c4a;text-align:center;line-height:1.55;min-height:58px;}
+#viewport-cap b{color:#a5e2ff;}
+/* rhythm bar */
+#rhythm{display:none;flex-direction:column;align-items:center;gap:11px;width:100%;}
+#rhythm.show{display:flex;animation:fadein .6s ease;}
+@keyframes fadein{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:none;}}
+#beats{display:flex;align-items:center;gap:7px;padding:10px 16px;border-radius:14px;
+  background:rgba(10,14,22,.7);border:1px solid #33506b;box-shadow:inset 0 2px 8px rgba(0,0,0,.6);}
+.beat{width:28px;height:28px;border-radius:50%;border:2px solid #7fa8c0;transition:all .13s;}
+.beat.gap{width:22px;height:4px;border-radius:2px;border:none;background:#3a4c5c;}
+.beat.demo{background:#7fd4ff;box-shadow:0 0 16px #7fd4ff;transform:scale(1.25);}
+.beat.hit{background:#8affb0;border-color:#8affb0;box-shadow:0 0 16px #8affb0;transform:scale(1.1);}
+.beat.miss{background:#ff6a5a;border-color:#ff6a5a;}
+#rhythm .r-note{font-size:12.5px;color:#8fc0da;letter-spacing:.5px;text-align:center;min-height:32px;line-height:1.4;}
+#listenBtn{
+  font-family:inherit;font-size:13px;letter-spacing:1px;padding:9px 18px;border-radius:9px;cursor:pointer;
+  color:#0a1018;font-weight:bold;background:linear-gradient(180deg,#a5e2ff,#5a9cc0);border:1px solid #cfeeff;
+  box-shadow:0 4px 12px rgba(90,156,192,.4);transition:transform .15s;
+}
+#listenBtn:hover{transform:translateY(-2px);}
+
+/* ================= vignette / fading ================= */
+#vignette{
+  position:fixed;inset:0;z-index:50;pointer-events:none;
+  background:radial-gradient(ellipse at center,transparent 24%,rgba(2,2,10,.97) 80%);
+  opacity:var(--fade-level);transition:opacity .4s linear;
+}
+#vignette.pulse{animation:danger-pulse .9s ease-in-out infinite;}
+@keyframes danger-pulse{0%,100%{filter:none;}50%{filter:hue-rotate(-40deg) brightness(1.2);}}
+#whisper{
+  position:fixed;left:0;right:0;top:80px;z-index:51;text-align:center;pointer-events:none;
+  font-style:italic;color:rgba(165,226,255,.9);font-size:17px;letter-spacing:1.5px;
+  text-shadow:0 0 14px #4aa8d8;opacity:0;transition:opacity .8s;
+}
+#whisper.show{opacity:1;}
+
+/* ================= overlays ================= */
+.overlay{
+  position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;padding:16px;
+  background:rgba(4,3,10,.92);backdrop-filter:blur(5px);
+  opacity:0;pointer-events:none;transition:opacity .55s;overflow:auto;
+}
+.overlay.show{opacity:1;pointer-events:auto;}
+.overlay .panel{transform:translateY(18px) scale(.97);transition:transform .55s cubic-bezier(.3,1.2,.4,1);}
+.overlay.show .panel{transform:none;}
+.panel{
+  position:relative;width:min(640px,100%);max-height:94vh;overflow:auto;text-align:center;padding:34px 32px 28px;border-radius:22px;
+  background:
+    radial-gradient(ellipse at 50% -10%,rgba(201,151,63,.16),transparent 55%),
+    linear-gradient(170deg,#281c11,#150f16 60%,#0e0a12);
+  border:3px solid #8a6a30;
+  box-shadow:0 0 0 7px #14100a,0 0 0 8px #4a3a1a,0 0 70px rgba(201,151,63,.3),inset 0 0 34px #000;
+}
+.panel .flourish{width:170px;height:22px;margin:0 auto 4px;opacity:.9;}
+.panel h1{
+  font-size:37px;color:var(--gold-text);letter-spacing:2px;margin-bottom:4px;
+  text-shadow:0 0 22px rgba(242,212,136,.45),0 3px 0 #3a2708;
+}
+.panel h2{font-size:13px;letter-spacing:5px;color:#9c7c4a;text-transform:uppercase;margin-bottom:16px;}
+.panel p{font-size:15px;line-height:1.7;color:#d8c9a8;margin-bottom:12px;}
+.panel p em{color:#a5e2ff;font-style:normal;}
+.panel p .dropcap{float:left;font-size:52px;line-height:.82;padding:4px 8px 0 0;color:var(--brass-hi);text-shadow:0 0 14px rgba(255,227,161,.4);}
+.howto{display:flex;gap:11px;justify-content:center;flex-wrap:wrap;margin:16px 0 18px;}
+.howto .step{
+  flex:1 1 150px;max-width:185px;border-radius:14px;padding:14px 11px;font-size:12.5px;line-height:1.55;color:#cbb98f;
+  background:linear-gradient(180deg,rgba(201,151,63,.12),rgba(201,151,63,.04));
+  border:1px solid #5a4520;box-shadow:inset 0 1px 0 rgba(255,227,161,.15);
+  transition:transform .2s,box-shadow .2s;
+}
+.howto .step:hover{transform:translateY(-4px);box-shadow:0 8px 18px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,227,161,.25);}
+.howto .step .ico{font-size:26px;display:block;margin-bottom:6px;filter:drop-shadow(0 0 8px rgba(127,212,255,.4));}
+.howto .step b{display:block;color:var(--brass-hi);margin-bottom:4px;font-size:13.5px;letter-spacing:.5px;}
+.bigbtn{
+  font-family:inherit;font-size:21px;letter-spacing:3px;padding:15px 50px;border-radius:14px;cursor:pointer;
+  color:#1a1206;font-weight:bold;background:linear-gradient(180deg,#ffe3a1,#c9973f 55%,#a87424);
+  border:2px solid #ffedc4;box-shadow:0 7px 22px rgba(201,151,63,.45),inset 0 2px 5px #fff5,inset 0 -3px 6px #7a531580;
+  transition:transform .15s,box-shadow .15s;margin-top:8px;position:relative;overflow:hidden;
+}
+.bigbtn::after{content:"";position:absolute;top:0;left:-80%;width:40%;height:100%;transform:skewX(-24deg);
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.45),transparent);animation:sheen 3.2s ease-in-out infinite;}
+@keyframes sheen{0%,60%{left:-80%;}100%{left:140%;}}
+.bigbtn:hover{transform:translateY(-3px) scale(1.02);box-shadow:0 12px 30px rgba(201,151,63,.65);}
+.finalscore{
+  font-size:48px;color:var(--gold-text);margin:10px 0 2px;
+  text-shadow:0 0 24px rgba(242,212,136,.55),0 3px 0 #3a2708;
+}
+.finalscore small{display:block;font-size:11px;letter-spacing:3px;color:#9c7c4a;}
+.medals{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:8px 0 4px;}
+.medal{font-size:12px;letter-spacing:1px;color:#cbb98f;background:rgba(201,151,63,.12);
+  border:1px solid #5a4520;border-radius:16px;padding:5px 12px;}
+/* story rivals mini-board */
+.rivals{margin:16px auto 4px;width:min(380px,100%);}
+.rivals h3{font-size:11px;letter-spacing:3px;color:#9c7c4a;margin-bottom:8px;}
+.rivals .row{
+  display:flex;justify-content:space-between;align-items:center;padding:8px 13px;margin-bottom:6px;
+  border-radius:9px;background:rgba(255,255,255,.04);border:1px solid #3a2f1a;font-size:14px;color:#cbb98f;
+}
+.rivals .row.me{background:rgba(201,151,63,.2);border-color:var(--brass);color:var(--brass-hi);font-weight:bold;box-shadow:0 0 14px rgba(201,151,63,.25);}
+.rivals .row .who{display:flex;gap:8px;align-items:center;}
+/* shared arcade leaderboard styles */
+.lb-wrap{margin-top:20px;text-align:left;}
+.lb-wrap h3{font-size:11px;letter-spacing:3px;color:#9c7c4a;text-align:center;margin-bottom:8px;}
+table.lb{width:100%;border-collapse:collapse;font-size:14px;}
+table.lb th{font-size:10px;letter-spacing:2px;color:#8a6a30;text-align:left;padding:6px 8px;border-bottom:1px solid #3a2f1a;}
+table.lb td{padding:7px 8px;border-bottom:1px solid rgba(255,255,255,.05);color:#d8c9a8;}
+table.lb tr.me td{background:rgba(201,151,63,.18);color:var(--brass-hi);font-weight:bold;}
+.lb-av{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;
+  margin-right:7px;border-radius:50%;background:rgba(255,255,255,.08);font-size:13px;vertical-align:-5px;}
+.lb-msg{text-align:center;color:#8a7a58;font-size:13px;padding:14px 0;}
+.lb-loading{text-align:center;color:#8a7a58;font-size:13px;padding:14px 0;}
+.lb-spin{width:18px;height:18px;border:2px solid #5a4520;border-top-color:var(--brass-hi);border-radius:50%;
+  margin:0 auto 8px;animation:spin 0.8s linear infinite;}
+#hsbadge,#hsbadge2{display:none;margin:10px auto 0;padding:6px 15px;border-radius:20px;font-size:13px;
+  background:rgba(201,151,63,.22);border:1px solid var(--brass);color:var(--brass-hi);}
+.nameform{display:none;gap:8px;justify-content:center;margin-top:10px;}
+.nameform input{font-family:inherit;font-size:15px;padding:9px 12px;border-radius:8px;border:1px solid #8a6a30;
+  background:#0e0a10;color:#e8dcc0;width:180px;}
+.nameform button{font-family:inherit;font-size:14px;padding:9px 16px;border-radius:8px;cursor:pointer;
+  color:#1a1206;font-weight:bold;background:linear-gradient(180deg,#ffe3a1,#b98a30);border:1px solid #ffedc4;}
+.pbest{font-size:12px;color:#8a7a58;margin-top:12px;letter-spacing:1px;}
+/* responsive */
+@media (max-width:760px){
+  #stage{flex-direction:column;padding-top:74px;}
+  #locket{flex:1 1 58%;}
+  #outside{flex:1 1 42%;flex-direction:row;gap:12px;flex-wrap:wrap;justify-content:center;}
+  #lens{width:min(150px,38%);}
+  #scorebox{font-size:20px;padding:4px 14px;}
+  #fadebar{width:105px;}
+  #gearRight{width:92px;height:92px;} #gearWrong{width:60px;height:60px;}
+  #objective{display:none;}
+  #pendulum{display:none;}
+  .hud-title{font-size:10px;}
+}
+@media (prefers-reduced-motion:reduce){
+  .bg-gear,#gearA .gear-svg,.running #gearB-img,.running #gearC .gear-svg{animation-duration:70s;}
+  .spark .halo,#axleB .hint-ring,.bigbtn::after,#pendulum,#felix svg,#felix .arm{animation:none;}
+  #stage.shaking{animation:none;}
+}
+</style>
+</head>
+<body>
+
+<!-- SVG shared gradients -->
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <radialGradient id="goldG" cx="35%" cy="30%"><stop offset="0%" stop-color="#ffedb8"/><stop offset="55%" stop-color="#d8a244"/><stop offset="100%" stop-color="#6b4a14"/></radialGradient>
+    <radialGradient id="copperG" cx="35%" cy="30%"><stop offset="0%" stop-color="#f0b080"/><stop offset="55%" stop-color="#b06a3a"/><stop offset="100%" stop-color="#5a3018"/></radialGradient>
+    <radialGradient id="steelG" cx="35%" cy="30%"><stop offset="0%" stop-color="#e6ecf2"/><stop offset="55%" stop-color="#93a2b2"/><stop offset="100%" stop-color="#3a4450"/></radialGradient>
+    <radialGradient id="brassSmG" cx="35%" cy="30%"><stop offset="0%" stop-color="#ffe0a0"/><stop offset="55%" stop-color="#b98a30"/><stop offset="100%" stop-color="#5c3f14"/></radialGradient>
+  </defs>
+</svg>
+
+<div id="hud">
+  <div id="hudleft">
+    <div class="hud-title">THE VANISHING TRICK · <b>ESCAPE THE CABINET</b></div>
+    <div id="objective"><span class="stepnum">1</span>Fix the gear train — drag the right gear onto the empty axle</div>
+  </div>
+  <div id="scorebox"><small>SOUL INTEGRITY</small><span id="scoreval">1000</span><span id="combo">×2</span></div>
+  <div id="hudright">
+    <div id="fadewrap">
+      <div id="fadelabel">☠ THE FADING</div>
+      <div id="fadebar"><div id="fadefill"></div></div>
+    </div>
+    <button id="muteBtn" title="Sound on/off">🔊</button>
+  </div>
+</div>
+
+<div id="stage">
+  <!-- LEFT : inside the locket -->
+  <section id="locket" aria-label="Inside the locket">
+    <canvas id="emberCanvas"></canvas>
+    <div class="corner tl"><svg viewBox="0 0 60 60" fill="none" stroke="#c9973f" stroke-width="2.4" stroke-linecap="round"><path d="M4 56 V16 Q4 4 16 4 H56"/><path d="M10 50 V22 Q10 10 22 10 H50"/><circle cx="16" cy="16" r="3.4" fill="#ffe3a1" stroke="none"/><path d="M4 34 q8 -3 8 -12 M34 4 q-3 8 -12 8"/></svg></div>
+    <div class="corner tr"><svg viewBox="0 0 60 60" fill="none" stroke="#c9973f" stroke-width="2.4" stroke-linecap="round"><path d="M4 56 V16 Q4 4 16 4 H56"/><path d="M10 50 V22 Q10 10 22 10 H50"/><circle cx="16" cy="16" r="3.4" fill="#ffe3a1" stroke="none"/><path d="M4 34 q8 -3 8 -12 M34 4 q-3 8 -12 8"/></svg></div>
+    <div class="corner bl"><svg viewBox="0 0 60 60" fill="none" stroke="#c9973f" stroke-width="2.4" stroke-linecap="round"><path d="M4 56 V16 Q4 4 16 4 H56"/><path d="M10 50 V22 Q10 10 22 10 H50"/><circle cx="16" cy="16" r="3.4" fill="#ffe3a1" stroke="none"/><path d="M4 34 q8 -3 8 -12 M34 4 q-3 8 -12 8"/></svg></div>
+    <div class="corner br"><svg viewBox="0 0 60 60" fill="none" stroke="#c9973f" stroke-width="2.4" stroke-linecap="round"><path d="M4 56 V16 Q4 4 16 4 H56"/><path d="M10 50 V22 Q10 10 22 10 H50"/><circle cx="16" cy="16" r="3.4" fill="#ffe3a1" stroke="none"/><path d="M4 34 q8 -3 8 -12 M34 4 q-3 8 -12 8"/></svg></div>
+
+    <div class="lamp" style="left:8%;top:10%;"></div>
+    <div class="lamp" style="right:6%;bottom:34%;animation-delay:1.2s;"></div>
+    <div class="pipe h" style="left:5%;top:16%;width:30%;"></div>
+    <div class="pipe v" style="left:33%;top:16%;height:13%;"></div>
+    <div class="pipejoint" style="left:32%;top:14.4%;"></div>
+    <div class="pipe h" style="right:4%;bottom:18%;width:26%;"></div>
+    <div class="pipe v" style="right:28.5%;bottom:18%;height:15%;"></div>
+    <div class="pipejoint" style="right:27.2%;bottom:17%;"></div>
+    <div class="gauge" style="left:7%;top:22%;"><div class="needle"></div></div>
+    <div id="pendulum"><div class="rod"></div><div class="bob"></div></div>
+    <svg class="bg-gear" style="left:-45px;top:-45px;width:200px;height:200px;" viewBox="0 0 100 100"><g fill="#c9973f"><circle cx="50" cy="50" r="28"/><g><rect x="46" y="8" width="8" height="16" rx="2"/><rect x="46" y="76" width="8" height="16" rx="2"/><rect x="8" y="46" width="16" height="8" rx="2"/><rect x="76" y="46" width="16" height="8" rx="2"/><rect x="18" y="18" width="10" height="10" rx="2" transform="rotate(45 23 23)"/><rect x="72" y="18" width="10" height="10" rx="2" transform="rotate(45 77 23)"/><rect x="18" y="72" width="10" height="10" rx="2" transform="rotate(45 23 77)"/><rect x="72" y="72" width="10" height="10" rx="2" transform="rotate(45 77 77)"/></g><circle cx="50" cy="50" r="10" fill="#120d08"/></g></svg>
+    <svg class="bg-gear rev" style="right:-55px;bottom:-55px;width:240px;height:240px;" viewBox="0 0 100 100"><g fill="#b06a3a"><circle cx="50" cy="50" r="28"/><g><rect x="46" y="8" width="8" height="16" rx="2"/><rect x="46" y="76" width="8" height="16" rx="2"/><rect x="8" y="46" width="16" height="8" rx="2"/><rect x="76" y="46" width="16" height="8" rx="2"/><rect x="18" y="18" width="10" height="10" rx="2" transform="rotate(45 23 23)"/><rect x="72" y="18" width="10" height="10" rx="2" transform="rotate(45 77 23)"/><rect x="18" y="72" width="10" height="10" rx="2" transform="rotate(45 23 77)"/><rect x="72" y="72" width="10" height="10" rx="2" transform="rotate(45 77 77)"/></g><circle cx="50" cy="50" r="10" fill="#120d08"/></g></svg>
+    <svg class="bg-gear" style="left:52%;top:-70px;width:150px;height:150px;animation-duration:18s;" viewBox="0 0 100 100"><g fill="#8a98a8"><circle cx="50" cy="50" r="28"/><g><rect x="46" y="8" width="8" height="16" rx="2"/><rect x="46" y="76" width="8" height="16" rx="2"/><rect x="8" y="46" width="16" height="8" rx="2"/><rect x="76" y="46" width="16" height="8" rx="2"/><rect x="18" y="18" width="10" height="10" rx="2" transform="rotate(45 23 23)"/><rect x="72" y="18" width="10" height="10" rx="2" transform="rotate(45 77 23)"/><rect x="18" y="72" width="10" height="10" rx="2" transform="rotate(45 23 77)"/><rect x="72" y="72" width="10" height="10" rx="2" transform="rotate(45 77 77)"/></g><circle cx="50" cy="50" r="10" fill="#120d08"/></g></svg>
+
+    <!-- gear lock puzzle -->
+    <div id="gearlock">
+      <div id="lockplate">
+        <div class="screw" style="left:8px;top:8px;"></div><div class="screw" style="right:8px;top:8px;"></div>
+        <div class="screw" style="left:8px;bottom:8px;"></div><div class="screw" style="right:8px;bottom:8px;"></div>
+      </div>
+      <div class="axle-row">
+        <div class="axle" id="gearA">
+          <div class="mount"></div>
+          <svg class="gear-svg" viewBox="0 0 100 100"><g fill="url(#goldG)"><circle cx="50" cy="50" r="28"/><g><rect x="46" y="8" width="8" height="16" rx="2"/><rect x="46" y="76" width="8" height="16" rx="2"/><rect x="8" y="46" width="16" height="8" rx="2"/><rect x="76" y="46" width="16" height="8" rx="2"/><rect x="18" y="18" width="10" height="10" rx="2" transform="rotate(45 23 23)"/><rect x="72" y="18" width="10" height="10" rx="2" transform="rotate(45 77 23)"/><rect x="18" y="72" width="10" height="10" rx="2" transform="rotate(45 23 77)"/><rect x="72" y="72" width="10" height="10" rx="2" transform="rotate(45 77 77)"/></g><circle cx="50" cy="50" r="16" fill="none" stroke="#7a5315" stroke-width="2" opacity=".6"/><circle cx="50" cy="50" r="9" fill="#120d08"/></g></svg>
+          <div class="label">⚡ POWER SOURCE</div>
+        </div>
+        <div class="axle" id="axleB">
+          <div class="mount"></div>
+          <div class="hint-ring"></div>
+          <svg id="gearB-img" class="gear-svg" viewBox="0 0 100 100"><g fill="url(#steelG)"><circle cx="50" cy="50" r="28"/><g><rect x="46" y="8" width="8" height="16" rx="2"/><rect x="46" y="76" width="8" height="16" rx="2"/><rect x="8" y="46" width="16" height="8" rx="2"/><rect x="76" y="46" width="16" height="8" rx="2"/><rect x="18" y="18" width="10" height="10" rx="2" transform="rotate(45 23 23)"/><rect x="72" y="18" width="10" height="10" rx="2" transform="rotate(45 77 23)"/><rect x="18" y="72" width="10" height="10" rx="2" transform="rotate(45 23 77)"/><rect x="72" y="72" width="10" height="10" rx="2" transform="rotate(45 77 77)"/></g><circle cx="50" cy="50" r="16" fill="none" stroke="#2c3540" stroke-width="2" opacity=".7"/><circle cx="50" cy="50" r="9" fill="#120d08"/></g></svg>
+          <div class="label">EMPTY AXLE</div>
+        </div>
+        <div class="axle" id="gearC">
+          <div class="mount"></div>
+          <svg class="gear-svg" viewBox="0 0 100 100"><g fill="url(#copperG)"><circle cx="50" cy="50" r="28"/><g><rect x="46" y="8" width="8" height="16" rx="2"/><rect x="46" y="76" width="8" height="16" rx="2"/><rect x="8" y="46" width="16" height="8" rx="2"/><rect x="76" y="46" width="16" height="8" rx="2"/><rect x="18" y="18" width="10" height="10" rx="2" transform="rotate(45 23 23)"/><rect x="72" y="18" width="10" height="10" rx="2" transform="rotate(45 77 23)"/><rect x="18" y="72" width="10" height="10" rx="2" transform="rotate(45 23 77)"/><rect x="72" y="72" width="10" height="10" rx="2" transform="rotate(45 77 77)"/></g><circle cx="50" cy="50" r="9" fill="#120d08"/><path d="M42 46h16v14h-16z" fill="#3a2810" opacity=".9"/><path d="M45 46v-5a5 5 0 0 1 10 0v5" stroke="#3a2810" stroke-width="4" fill="none"/></g></svg>
+          <div class="label">🔒 DOOR LOCK</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="shelf">
+      <div style="height:132px"></div>
+      <div class="shelf-plank"></div>
+      <div class="bracket" style="left:20px;"></div><div class="bracket" style="right:20px;"></div>
+      <div class="shelf-note">Two loose gears…<br>only one fits the empty axle!</div>
+    </div>
+    <div class="loose" id="gearWrong">
+      <svg class="gear-svg" viewBox="0 0 100 100"><g fill="url(#brassSmG)"><circle cx="50" cy="50" r="28"/><g><rect x="46" y="8" width="8" height="16" rx="2"/><rect x="46" y="76" width="8" height="16" rx="2"/><rect x="8" y="46" width="16" height="8" rx="2"/><rect x="76" y="46" width="16" height="8" rx="2"/><rect x="18" y="18" width="10" height="10" rx="2" transform="rotate(45 23 23)"/><rect x="72" y="18" width="10" height="10" rx="2" transform="rotate(45 77 23)"/><rect x="18" y="72" width="10" height="10" rx="2" transform="rotate(45 23 77)"/><rect x="72" y="72" width="10" height="10" rx="2" transform="rotate(45 77 77)"/></g><circle cx="50" cy="50" r="9" fill="#120d08"/></g></svg>
+    </div>
+    <div class="loose" id="gearRight">
+      <svg class="gear-svg" viewBox="0 0 100 100"><g fill="url(#steelG)"><circle cx="50" cy="50" r="28"/><g><rect x="46" y="8" width="8" height="16" rx="2"/><rect x="46" y="76" width="8" height="16" rx="2"/><rect x="8" y="46" width="16" height="8" rx="2"/><rect x="76" y="46" width="16" height="8" rx="2"/><rect x="18" y="18" width="10" height="10" rx="2" transform="rotate(45 23 23)"/><rect x="72" y="18" width="10" height="10" rx="2" transform="rotate(45 77 23)"/><rect x="18" y="72" width="10" height="10" rx="2" transform="rotate(45 23 77)"/><rect x="72" y="72" width="10" height="10" rx="2" transform="rotate(45 77 77)"/></g><circle cx="50" cy="50" r="16" fill="none" stroke="#2c3540" stroke-width="2" opacity=".7"/><circle cx="50" cy="50" r="9" fill="#120d08"/></g></svg>
+    </div>
+  </section>
+
+  <!-- RIGHT : outside viewport -->
+  <section id="outside" aria-label="The outside viewport">
+    <h4>◈ THE OUTSIDE WORLD ◈</h4>
+    <div id="lens">
+      <div id="roomScene">
+        <div class="moon"></div><div class="beam"></div>
+        <div class="shelfline" style="top:46%;width:62%;"></div>
+        <div class="shelfline" style="top:68%;width:44%;"></div>
+        <div class="bottle" style="left:8%;top:36%;width:9px;height:22px;"></div>
+        <div class="bottle" style="left:22%;top:33%;width:13px;height:25px;"></div>
+        <div class="bottle" style="left:40%;top:38%;width:8px;height:18px;"></div>
+        <div class="candle"></div><div class="flame"></div>
+      </div>
+      <div id="felix">
+        <svg viewBox="0 0 120 140">
+          <ellipse cx="60" cy="134" rx="42" ry="6" fill="#000" opacity=".55"/>
+          <g fill="#0b0d15">
+            <circle cx="60" cy="42" r="16"/>
+            <path d="M44 36 q16 -18 32 0 l-4 -14 q-12 -8 -24 0 z"/>
+            <path d="M42 60 q18 -10 36 0 l6 46 q-24 10 -48 0 z"/>
+            <g class="arm"><rect x="70" y="62" width="9" height="36" rx="4"/><circle cx="76" cy="100" r="8" opacity=".85"/></g>
+            <rect x="38" y="66" width="9" height="34" rx="4" transform="rotate(14 42 66)"/>
+            <rect x="48" y="104" width="10" height="28" rx="4"/>
+            <rect x="62" y="104" width="10" height="28" rx="4"/>
+          </g>
+        </svg>
+      </div>
+      <div id="shutter"><span class="keyhole">🗝️</span></div>
+    </div>
+    <div id="viewport-cap">The brass shutter is sealed tight.<br>Fix the gear train to wind it open.</div>
+    <div id="rhythm">
+      <div id="beats"></div>
+      <div class="r-note" id="rnote">Tap the glass to knock the secret pattern.</div>
+      <button id="listenBtn">🔊 Hear the pattern again</button>
+    </div>
+  </section>
+</div>
+
+<div id="vignette"></div>
+<div id="whisper"></div>
+
+<!-- START -->
+<div class="overlay show" id="startOverlay">
+  <div class="panel">
+    <svg class="flourish" viewBox="0 0 170 22" fill="none" stroke="#c9973f" stroke-width="1.6"><path d="M5 11 H62 M108 11 H165"/><circle cx="85" cy="11" r="6"/><circle cx="85" cy="11" r="2.4" fill="#ffe3a1" stroke="none"/><path d="M62 11 q6 -8 12 0 q-6 8 -12 0 M108 11 q-6 -8 -12 0 q6 8 12 0"/></svg>
+    <h2>The Vanishing Trick · Jenni Spangler</h2>
+    <h1>⚙️ Escape the Cabinet</h1>
+    <p><span class="dropcap">P</span>inchbeck's cruel magic has shrunk you — <em>Leander</em> — inside a tiny brass locket.
+    Every heartbeat, you fade a little more into nothingness. Repair the clockwork, wind open the
+    viewport, and knock the secret signal so <em>Felix</em> notices the locket… before you vanish forever.</p>
+    <div class="howto">
+      <div class="step"><span class="ico">✨</span><b>Catch memories</b>Touch the glowing sparks to remember who you are. Each pushes The Fading back — chain them fast for <em>combo</em> points!</div>
+      <div class="step"><span class="ico">⚙️</span><b>Fix the gears</b>Two loose gears sit on the shelf — but only one fits the empty axle. Choose wisely and drag it on.</div>
+      <div class="step"><span class="ico">👊</span><b>Signal Felix</b>Listen to the knock pattern, then tap the glass lens in the same rhythm. A golden spark is worth triple!</div>
+    </div>
+    <p style="font-size:13px;color:#9c7c4a;">Soul Integrity drains every second — much faster when you're nearly gone. Escape with the highest score!</p>
+    <button class="bigbtn" id="startBtn">BEGIN ▶</button>
+    <div class="pbest" id="pbest"></div>
+    <div class="lb-wrap"><h3>🏆 WORLDWIDE SOUL INTEGRITY BOARD</h3><div id="mainboard"></div></div>
+  </div>
+</div>
+
+<!-- GAME OVER -->
+<div class="overlay" id="overOverlay">
+  <div class="panel">
+    <h1 style="color:#a5e2ff;text-shadow:0 0 20px #4aa8d8;">Faded Into Nothingness…</h1>
+    <h2>The locket fell silent</h2>
+    <p>Leander's memories slipped away before help could come. Catch more <em>memory sparks</em> — and chain combos — to hold on longer next time.</p>
+    <div class="finalscore" id="overScore">0<small>FINAL SOUL INTEGRITY</small></div>
+    <div class="medals" id="overMedals"></div>
+    <div class="rivals"><h3>📖 STORY RIVALS</h3><div id="overRivals"></div></div>
+    <div id="hsbadge"></div>
+    <div class="nameform" id="nameform"><input id="nameinput" maxlength="16" placeholder="Your name"><button id="savescore">SAVE</button></div>
+    <button class="bigbtn" id="retryBtn">TRY AGAIN ↻</button>
+    <div class="lb-wrap"><h3>🏆 WORLDWIDE SOUL INTEGRITY BOARD</h3><div id="endboard"></div></div>
+  </div>
+</div>
+
+<!-- VICTORY -->
+<div class="overlay" id="winOverlay">
+  <div class="panel">
+    <svg class="flourish" viewBox="0 0 170 22" fill="none" stroke="#c9973f" stroke-width="1.6"><path d="M5 11 H62 M108 11 H165"/><circle cx="85" cy="11" r="6"/><circle cx="85" cy="11" r="2.4" fill="#ffe3a1" stroke="none"/><path d="M62 11 q6 -8 12 0 q-6 8 -12 0 M108 11 q-6 -8 -12 0 q6 8 12 0"/></svg>
+    <h1>✨ Rescued! ✨</h1>
+    <h2>Felix heard the knocking</h2>
+    <p>Felix's silhouette leans close — he lifts the locket from the shelf, whispers the counter-charm,
+    and <em>Leander tumbles out, whole and remembered</em>. The Vanishing Trick is broken!</p>
+    <div class="finalscore" id="winScore">0<small>FINAL SOUL INTEGRITY</small></div>
+    <div class="medals" id="winMedals"></div>
+    <div class="rivals"><h3>📖 STORY RIVALS</h3><div id="winRivals"></div></div>
+    <div id="hsbadge2"></div>
+    <div class="nameform" id="nameform2"><input id="nameinput2" maxlength="16" placeholder="Your name"><button id="savescore2">SAVE</button></div>
+    <button class="bigbtn" id="againBtn">PLAY AGAIN ↻</button>
+    <div class="lb-wrap"><h3>🏆 WORLDWIDE SOUL INTEGRITY BOARD</h3><div id="endboard2"></div></div>
+  </div>
+</div>
+
+<script>
+function $(id){return document.getElementById(id);}
+
+/* ---- SHARED ARCADE BACKEND — identical in every game ---- */
+var SB_URL='https://wpohvsjkrskhlrayaubp.supabase.co';
+var SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indwb2h2c2prcnNraGxyYXlhdWJwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzMDEzOTcsImV4cCI6MjA5Njg3NzM5N30.Xi07ayGB5CykR-_7QX-b8UsUmMmTbGIlYpctXYgW9JI';
+function sbH(){return {'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'};}
+
+var GAME_ID='vanishinglocket';   /* unique, lowercase, never reused */
+
+function currentPlayer(){try{return JSON.parse(localStorage.getItem('rna_player')||'null');}catch(e){return null;}}
+function playerName(){var p=currentPlayer();return p?p.name:null;}
+
+async function sbFetchTop(limit){limit=limit||15;try{var r=await fetch(SB_URL+'/rest/v1/scores?select=name%2Cscore&game=eq.'+GAME_ID+'&order=score.desc&limit='+limit,{headers:sbH()});if(!r.ok)return null;return await r.json();}catch(e){return null;}}
+async function sbFetchAvatars(){try{var r=await fetch(SB_URL+'/rest/v1/players?select=name%2Cavatar&limit=1000',{headers:sbH()});if(!r.ok)return {};var rows=await r.json();var m={};rows.forEach(function(x){if(x&&x.name)m[String(x.name).trim().toLowerCase()]=x.avatar||'🎮';});return m;}catch(e){return {};}}
+function avatarFor(map,name){var k=String(name==null?'':name).trim().toLowerCase();return (map&&map[k])?map[k]:'🎮';}
+async function sbInsert(name,score){try{var h=sbH();h['Prefer']='return=minimal';var body={name:name,score:score,game:GAME_ID};var pn=playerName();if(pn)body.player=pn;var r=await fetch(SB_URL+'/rest/v1/scores',{method:'POST',headers:h,body:JSON.stringify(body)});return r.ok;}catch(e){return false;}}
+async function sbQualifies(score){try{var r=await fetch(SB_URL+'/rest/v1/scores?select=score&game=eq.'+GAME_ID+'&order=score.desc&limit=15',{headers:sbH()});if(!r.ok)return true;var rows=await r.json();if(!rows||rows.length<15)return true;return score>rows[rows.length-1].score;}catch(e){return true;}}
+function lbEsc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function lbLoading(){return '<div class="lb-loading"><div class="lb-spin"></div>Loading…</div>';}
+function lbTable(rows,hiN,hiS,avatars){if(!rows||!rows.length)return '<div class="lb-msg">No souls recorded yet — escape first!</div>';var med=['🥇','🥈','🥉'],h='<table class="lb"><thead><tr><th>RANK</th><th>PLAYER</th><th>INTEGRITY</th></tr></thead><tbody>',mk=false;rows.forEach(function(r,i){var me=(!mk&&hiN&&r.name===hiN&&r.score===hiS);if(me)mk=true;var av=avatarFor(avatars,r.name);h+='<tr class="'+(me?'me':'')+'"><td>'+(i<3?med[i]:(i+1))+'</td><td><span class="lb-av">'+av+'</span>'+lbEsc(r.name)+'</td><td>'+r.score+'</td></tr>';});return h+'</tbody></table>';}
+async function loadMainBoard(){$('mainboard').innerHTML=lbLoading();var res=await Promise.all([sbFetchTop(15),sbFetchAvatars()]);$('mainboard').innerHTML=lbTable(res[0],null,null,res[1]);}
+async function loadEndBoard(n,s){var el=state.won?$('endboard2'):$('endboard');el.innerHTML=lbLoading();var res=await Promise.all([sbFetchTop(10),sbFetchAvatars()]);el.innerHTML=lbTable(res[0],n,s,res[1]);}
+
+/* =========================================================
+   GAME STATE
+========================================================= */
+var state={
+  phase:'start',          // start | play | rhythm | winning | over | win
+  fade:0, score:1000,
+  gearPlaced:false, won:false,
+  sparkTimer:0, whisperTimer:0, heartTimer:0, lastT:0,
+  combo:0, lastPop:0, sparksPopped:0, rhythmFails:0
+};
+var PBEST_KEY='vanishinglocket_best';
+
+/* =========================================================
+   WEB AUDIO — synthesized Victorian machine sounds
+========================================================= */
+var AC=null,master=null,droneOsc=null,droneGain=null,muted=false;
+function audio(){
+  if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)();master=AC.createGain();master.gain.value=1;master.connect(AC.destination);}catch(e){}}
+  if(AC&&AC.state==='suspended')AC.resume();
+  return AC;
+}
+function setMuted(m){muted=m;if(master&&AC)master.gain.setTargetAtTime(m?0:1,AC.currentTime,0.05);$('muteBtn').textContent=m?'🔇':'🔊';}
+function startDrone(){
+  var ac=audio();if(!ac||droneOsc)return;
+  droneOsc=ac.createOscillator();droneGain=ac.createGain();
+  var lfo=ac.createOscillator(),lfoG=ac.createGain();
+  droneOsc.type='sine';droneOsc.frequency.value=52;
+  lfo.frequency.value=0.4;lfoG.gain.value=6;
+  lfo.connect(lfoG);lfoG.connect(droneOsc.frequency);
+  droneGain.gain.value=0;
+  droneOsc.connect(droneGain);droneGain.connect(master);
+  droneOsc.start();lfo.start();
+}
+function setDroneLevel(f01){if(droneGain&&AC)droneGain.gain.setTargetAtTime(0.004+f01*0.09,AC.currentTime,0.3);}
+function stopDrone(){if(droneGain&&AC)droneGain.gain.setTargetAtTime(0,AC.currentTime,0.2);}
+function blip(freq,dur,type,vol,when){
+  var ac=audio();if(!ac)return;when=when||0;
+  var o=ac.createOscillator(),g=ac.createGain();
+  o.type=type||'sine';o.frequency.value=freq;
+  g.gain.setValueAtTime(vol||0.2,ac.currentTime+when);
+  g.gain.exponentialRampToValueAtTime(0.0001,ac.currentTime+when+dur);
+  o.connect(g);g.connect(master);
+  o.start(ac.currentTime+when);o.stop(ac.currentTime+when+dur+0.05);
+}
+function sfxClickMetal(){blip(1800,0.05,'square',0.12);blip(920,0.09,'triangle',0.18,0.02);blip(140,0.12,'sine',0.22,0.02);}
+function sfxTick(){blip(2400,0.03,'square',0.035);}
+function sfxPop(combo){
+  var ac=audio();if(!ac)return;
+  var base=480*(1+0.16*Math.min(combo||1,6));
+  var o=ac.createOscillator(),g=ac.createGain();
+  o.type='sine';o.frequency.setValueAtTime(base,ac.currentTime);
+  o.frequency.exponentialRampToValueAtTime(base*2.6,ac.currentTime+0.14);
+  g.gain.setValueAtTime(0.22,ac.currentTime);g.gain.exponentialRampToValueAtTime(0.0001,ac.currentTime+0.2);
+  o.connect(g);g.connect(master);o.start();o.stop(ac.currentTime+0.25);
+}
+function sfxKnock(){blip(190,0.08,'triangle',0.3);blip(95,0.14,'sine',0.25,0.01);}
+function sfxBad(){blip(160,0.25,'sawtooth',0.14);blip(120,0.3,'sawtooth',0.12,0.08);}
+function sfxClunk(){blip(110,0.16,'square',0.2);blip(70,0.24,'sine',0.24,0.04);}
+function sfxHeart(){blip(58,0.13,'sine',0.3);blip(50,0.16,'sine',0.24,0.16);}
+function sfxChime(){
+  var notes=[523,659,784,1047,1319];
+  notes.forEach(function(f,i){blip(f,0.5,'sine',0.18,i*0.14);blip(f*2,0.35,'triangle',0.06,i*0.14);});
+}
+function sfxGearsRun(){sfxClickMetal();setTimeout(sfxClickMetal,140);setTimeout(sfxClickMetal,300);setTimeout(function(){blip(330,0.5,'triangle',0.12);blip(440,0.5,'triangle',0.1,0.1);},420);}
+
+/* =========================================================
+   EMBER PARTICLES (canvas, inside the locket)
+========================================================= */
+var embers=[],eCtx=null;
+function initEmbers(){
+  var c=$('emberCanvas');eCtx=c.getContext('2d');
+  function size(){c.width=$('locket').clientWidth;c.height=$('locket').clientHeight;}
+  size();window.addEventListener('resize',size);
+  for(var i=0;i<26;i++)embers.push(newEmber(c,true));
+}
+function newEmber(c,anyY){
+  var blue=Math.random()<0.25;
+  return{
+    x:Math.random()*c.width, y:anyY?Math.random()*c.height:c.height+8,
+    r:1+Math.random()*2.4, vy:-(8+Math.random()*20)/60, vx:(Math.random()-0.5)*14/60,
+    a:0.15+Math.random()*0.4, blue:blue, w:Math.random()*6.28
+  };
+}
+function drawEmbers(){
+  if(!eCtx)return;
+  var c=$('emberCanvas');
+  eCtx.clearRect(0,0,c.width,c.height);
+  for(var i=0;i<embers.length;i++){
+    var e=embers[i];
+    e.w+=0.03;e.x+=e.vx+Math.sin(e.w)*0.18;e.y+=e.vy;
+    if(e.y<-10||e.x<-10||e.x>c.width+10){embers[i]=newEmber(c,false);continue;}
+    var g=eCtx.createRadialGradient(e.x,e.y,0,e.x,e.y,e.r*3.4);
+    if(e.blue){g.addColorStop(0,'rgba(165,226,255,'+e.a+')');g.addColorStop(1,'rgba(80,140,220,0)');}
+    else{g.addColorStop(0,'rgba(255,190,110,'+e.a+')');g.addColorStop(1,'rgba(255,120,40,0)');}
+    eCtx.fillStyle=g;
+    eCtx.beginPath();eCtx.arc(e.x,e.y,e.r*3.4,0,6.28);eCtx.fill();
+  }
+}
+
+/* =========================================================
+   HUD + FADING
+========================================================= */
+function setFade(v){
+  state.fade=Math.max(0,Math.min(100,v));
+  document.documentElement.style.setProperty('--fade-level',(state.fade/100).toFixed(3));
+  $('fadefill').style.width=state.fade+'%';
+  $('fadefill').classList.toggle('danger',state.fade>65);
+  $('vignette').classList.toggle('pulse',state.fade>80);
+  $('stage').classList.toggle('shaking',state.fade>85&&(state.phase==='play'||state.phase==='rhythm'));
+  setDroneLevel(state.fade/100);
+}
+function setScore(v,goodOrBad){
+  var prev=state.score;
+  state.score=Math.max(0,v);
+  $('scoreval').textContent=Math.round(state.score);
+  if(goodOrBad==='good'){$('scorebox').classList.remove('bump');void $('scorebox').offsetWidth;$('scorebox').classList.add('bump');}
+  if(goodOrBad==='bad'){$('scorebox').classList.remove('hurt');void $('scorebox').offsetWidth;$('scorebox').classList.add('hurt');}
+}
+function setObjective(step,text){
+  $('objective').innerHTML='<span class="stepnum">'+step+'</span>'+text;
+}
+var WHISPERS=['Remember your name…','Who is Leander…?','Hold on to the memories…','You are fading, little thief…','Felix is close. Stay whole.','Don\u2019t let go…'];
+function maybeWhisper(dt){
+  if(state.fade<55){$('whisper').classList.remove('show');return;}
+  state.whisperTimer-=dt;
+  if(state.whisperTimer<=0){
+    $('whisper').textContent='“'+WHISPERS[Math.floor(Math.random()*WHISPERS.length)]+'”';
+    $('whisper').classList.add('show');
+    setTimeout(function(){$('whisper').classList.remove('show');},2600);
+    state.whisperTimer=6+Math.random()*4;
+  }
+}
+function floatText(x,y,txt,cls){
+  var ft=document.createElement('div');
+  ft.className='float-text'+(cls?' '+cls:'');
+  ft.textContent=txt;ft.style.left=x+'px';ft.style.top=y+'px';
+  document.body.appendChild(ft);setTimeout(function(){ft.remove();},1150);
+}
+function burstAt(x,y,color){
+  for(var i=0;i<10;i++){
+    var b=document.createElement('div');b.className='pop-burst';
+    b.style.left=x+'px';b.style.top=y+'px';b.style.background=color;
+    b.style.boxShadow='0 0 8px '+color;
+    var ang=Math.random()*6.28,d=30+Math.random()*46;
+    b.style.setProperty('--bx',Math.cos(ang)*d+'px');
+    b.style.setProperty('--by',Math.sin(ang)*d+'px');
+    document.body.appendChild(b);
+    (function(el){setTimeout(function(){el.remove();},600);})(b);
+  }
+}
+
+/* =========================================================
+   MEMORY SPARKS + COMBO
+========================================================= */
+var SPARK_ICONS=[
+  '<svg viewBox="0 0 60 60"><circle cx="30" cy="36" r="14" fill="none" stroke="#a5e2ff" stroke-width="4"/><path d="M30 10 l7 8 -7 8 -7 -8 z" fill="#cfeeff" stroke="#7fd4ff" stroke-width="2"/></svg>',
+  '<svg viewBox="0 0 60 60"><path d="M14 26h26v12a11 11 0 0 1-11 11h-4a11 11 0 0 1-11-11z" fill="none" stroke="#a5e2ff" stroke-width="4"/><path d="M40 29h6a6 6 0 0 1 0 12h-5" fill="none" stroke="#a5e2ff" stroke-width="4"/><path d="M22 20c0-4 4-4 4-8M32 20c0-4 4-4 4-8" stroke="#cfeeff" stroke-width="3" fill="none" stroke-linecap="round"/></svg>',
+  '<svg viewBox="0 0 60 60"><rect x="12" y="12" width="36" height="36" rx="3" fill="none" stroke="#a5e2ff" stroke-width="4"/><circle cx="24" cy="26" r="4" fill="#cfeeff"/><circle cx="36" cy="26" r="4" fill="#cfeeff"/><path d="M20 40 q4 -8 8 0 M32 40 q4 -8 8 0" stroke="#cfeeff" stroke-width="3" fill="none"/></svg>'
+];
+var GOLD_ICON='<svg viewBox="0 0 60 60"><path d="M30 6 l6 16 17 1 -13 11 5 17 -15 -10 -15 10 5 -17 -13 -11 17 -1 z" fill="none" stroke="#ffd66e" stroke-width="3.5" stroke-linejoin="round"/><circle cx="30" cy="30" r="5" fill="#ffe9b0"/></svg>';
+function spawnSpark(){
+  if(state.phase!=='play'&&state.phase!=='rhythm')return;
+  var gold=Math.random()<0.12;
+  var el=document.createElement('div');
+  el.className='spark'+(gold?' gold':'');
+  el.innerHTML='<div class="halo"></div>'+(gold?GOLD_ICON:SPARK_ICONS[Math.floor(Math.random()*SPARK_ICONS.length)]);
+  var lock=$('locket').getBoundingClientRect();
+  var x=lock.left+24+Math.random()*(lock.width-110);
+  el.style.left=x+'px';
+  el.style.top=(lock.bottom-72)+'px';
+  el.style.animationDuration=(gold?5+Math.random()*2:7+Math.random()*4)+'s';
+  var popped=false;
+  function pop(){
+    if(popped)return;popped=true;
+    el.classList.add('popped');
+    var now=performance.now();
+    state.combo=(now-state.lastPop<2500)?state.combo+1:1;
+    state.lastPop=now;state.sparksPopped++;
+    var mult=Math.min(state.combo,5);
+    var pts=(gold?150:50)*mult;
+    sfxPop(state.combo);
+    setFade(state.fade-(gold?40:25));
+    setScore(state.score+pts,'good');
+    var r=el.getBoundingClientRect();
+    floatText(r.left,r.top-8,'+'+pts+(mult>1?'  ×'+mult+'!':' ✨'),gold?'gold':'');
+    burstAt(r.left+30,r.top+30,gold?'#ffd66e':'#a5e2ff');
+    if(mult>1){$('combo').textContent='×'+mult;$('combo').classList.add('on');}
+    clearTimeout(spawnSpark._comboOff);
+    spawnSpark._comboOff=setTimeout(function(){$('combo').classList.remove('on');state.combo=0;},2500);
+    setTimeout(function(){el.remove();},420);
+  }
+  el.addEventListener('pointerenter',pop);
+  el.addEventListener('pointerdown',pop);
+  document.body.appendChild(el);
+  setTimeout(function(){if(!popped)el.remove();},12000);
+}
+
+/* =========================================================
+   GEAR DRAG PUZZLE — two gears, one fits
+========================================================= */
+var drag={on:false,el:null,dx:0,dy:0};
+var homes={};
+function placeGearsHome(){
+  var lock=$('locket').getBoundingClientRect();
+  homes.gearWrong={x:lock.left+42,y:lock.bottom-78-42};
+  homes.gearRight={x:lock.left+128,y:lock.bottom-126-38};
+  ['gearWrong','gearRight'].forEach(function(id){
+    var el=$(id);if(!el)return;
+    el.style.left=homes[id].x+'px';el.style.top=homes[id].y+'px';
+  });
+}
+function axleBCenter(){
+  var r=$('axleB').getBoundingClientRect();
+  return {x:r.left+r.width/2,y:r.top+r.height/2,rad:r.width/2};
+}
+function elCenter(el){var r=el.getBoundingClientRect();return{x:r.left+r.width/2,y:r.top+r.height/2};}
+function onGearDown(e){
+  if(state.gearPlaced||state.phase!=='play')return;
+  drag.on=true;drag.el=this;
+  this.classList.add('dragging');
+  var r=this.getBoundingClientRect();
+  drag.dx=e.clientX-r.left;drag.dy=e.clientY-r.top;
+  this.setPointerCapture&&this.setPointerCapture(e.pointerId);
+  e.preventDefault();
+}
+function onGearMove(e){
+  if(!drag.on)return;
+  drag.el.style.left=(e.clientX-drag.dx)+'px';
+  drag.el.style.top=(e.clientY-drag.dy)+'px';
+  var b=axleBCenter(),g=elCenter(drag.el);
+  $('axleB').classList.toggle('near',Math.hypot(b.x-g.x,b.y-g.y)<b.rad*1.15);
+}
+function springHome(el){
+  var h=homes[el.id];
+  el.style.transition='left .38s cubic-bezier(.3,1.4,.4,1), top .38s cubic-bezier(.3,1.4,.4,1)';
+  el.style.left=h.x+'px';el.style.top=h.y+'px';
+  setTimeout(function(){el.style.transition='';},420);
+}
+function onGearUp(){
+  if(!drag.on)return;
+  var el=drag.el;drag.on=false;drag.el=null;
+  el.classList.remove('dragging');
+  var b=axleBCenter(),g=elCenter(el);
+  var near=Math.hypot(b.x-g.x,b.y-g.y)<b.rad*1.15;
+  $('axleB').classList.remove('near');
+  if(!near){springHome(el);return;}
+  if(el.id==='gearRight'){placeGearSuccess(el);}
+  else{ /* the wrong gear rattles right off */
+    sfxClunk();
+    el.classList.add('wobble');
+    setScore(state.score-10,'bad');
+    floatText(b.x-80,b.y-70,'Too small! It rattles off… −10','bad');
+    setTimeout(function(){el.classList.remove('wobble');springHome(el);},650);
+  }
+}
+function placeGearSuccess(el){
+  state.gearPlaced=true;
+  el.remove();
+  var w=$('gearWrong');if(w)w.style.opacity='.35';
+  $('axleB').classList.add('filled');
+  $('axleB').querySelector('.label').textContent='✦ ENGAGED ✦';
+  $('gearlock').classList.add('running');
+  $('gearC').querySelector('.label').textContent='🔓 UNLOCKED';
+  sfxGearsRun();
+  setScore(state.score+100,'good');
+  var b=axleBCenter();
+  floatText(b.x-90,b.y-70,'+100 ⚙️ GEARS ENGAGED','gold');
+  burstAt(b.x,b.y,'#ffe3a1');
+  setObjective(2,'Signal Felix — listen, then knock the pattern on the glass');
+  setTimeout(openViewport,700);
+}
+function openViewport(){
+  $('shutter').classList.add('open');
+  $('lens').classList.add('glow');
+  setTimeout(function(){$('lens').classList.remove('glow');},1600);
+  $('viewport-cap').innerHTML='The glass clears — <b>Felix</b> is dusting the shelf outside!<br>Knock the secret signal so he notices the locket.';
+  setTimeout(startRhythm,1300);
+}
+
+/* =========================================================
+   RHYTHM — "Signal Felix"
+   KNOCK … pause … KNOCK-KNOCK-KNOCK (gaps judged)
+========================================================= */
+var RHY={gaps:[1000,350,350],tol:0.45,taps:[],lastTap:0,playing:false};
+function buildBeatRow(){
+  var row=$('beats');row.innerHTML='';
+  ['b','G','b','g','b','g','b'].forEach(function(k){
+    var d=document.createElement('div');
+    if(k==='b'){d.className='beat';}
+    else{d.className='beat gap';if(k==='G')d.style.width='46px';}
+    row.appendChild(d);
+  });
+}
+function beatEls(){return Array.prototype.filter.call($('beats').children,function(c){return !c.classList.contains('gap');});}
+function startRhythm(){
+  state.phase='rhythm';
+  $('rhythm').classList.add('show');
+  buildBeatRow();
+  demoPattern();
+}
+function demoPattern(){
+  if(RHY.playing)return;RHY.playing=true;
+  RHY.taps=[];
+  var els=beatEls();els.forEach(function(b){b.className='beat';});
+  $('rnote').textContent='Listen carefully…';
+  var t=350;
+  els.forEach(function(b,i){
+    setTimeout(function(){
+      b.classList.add('demo');sfxKnock();lensRipple();
+      setTimeout(function(){b.classList.remove('demo');},220);
+    },t);
+    if(i<RHY.gaps.length)t+=RHY.gaps[i];
+  });
+  setTimeout(function(){RHY.playing=false;$('rnote').innerHTML='Your turn — tap the glass!<br><b style="color:#cfeeff">knock · pause · knock-knock-knock</b>';},t+500);
+}
+function lensRipple(x,y){
+  var lens=$('lens'),r=lens.getBoundingClientRect();
+  var rp=document.createElement('div');rp.className='ripple';
+  var size=r.width*0.4;
+  rp.style.width=size+'px';rp.style.height=size+'px';
+  rp.style.left=((x!=null?x-r.left:r.width/2)-size/2)+'px';
+  rp.style.top=((y!=null?y-r.top:r.height/2)-size/2)+'px';
+  lens.appendChild(rp);
+  setTimeout(function(){rp.remove();},650);
+}
+function rhythmTap(e){
+  if(state.phase!=='rhythm'||RHY.playing)return;
+  var now=performance.now();
+  lensRipple(e&&e.clientX,e&&e.clientY);
+  $('lens').classList.add('glow');setTimeout(function(){$('lens').classList.remove('glow');},160);
+  sfxKnock();
+  var els=beatEls();
+  if(RHY.taps.length>0){
+    var gap=now-RHY.lastTap;
+    var want=RHY.gaps[RHY.taps.length-1];
+    if(Math.abs(gap-want)>want*RHY.tol){return rhythmFail();}
+  }
+  RHY.taps.push(now);RHY.lastTap=now;
+  els[RHY.taps.length-1].classList.add('hit');
+  if(RHY.taps.length===els.length){rhythmWin();}
+}
+function rhythmFail(){
+  state.rhythmFails++;
+  sfxBad();
+  $('lens').classList.remove('badshake');void $('lens').offsetWidth;$('lens').classList.add('badshake');
+  beatEls().forEach(function(b){b.classList.add('miss');});
+  setScore(state.score-30,'bad');
+  var r=$('lens').getBoundingClientRect();
+  floatText(r.left+10,r.top-6,'Felix didn\u2019t hear… −30','bad');
+  $('rnote').textContent='Not quite the rhythm — listen again!';
+  RHY.taps=[];
+  setTimeout(demoPattern,900);
+}
+function rhythmWin(){
+  state.phase='winning';
+  $('stage').classList.remove('shaking');
+  $('felix').classList.add('noticing');
+  $('rnote').textContent='Felix turns — he sees the locket!';
+  sfxChime();
+  var bonus=200+(state.rhythmFails===0?100:0);
+  setScore(state.score+bonus,'good');
+  var r=$('lens').getBoundingClientRect();
+  floatText(r.left,r.top-10,'+'+bonus+(state.rhythmFails===0?' PERFECT SIGNAL!':' RESCUE!'),'gold');
+  setTimeout(function(){endGame(true);},1700);
+}
+
+/* =========================================================
+   MAIN LOOP
+========================================================= */
+var tickTimer=0;
+function loop(t){
+  var dt=Math.min(0.1,(t-state.lastT)/1000);state.lastT=t;
+  drawEmbers();
+  if(state.phase==='play'||state.phase==='rhythm'){
+    setFade(state.fade+1.5*dt);
+    var drain=state.fade>80?20:5;
+    setScore(state.score-drain*dt);
+    state.sparkTimer-=dt;
+    if(state.sparkTimer<=0){spawnSpark();state.sparkTimer=1.5+Math.random()*1.5;}
+    tickTimer-=dt;
+    if(tickTimer<=0){sfxTick();tickTimer=1.1;}
+    if(state.fade>80){
+      state.heartTimer-=dt;
+      if(state.heartTimer<=0){sfxHeart();state.heartTimer=0.95;}
+    }
+    maybeWhisper(dt);
+    if(state.fade>=100){endGame(false);requestAnimationFrame(loop);return;}
+  }
+  requestAnimationFrame(loop);
+}
+
+/* =========================================================
+   STORY RIVALS + MEDALS
+========================================================= */
+function renderRivals(elId,myScore){
+  var rows=[
+    {name:'Charlotte',score:1450,note:'clever and fast',me:false},
+    {name:playerName()||'Leander (you)',score:Math.round(myScore),note:'',me:true},
+    {name:'Felix',score:850,note:'easily distracted',me:false}
+  ].sort(function(a,b){return b.score-a.score;});
+  var med=['🥇','🥈','🥉'];
+  $(elId).innerHTML=rows.map(function(r,i){
+    return '<div class="row'+(r.me?' me':'')+'"><span class="who">'+med[i]+' '+lbEsc(r.name)+
+      (r.note?' <small style="color:#8a7a58">('+r.note+')</small>':'')+'</span><span>'+r.score+' pts</span></div>';
+  }).join('');
+}
+function renderMedals(elId,won){
+  var m=[];
+  m.push('✨ '+state.sparksPopped+' memories caught');
+  if(state.combo>=3||spawnSpark._maxCombo>=3)m.push('🔥 combo chained');
+  if(won&&state.rhythmFails===0)m.push('👊 perfect signal');
+  if(won)m.push('🗝️ cabinet escaped');
+  $(elId).innerHTML=m.map(function(x){return '<span class="medal">'+x+'</span>';}).join('');
+}
+
+/* =========================================================
+   START / END FLOW
+========================================================= */
+function startGame(){
+  audio();startDrone();
+  state.phase='play';state.fade=0;state.score=1000;state.gearPlaced=false;state.won=false;
+  state.sparkTimer=1;state.whisperTimer=4;state.heartTimer=0;state.lastT=performance.now();
+  state.combo=0;state.lastPop=0;state.sparksPopped=0;state.rhythmFails=0;
+  setFade(0);setScore(1000);
+  setObjective(1,'Fix the gear train — drag the right gear onto the empty axle');
+  // reset the puzzle + viewport for replays
+  resetPuzzle();
+  $('startOverlay').classList.remove('show');
+  $('overOverlay').classList.remove('show');
+  $('winOverlay').classList.remove('show');
+}
+function resetPuzzle(){
+  $('gearlock').classList.remove('running');
+  $('axleB').classList.remove('filled','near');
+  $('axleB').querySelector('.label').textContent='EMPTY AXLE';
+  $('gearC').querySelector('.label').textContent='🔒 DOOR LOCK';
+  $('shutter').classList.remove('open');
+  $('felix').classList.remove('noticing');
+  $('rhythm').classList.remove('show');
+  $('viewport-cap').innerHTML='The brass shutter is sealed tight.<br>Fix the gear train to wind it open.';
+  ['gearWrong','gearRight'].forEach(function(id){
+    if(!$(id)){
+      var tpl=id==='gearWrong'?resetPuzzle._wrongHTML:resetPuzzle._rightHTML;
+      var d=document.createElement('div');d.innerHTML=tpl;
+      var el=d.firstElementChild;document.body.appendChild(el);
+      el.addEventListener('pointerdown',onGearDown);
+    }else{$(id).style.opacity='';}
+  });
+  placeGearsHome();
+}
+async function endGame(won){
+  if(state.phase==='over'||state.phase==='win')return;
+  state.phase=won?'win':'over';
+  state.won=won;
+  stopDrone();
+  $('stage').classList.remove('shaking');
+  document.querySelectorAll('.spark').forEach(function(s){s.remove();});
+  var score=Math.round(state.score);
+  var pb=parseInt(localStorage.getItem(PBEST_KEY)||'0',10);
+  if(score>pb){localStorage.setItem(PBEST_KEY,String(score));}
+  if(won){
+    $('winScore').firstChild.nodeValue=score;
+    renderRivals('winRivals',score);renderMedals('winMedals',true);
+    $('winOverlay').classList.add('show');
+  }else{
+    $('overScore').firstChild.nodeValue=score;
+    renderRivals('overRivals',score);renderMedals('overMedals',false);
+    $('overOverlay').classList.add('show');
+  }
+  await saveFlow(score,won);
+}
+async function saveFlow(score,won){
+  var badge=won?$('hsbadge2'):$('hsbadge');
+  var form=won?$('nameform2'):$('nameform');
+  badge.style.display='none';form.style.display='none';
+  var board=won?$('endboard2'):$('endboard');
+  board.innerHTML=lbLoading();
+  try{window.parent.postMessage({holesArcade:true,game:GAME_ID,score:score},'*');}catch(e){}
+  var pn=playerName();
+  if(pn){
+    if(score>0){
+      var wasTop=await sbQualifies(score);
+      await sbInsert(pn,score);
+      badge.textContent=wasTop?('🏆 New top score — saved as '+pn+'!'):('✓ Saved to your record, '+pn);
+      badge.style.display='inline-block';
+    }
+    loadEndBoard(pn,score);
+  }else{
+    badge.innerHTML='🏆 Top score! Log your name:';
+    var q=await sbQualifies(score);
+    if(q&&score>0){badge.style.display='inline-block';form.style.display='flex';}
+    loadEndBoard(null,null);
+  }
+}
+async function manualSave(inputId,formId){
+  var name=($(inputId).value||'').trim();
+  if(!name)return;
+  var score=Math.round(state.score);
+  $(formId).style.display='none';
+  await sbInsert(name,score);
+  loadEndBoard(name,score);
+}
+
+/* =========================================================
+   WIRE UP
+========================================================= */
+window.addEventListener('DOMContentLoaded',function(){
+  resetPuzzle._wrongHTML=$('gearWrong').outerHTML;
+  resetPuzzle._rightHTML=$('gearRight').outerHTML;
+  initEmbers();
+  placeGearsHome();
+  window.addEventListener('resize',function(){if(!state.gearPlaced&&!drag.on)placeGearsHome();});
+  $('gearWrong').addEventListener('pointerdown',onGearDown);
+  $('gearRight').addEventListener('pointerdown',onGearDown);
+  window.addEventListener('pointermove',onGearMove);
+  window.addEventListener('pointerup',onGearUp);
+  window.addEventListener('pointercancel',onGearUp);
+  $('lens').addEventListener('pointerdown',function(e){e.preventDefault();rhythmTap(e);});
+  $('listenBtn').addEventListener('click',demoPattern);
+  $('muteBtn').addEventListener('click',function(){audio();setMuted(!muted);});
+  $('startBtn').addEventListener('click',startGame);
+  $('retryBtn').addEventListener('click',startGame);
+  $('againBtn').addEventListener('click',startGame);
+  $('savescore').addEventListener('click',function(){manualSave('nameinput','nameform');});
+  $('savescore2').addEventListener('click',function(){manualSave('nameinput2','nameform2');});
+  var pb=parseInt(localStorage.getItem(PBEST_KEY)||'0',10);
+  var pn=playerName();
+  $('pbest').textContent=(pn?('Signed in as '+pn+' · '):'')+(pb>0?('Your best on this device: '+pb+' pts'):'No personal best yet — good luck!');
+  loadMainBoard();
+  requestAnimationFrame(loop);
+});
+</script>
+</body>
+</html>
