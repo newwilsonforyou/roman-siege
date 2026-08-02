@@ -1308,7 +1308,23 @@ var $=function(id){return document.getElementById(id);};
 
 var SB_URL='https://wpohvsjkrskhlrayaubp.supabase.co';
 var SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indwb2h2c2prcnNraGxyYXlhdWJwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzMDEzOTcsImV4cCI6MjA5Njg3NzM5N30.Xi07ayGB5CykR-_7QX-b8UsUmMmTbGIlYpctXYgW9JI';
-function sbH(){return {'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'};}
+/* returns the signed-in player's short-lived token, or the public key */
+function sbTok(){try{return localStorage.getItem('sb_token')||SB_KEY;}catch(e){return SB_KEY;}}
+var FN=SB_URL+'/functions/v1/';
+function setTok(t){try{localStorage.setItem('sb_token',t);}catch(e){}}
+function clearTok(){try{localStorage.removeItem('sb_token');}catch(e){}}
+/* server-side sign in: the password is checked by the login Edge Function,
+   never in the browser. Returns {name,avatar,uid}. */
+async function authCall(action,name,pass,avatar){
+  var r=await fetch(FN+'login',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({action:action,name:name,password:pass,avatar:avatar,app:'arcade'})});
+  var d=null;try{d=await r.json();}catch(e){}
+  if(!r.ok||!d||!d.token)throw new Error((d&&d.error)||'Could not sign in.');
+  setTok(d.token);
+  return d.player;
+}
+
+function sbH(){return {'apikey':SB_KEY,'Authorization':'Bearer '+sbTok(),'Content-Type':'application/json'};}
 
 var AVATARS=[
   '🛡️','⚔️','👑','🏛️','🦅','🐺','🔥','⭐','🚀','🪐','☄️','🎯',
@@ -1322,7 +1338,7 @@ var selectedAvatar='🛡️';
 
 function getPlayer(){try{return JSON.parse(localStorage.getItem('rna_player')||'null');}catch(e){return null;}}
 function setPlayer(p){localStorage.setItem('rna_player',JSON.stringify(p));}
-function clearPlayer(){localStorage.removeItem('rna_player');}
+function clearPlayer(){localStorage.removeItem('rna_player');clearTok();}
 
 function renderUserBar(){
   var p=getPlayer(),bar=$('userbar');
@@ -1385,21 +1401,6 @@ function buildAvatars(){
   });
 }
 
-/* simple password hashing using the browser's built-in crypto (SHA-256).
-   Stores a scrambled hash, never the raw password. This is locker-level
-   security suitable for a classroom, not bank-grade. */
-async function hashPass(pw){
-  try{
-    var enc=new TextEncoder().encode('rna-salt::'+pw);
-    var buf=await crypto.subtle.digest('SHA-256',enc);
-    return Array.from(new Uint8Array(buf)).map(function(b){return b.toString(16).padStart(2,'0');}).join('');
-  }catch(e){
-    // fallback if crypto unavailable: weak scramble (still not plain text)
-    var h=0;for(var i=0;i<pw.length;i++){h=(h*31+pw.charCodeAt(i))>>>0;}
-    return 'fallback'+h;
-  }
-}
-
 function showMode(mode){
   $('siChoose').style.display=mode==='choose'?'block':'none';
   $('siNew').style.display=mode==='new'?'block':'none';
@@ -1425,26 +1426,16 @@ $('createBtn').addEventListener('click',async function(){
   var name=$('newName').value.trim().slice(0,16);
   var pass=$('newPass').value;
   if(!name){$('newErr').textContent='Please choose a username.';return;}
-  if(pass.length<3){$('newErr').textContent='Password must be at least 3 characters.';return;}
+  if(pass.length<8){$('newErr').textContent='Password must be at least 8 characters.';return;}
+  $('newErr').textContent='';
   $('createBtn').textContent='Creating…';$('createBtn').disabled=true;
   try{
-    // check if username already taken
-    var r=await fetch(SB_URL+'/rest/v1/players?select=name&name=eq.'+encodeURIComponent(name),{headers:sbH()});
-    var rows=r.ok?await r.json():[];
-    if(rows&&rows.length){
-      $('newErr').textContent='That username is taken. Try another, or log in.';
-      $('createBtn').textContent='CREATE & ENTER';$('createBtn').disabled=false;return;
-    }
-    var ph=await hashPass(pass);
-    var h=sbH();h['Prefer']='return=minimal';
-    var ins=await fetch(SB_URL+'/rest/v1/players',{method:'POST',headers:h,
-      body:JSON.stringify({name:name,avatar:selectedAvatar,pass_hash:ph})});
-    if(!ins.ok){throw new Error('insert failed');}
-    setPlayer({name:name,avatar:selectedAvatar});
+    var p=await authCall('signup',name,pass,selectedAvatar);
+    setPlayer({name:p.name,avatar:p.avatar||selectedAvatar});
     $('signinModal').classList.remove('show');
     renderUserBar();
   }catch(e){
-    $('newErr').textContent='Connection problem. Try again.';
+    $('newErr').textContent=e.message||'Connection problem. Try again.';
   }
   $('createBtn').textContent='CREATE & ENTER';$('createBtn').disabled=false;
 });
@@ -1455,26 +1446,15 @@ $('loginBtn').addEventListener('click',async function(){
   var name=$('logName').value.trim().slice(0,16);
   var pass=$('logPass').value;
   if(!name||!pass){$('logErr').textContent='Enter your username and password.';return;}
+  $('logErr').textContent='';
   $('loginBtn').textContent='Logging in…';$('loginBtn').disabled=true;
   try{
-    var r=await fetch(SB_URL+'/rest/v1/players?select=*&name=eq.'+encodeURIComponent(name),{headers:sbH()});
-    var rows=r.ok?await r.json():[];
-    if(!rows||!rows.length){
-      $('logErr').textContent='No account with that username. Create one?';
-      $('loginBtn').textContent='LOG IN';$('loginBtn').disabled=false;return;
-    }
-    var player=rows[0];
-    var ph=await hashPass(pass);
-    // accounts created before passwords (no hash) are let in to avoid lockout
-    if(player.pass_hash && player.pass_hash!==ph){
-      $('logErr').textContent='Wrong password. Try again.';
-      $('loginBtn').textContent='LOG IN';$('loginBtn').disabled=false;return;
-    }
-    setPlayer({name:player.name,avatar:player.avatar||'🛡️'});
+    var p=await authCall('login',name,pass);
+    setPlayer({name:p.name,avatar:p.avatar||'🛡️'});
     $('signinModal').classList.remove('show');
     renderUserBar();
   }catch(e){
-    $('logErr').textContent='Connection problem. Try again.';
+    $('logErr').textContent=e.message||'Connection problem. Try again.';
   }
   $('loginBtn').textContent='LOG IN';$('loginBtn').disabled=false;
 });
